@@ -1,0 +1,14 @@
+# features 폴더 = 백엔드 담당과 대칭 (컨벤션 1-4 · 4-2)
+/src/features/auth/        @perish95
+/src/features/user/        @perish95
+/src/features/store/       @VoC-100
+/src/features/product/     @VoC-100
+/src/features/order/       @jongbeen97
+/src/features/review/      @jongbeen97
+/src/features/settlement/  @jihoon-devstu
+/src/features/admin/       @jihoon-devstu
+
+# 공유 파일 — 전원
+/src/shared/               @jihoon-devstu @perish95 @VoC-100 @jongbeen97
+/src/app/                  @jihoon-devstu @perish95 @VoC-100 @jongbeen97
+/.github/                  @perish95

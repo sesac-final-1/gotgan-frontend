@@ -1,0 +1,10 @@
+# 프론트 CI — PR lint · build 검사 (배포는 Vercel Git 연동) — 담당 이경석. 지금은 수동 실행 전용 스텁 (자동 실행 · 실패 없음).
+# TODO 이경석: pull_request · push(main) — 이 저장소 전체 (lint · build). 배포는 Vercel Git 연동
+name: frontend
+on:
+  workflow_dispatch:
+jobs:
+  todo:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "TODO 이경석 — 프론트 CI — PR lint · build 검사 (배포는 Vercel Git 연동)"

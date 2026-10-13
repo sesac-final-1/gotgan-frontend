@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.vercel/
+*.log
+
+# 비밀 값 — Vercel 환경 변수에만
+.env
+.env.*
+!.env.example
+
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
