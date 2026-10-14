@@ -149,7 +149,7 @@
 도메인(기능) 기반 구조. **백엔드 서비스와 `features/{도메인}`이 대칭** (payment는 화면이 없어 `features/order`의 결제 흐름에 포함).
 
 ```
-frontend/src/
+gotgan-frontend/src/
 ├── app/                          # 앱 전역
 │   ├── router.jsx                #   전체 라우트 (단일 파일, 도메인별 주석 구획)
 │   ├── providers.jsx             #   QueryClientProvider 등
