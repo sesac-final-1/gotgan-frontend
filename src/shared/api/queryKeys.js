@@ -14,6 +14,7 @@ export const queryKeys = {
     settlements: () => ['admin', 'settlements'],
     reviews: () => ['admin', 'reviews'],
     categories: () => ['admin', 'categories'],
+    products: () => ['admin', 'products'],
   },
 
   // ── user (이경석)

@@ -1,6 +1,6 @@
 // admin 도메인 API — 담당 구지훈. 관리자 화면은 /api/admin/**(admin-service)만 호출 (컨벤션 4-2 규칙 1)
 import { mockResolve } from '@/mocks/mockApi';
-import { categories, stores } from '@/mocks/fixtures/catalog';
+import { categories, stores, products } from '@/mocks/fixtures/catalog';
 import { users, applications } from '@/mocks/fixtures/people';
 import { settlements, platformDaily } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
@@ -33,6 +33,9 @@ export const fetchAdminReviews = () => mockResolve(reviews);
 
 // TODO(구지훈): GET /api/admin/categories (수수료 · 적용 시작일 포함)
 export const fetchAdminCategories = () => mockResolve(categories);
+
+// TODO(구지훈): GET /api/admin/products (스토어별 상품 · 상태 — 상품 수 · 상세 표 · 리뷰 상품명)
+export const fetchAdminProducts = () => mockResolve(products);
 
 // TODO(구지훈): PATCH /api/admin/applications/{id} { status, reason } → store-service 상태 변경 + 이력 기록 (승인 시 StoreApproved 발행)
 // 목업: 메모리의 목업 데이터를 직접 바꾸고 이력을 한 줄 추가 (새로고침하면 초기화)
