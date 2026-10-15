@@ -20,6 +20,7 @@ describe('format', () => {
 
   it('날짜 · 클래스', () => {
     expect(ymd(new Date(2026, 9, 1))).toBe('2026.10.01');
-    expect(cx('a', false && 'b', 'c')).toBe('a c');
+    const hidden = false;
+    expect(cx('a', hidden && 'b', 'c')).toBe('a c');
   });
 });
