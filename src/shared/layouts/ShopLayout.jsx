@@ -82,9 +82,9 @@ export default function ShopLayout({ categories = [], cartCount = 0 }) {
               <NavLink key={n.label} to={n.to} className="hover:text-point">{n.label}</NavLink>
             ))}
           </nav>
-          <form className="ml-auto hidden sm:flex items-center border-b-2 border-ink w-full max-w-[300px]" onSubmit={(e) => { e.preventDefault(); nav(`/products?q=${encodeURIComponent(q)}`); }}>
+          <form className="ml-auto hidden sm:flex items-center border-b-2 border-ink w-full max-w-[300px]" onSubmit={(e) => { e.preventDefault(); void nav(`/products?q=${encodeURIComponent(q)}`); }}>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="리넨 셔츠, 햇감귤, 머그컵" className="flex-1 h-9 text-sm outline-none bg-transparent placeholder:text-mute" />
-            <button aria-label="검색"><Search size={19} strokeWidth={1.8} /></button>
+            <button type="submit" aria-label="검색"><Search size={19} strokeWidth={1.8} /></button>
           </form>
           <div className="ml-auto sm:ml-0 flex items-center gap-3">
             <Link to="/products?q=" className="sm:hidden" aria-label="검색"><Search size={22} strokeWidth={1.6} /></Link>

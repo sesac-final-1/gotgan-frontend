@@ -45,7 +45,7 @@ function RequestBody({ o, l, p, store }) {
   const submit = () => {
     // TODO(이경석): useRequestClaimMutation
     toast(`${type} 신청이 접수되었어요`);
-    nav('/mypage/claims');
+    void nav('/mypage/claims');
   };
   return (
     <div>

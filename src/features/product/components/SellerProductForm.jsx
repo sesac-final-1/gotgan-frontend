@@ -63,7 +63,7 @@ function FormBody({ src, categories, store }) {
   const sp = Math.round((price * (1 - disc / 100)) / 10) * 10;
   const fee = Math.round(sp * (c.commission + PAYMENT_FEE));
   // TODO(박지연): useCreateProductMutation / useUpdateProductMutation
-  const submit = () => { toast(edit ? '상품이 수정되었어요' : '상품이 등록되었어요'); nav('/seller/products'); };
+  const submit = () => { toast(edit ? '상품이 수정되었어요' : '상품이 등록되었어요'); void nav('/seller/products'); };
 
   return (
     <div>

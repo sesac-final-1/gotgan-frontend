@@ -10,7 +10,7 @@ export default function ShopLogin() {
   const [tab, setTab] = useState('buyer');
   const dest = { buyer: '/mypage', seller: '/seller', admin: '/admin' }[tab];
   // TODO(이경석): useLoginMutation — 지금은 선택한 역할의 첫 화면으로 이동만
-  const submit = (e) => { e.preventDefault(); nav(dest); };
+  const submit = (e) => { e.preventDefault(); void nav(dest); };
   return (
     <div className="max-w-[400px] mx-auto px-4 pt-16">
       <h1 className="text-[26px] font-bold tracking-tight text-center">로그인</h1>
@@ -26,7 +26,7 @@ export default function ShopLogin() {
           <Checkbox checked label="로그인 상태 유지" />
           <span className="text-mute">아이디 · 비밀번호 찾기</span>
         </div>
-        <button className="btn btn-ink btn-lg w-full">로그인</button>
+        <button type="submit" className="btn btn-ink btn-lg w-full">로그인</button>
       </form>
       {tab === 'buyer' && (
         <>

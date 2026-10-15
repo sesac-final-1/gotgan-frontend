@@ -45,7 +45,7 @@ export default function ShopCheckout() {
   const t = totalsOf(groups, point);
 
   // TODO(이경석): useCreateOrderMutation + PortOne 결제 — 지금은 장바구니 선택분 비우고 완료 화면으로
-  const pay = (amount, earn) => { clearChecked(); nav('/order/complete', { state: { pay: amount, method, point, earn } }); };
+  const pay = (amount, earn) => { clearChecked(); void nav('/order/complete', { state: { pay: amount, method, point, earn } }); };
 
   if (!lines.length) return <Empty title="주문할 상품이 없어요" action={<Link to="/cart" className="btn btn-ink">장바구니로</Link>} />;
 

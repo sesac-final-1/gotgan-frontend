@@ -8,7 +8,7 @@ export function useDecideApplicationMutation() {
   return useMutation({
     mutationFn: decideApplication,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.admin.applications() }); // 이력 키도 applications 하위라 함께 갱신
+      return qc.invalidateQueries({ queryKey: queryKeys.admin.applications() }); // 이력 키도 applications 하위라 함께 갱신
     },
   });
 }

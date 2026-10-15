@@ -82,7 +82,7 @@ export default function SellerOrderList() {
   // TODO(이경석): useShipOrderItemsMutation
   const ship = () => {
     const ready = selRows.filter((r) => r.status === '배송준비');
-    setPatch((prev) => ({ ...prev, ...Object.fromEntries(ready.map((r) => [r.lineId, { ...prev[r.lineId], status: '배송중', invoice: r.invoice || `6512${Math.floor(Math.random() * 1e8)}` }])) }));
+    setPatch((prev) => ({ ...prev, ...Object.fromEntries(ready.map((r) => [r.lineId, { ...prev[r.lineId], status: '배송중', invoice: r.invoice || `6512${String(Date.now()).slice(-8)}` }])) }));
     toast(`송장 등록 · 발송처리 완료 (구매자에게 알림톡 발송)`); setSel(new Set()); setInvoiceModal(false);
   };
   // TODO(이경석): useCancelOrderItemsMutation

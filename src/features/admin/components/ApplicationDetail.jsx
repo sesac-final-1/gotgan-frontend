@@ -38,7 +38,7 @@ function DetailBody({ a }) {
   const submit = (status, reason, msg) =>
     decide.mutate(
       { id: a.id, status, reason },
-      { onSuccess: () => { setModal(null); toast(msg); nav('/admin/applications'); } },
+      { onSuccess: () => { setModal(null); toast(msg); void nav('/admin/applications'); } },
     );
 
   return (

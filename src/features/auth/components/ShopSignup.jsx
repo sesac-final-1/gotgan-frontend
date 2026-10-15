@@ -8,7 +8,7 @@ export default function ShopSignup() {
   const nav = useNavigate();
   const [all, setAll] = useState(false);
   // TODO(이경석): useSignupMutation
-  const submit = (e) => { e.preventDefault(); toast('가입을 환영해요! 로그인해주세요'); nav('/login'); };
+  const submit = (e) => { e.preventDefault(); toast('가입을 환영해요! 로그인해주세요'); void nav('/login'); };
   return (
     <div className="max-w-[440px] mx-auto px-4 pt-16">
       <h1 className="text-[26px] font-bold tracking-tight">회원가입</h1>
@@ -24,7 +24,7 @@ export default function ShopSignup() {
           <div className="h-px bg-line" />
           {['(필수) 만 14세 이상입니다', '(필수) 이용약관 동의', '(필수) 개인정보 수집·이용 동의', '(선택) 마케팅 정보 수신 동의'].map((t) => <Checkbox key={t} checked={all} onChange={() => {}} label={t} />)}
         </div>
-        <button className="btn btn-ink btn-lg w-full">가입하기</button>
+        <button type="submit" className="btn btn-ink btn-lg w-full">가입하기</button>
       </form>
     </div>
   );

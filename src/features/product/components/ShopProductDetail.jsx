@@ -80,7 +80,7 @@ function DetailBody({ p, store, cat, products, stores }) {
   };
   // TODO(이경석): useAddCartItemMutation — 지금은 useCart 목업 스토어에 담기
   const onCart = () => { const ls = ensureLines(); if (!ls) return; ls.forEach((l) => addToCart(p.id, l.label, l.qty)); setCartModal(true); };
-  const onBuy = () => { const ls = ensureLines(); if (!ls) return; ls.forEach((l) => addToCart(p.id, l.label, l.qty)); nav('/checkout'); };
+  const onBuy = () => { const ls = ensureLines(); if (!ls) return; ls.forEach((l) => addToCart(p.id, l.label, l.qty)); void nav('/checkout'); };
 
   const TABS = [['info', '상품정보'], ['reviews', `리뷰 ${comma(p.reviews)}`], ['qna', `Q&A ${myQna.length}`], ['ship', '배송/교환/반품']];
   const go = (k) => { setTab(k); document.getElementById(k)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
