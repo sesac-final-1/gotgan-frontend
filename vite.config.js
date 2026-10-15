@@ -17,6 +17,12 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.js'],
-    coverage: { reporter: ['text', 'lcov'] }, // sonar.javascript.lcov.reportPaths=coverage/lcov.info
+    // 커버리지 = 로직(.js)만 — 화면(.jsx) · 목업은 제외. sonar-project.properties 의 sonar.coverage.exclusions 와 같은 범위
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'lcov'], // sonar.javascript.lcov.reportPaths=coverage/lcov.info
+      include: ['src/**/*.js'],
+      exclude: ['src/mocks/**', 'src/test/**', 'src/**/*.test.js'],
+    },
   },
 });
