@@ -33,3 +33,13 @@ export const fetchAdminReviews = () => mockResolve(reviews);
 
 // TODO(구지훈): GET /api/admin/categories (수수료 · 적용 시작일 포함)
 export const fetchAdminCategories = () => mockResolve(categories);
+
+// TODO(구지훈): PATCH /api/admin/applications/{id} { status, reason } → store-service 상태 변경 + 이력 기록 (승인 시 StoreApproved 발행)
+// 목업: 메모리의 목업 데이터를 직접 바꾸고 이력을 한 줄 추가 (새로고침하면 초기화)
+export const decideApplication = ({ id, status, reason }) => {
+  const app = applications.find((a) => a.id === id);
+  const from = app.status;
+  Object.assign(app, { status, decided: new Date() });
+  applicationHistory.unshift({ id: `AH-${Date.now()}`, appId: id, storeName: app.storeName, at: new Date(), from, to: status, by: '곳간 운영팀 · 정다은', reason });
+  return mockResolve({ id, status });
+};
