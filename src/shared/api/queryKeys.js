@@ -44,6 +44,7 @@ export const queryKeys = {
     all: ['order'],
     my: () => ['order', 'my'],
     sellerItems: (params) => ['order', 'seller', 'items', params ?? {}], // 서버 페이징 대상 (컨벤션 4-7)
+    sellerBuyers: () => ['order', 'seller', 'buyers'], // 임시 — 응답에 작성자 · 구매자 요약이 들어오면 삭제
   },
 
   // ── review (이경석)
