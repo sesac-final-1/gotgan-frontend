@@ -29,7 +29,7 @@ gotgan-frontend/
 |---|---|
 | `auth` · `user` | 이경석 |
 | `store` · `product` | 박지연 |
-| `order` · `review` | 이종빈 |
+| `order` · `review` | 이경석 |
 | `admin` · `settlement` | 구지훈 |
 
 다른 사람의 `features/` 폴더는 PR 없이 수정 금지. 공유 파일(`shared/api/queryKeys.js` · `app/router.jsx`)은 도메인별 주석 구획 안에서만.
