@@ -3,12 +3,12 @@
 /src/features/user/        @perish95
 /src/features/store/       @VoC-100
 /src/features/product/     @VoC-100
-/src/features/order/       @jongbeen97
-/src/features/review/      @jongbeen97
+/src/features/order/       @perish95
+/src/features/review/      @perish95
 /src/features/settlement/  @jihoon-devstu
 /src/features/admin/       @jihoon-devstu
 
 # 공유 파일 — 전원
-/src/shared/               @jihoon-devstu @perish95 @VoC-100 @jongbeen97
-/src/app/                  @jihoon-devstu @perish95 @VoC-100 @jongbeen97
+/src/shared/               @jihoon-devstu @perish95 @VoC-100
+/src/app/                  @jihoon-devstu @perish95 @VoC-100
 /.github/                  @perish95
