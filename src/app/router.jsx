@@ -1,14 +1,53 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import RootLayout from '@/app/RootLayout';
-import PendingPage from '@/shared/components/common/PendingPage';
 import ShopRoot from '@/pages/shop/ShopRoot';
+import HomePage from '@/pages/shop/HomePage';
+import ProductListPage from '@/pages/shop/ProductListPage';
+import ProductDetailPage from '@/pages/shop/ProductDetailPage';
+import StoreListPage from '@/pages/shop/StoreListPage';
+import StoreHomePage from '@/pages/shop/StoreHomePage';
+import CartPage from '@/pages/shop/CartPage';
+import CheckoutPage from '@/pages/shop/CheckoutPage';
+import OrderCompletePage from '@/pages/shop/OrderCompletePage';
+import LoginPage from '@/pages/shop/LoginPage';
+import SignupPage from '@/pages/shop/SignupPage';
+import HelpPage from '@/pages/shop/HelpPage';
+import SellerApplyPage from '@/pages/shop/SellerApplyPage';
+import MyPageRoot from '@/pages/mypage/MyPageRoot';
+import MyOrdersPage from '@/pages/mypage/MyOrdersPage';
+import MyOrderDetailPage from '@/pages/mypage/MyOrderDetailPage';
+import MyClaimRequestPage from '@/pages/mypage/MyClaimRequestPage';
+import MyClaimsPage from '@/pages/mypage/MyClaimsPage';
+import MyReviewsPage from '@/pages/mypage/MyReviewsPage';
+import MyQnaPage from '@/pages/mypage/MyQnaPage';
+import MyPointsPage from '@/pages/mypage/MyPointsPage';
+import MyProfilePage from '@/pages/mypage/MyProfilePage';
+import MyAddressesPage from '@/pages/mypage/MyAddressesPage';
+import SellerLayout from '@/pages/seller/SellerLayout';
+import SellerDashboardPage from '@/pages/seller/SellerDashboardPage';
+import SellerProductListPage from '@/pages/seller/SellerProductListPage';
+import SellerProductFormPage from '@/pages/seller/SellerProductFormPage';
+import SellerOrderListPage from '@/pages/seller/SellerOrderListPage';
+import SellerOrderDetailPage from '@/pages/seller/SellerOrderDetailPage';
+import SellerClaimsPage from '@/pages/seller/SellerClaimsPage';
+import SellerReviewsPage from '@/pages/seller/SellerReviewsPage';
+import SellerQnaPage from '@/pages/seller/SellerQnaPage';
+import SellerSettlementsPage from '@/pages/seller/SellerSettlementsPage';
+import SellerStorePage from '@/pages/seller/SellerStorePage';
 import AdminLayout from '@/pages/admin/AdminLayout';
 import AdminApplicationsPage from '@/pages/admin/AdminApplicationsPage';
 import AdminApplicationDetailPage from '@/pages/admin/AdminApplicationDetailPage';
+import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
+import AdminStoresPage from '@/pages/admin/AdminStoresPage';
+import AdminStoreDetailPage from '@/pages/admin/AdminStoreDetailPage';
+import AdminSettlementsPage from '@/pages/admin/AdminSettlementsPage';
+import AdminUsersPage from '@/pages/admin/AdminUsersPage';
+import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage';
+import AdminReviewsPage from '@/pages/admin/AdminReviewsPage';
+import AdminCategoriesPage from '@/pages/admin/AdminCategoriesPage';
 
 // 전체 라우트 — 단일 파일 (컨벤션 4-3). 영역 · 도메인별 주석 구획 안에서만 추가, catch-all(*)은 항상 맨 마지막
-// 경로는 목업과 같다. PendingPage = 아직 이식하지 않은 화면 (F4 에서 교체)
-const pending = { element: <PendingPage /> };
+// 경로는 목업과 같다
 
 export const router = createBrowserRouter([
   {
@@ -18,33 +57,34 @@ export const router = createBrowserRouter([
       {
         element: <ShopRoot />,
         children: [
-          { index: true, ...pending },
-          { path: 'products', ...pending },
-          { path: 'products/:id', ...pending },
-          { path: 'stores', ...pending },
-          { path: 'store/:id', ...pending },
-          { path: 'cart', ...pending },
-          { path: 'checkout', ...pending },
-          { path: 'order/complete', ...pending },
-          { path: 'login', ...pending },
-          { path: 'signup', ...pending },
-          { path: 'help', ...pending },
-          { path: 'seller/apply', ...pending },
+          { index: true, element: <HomePage /> },
+          { path: 'products', element: <ProductListPage /> },
+          { path: 'products/:id', element: <ProductDetailPage /> },
+          { path: 'stores', element: <StoreListPage /> },
+          { path: 'store/:id', element: <StoreHomePage /> },
+          { path: 'cart', element: <CartPage /> },
+          { path: 'checkout', element: <CheckoutPage /> },
+          { path: 'order/complete', element: <OrderCompletePage /> },
+          { path: 'login', element: <LoginPage /> },
+          { path: 'signup', element: <SignupPage /> },
+          { path: 'help', element: <HelpPage /> },
+          { path: 'seller/apply', element: <SellerApplyPage /> },
 
           // ── mypage
           {
             path: 'mypage',
+            element: <MyPageRoot />,
             children: [
               { index: true, element: <Navigate to="orders" replace /> },
-              { path: 'orders', ...pending },
-              { path: 'orders/:id', ...pending },
-              { path: 'claim/:lineId', ...pending },
-              { path: 'claims', ...pending },
-              { path: 'reviews', ...pending },
-              { path: 'qna', ...pending },
-              { path: 'points', ...pending },
-              { path: 'profile', ...pending },
-              { path: 'addresses', ...pending },
+              { path: 'orders', element: <MyOrdersPage /> },
+              { path: 'orders/:id', element: <MyOrderDetailPage /> },
+              { path: 'claim/:lineId', element: <MyClaimRequestPage /> },
+              { path: 'claims', element: <MyClaimsPage /> },
+              { path: 'reviews', element: <MyReviewsPage /> },
+              { path: 'qna', element: <MyQnaPage /> },
+              { path: 'points', element: <MyPointsPage /> },
+              { path: 'profile', element: <MyProfilePage /> },
+              { path: 'addresses', element: <MyAddressesPage /> },
             ],
           },
         ],
@@ -53,18 +93,19 @@ export const router = createBrowserRouter([
       // ── seller (판매자센터)
       {
         path: 'seller',
+        element: <SellerLayout />,
         children: [
-          { index: true, ...pending },
-          { path: 'products', ...pending },
-          { path: 'products/new', ...pending },
-          { path: 'products/:id/edit', ...pending },
-          { path: 'orders', ...pending },
-          { path: 'orders/:lineId', ...pending },
-          { path: 'claims', ...pending },
-          { path: 'reviews', ...pending },
-          { path: 'qna', ...pending },
-          { path: 'settlements', ...pending },
-          { path: 'store', ...pending },
+          { index: true, element: <SellerDashboardPage /> },
+          { path: 'products', element: <SellerProductListPage /> },
+          { path: 'products/new', element: <SellerProductFormPage /> },
+          { path: 'products/:id/edit', element: <SellerProductFormPage /> },
+          { path: 'orders', element: <SellerOrderListPage /> },
+          { path: 'orders/:lineId', element: <SellerOrderDetailPage /> },
+          { path: 'claims', element: <SellerClaimsPage /> },
+          { path: 'reviews', element: <SellerReviewsPage /> },
+          { path: 'qna', element: <SellerQnaPage /> },
+          { path: 'settlements', element: <SellerSettlementsPage /> },
+          { path: 'store', element: <SellerStorePage /> },
         ],
       },
 
@@ -73,16 +114,16 @@ export const router = createBrowserRouter([
         path: 'admin',
         element: <AdminLayout />,
         children: [
-          { index: true, ...pending },
+          { index: true, element: <AdminDashboardPage /> },
           { path: 'applications', element: <AdminApplicationsPage /> },
           { path: 'applications/:id', element: <AdminApplicationDetailPage /> },
-          { path: 'stores', ...pending },
-          { path: 'stores/:id', ...pending },
-          { path: 'settlements', ...pending },
-          { path: 'users', ...pending },
-          { path: 'users/:id', ...pending },
-          { path: 'reviews', ...pending },
-          { path: 'categories', ...pending },
+          { path: 'stores', element: <AdminStoresPage /> },
+          { path: 'stores/:id', element: <AdminStoreDetailPage /> },
+          { path: 'settlements', element: <AdminSettlementsPage /> },
+          { path: 'users', element: <AdminUsersPage /> },
+          { path: 'users/:id', element: <AdminUserDetailPage /> },
+          { path: 'reviews', element: <AdminReviewsPage /> },
+          { path: 'categories', element: <AdminCategoriesPage /> },
         ],
       },
 
