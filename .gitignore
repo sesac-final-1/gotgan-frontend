@@ -12,3 +12,5 @@ dist/
 .vscode/
 .DS_Store
 Thumbs.db
+coverage/
+.vite/
