@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "http://gotgan-api.duckdns.org/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
