@@ -5,7 +5,7 @@ import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { toMap } from '@/shared/utils/collection';
-import { cx, comma } from '@/shared/utils/format';
+import { cx } from '@/shared/utils/format';
 
 export default function ShopStoreList() {
   const { data: stores = [] } = useStoresQuery();
@@ -37,7 +37,7 @@ export default function ShopStoreList() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2"><b className="text-[16px] group-hover:underline">{s.name}</b><span className="text-[11px] text-mute">{catById[s.cat]?.name}</span></div>
                   <p className="text-[13px] text-ink-2 mt-1 line-clamp-1">{s.intro}</p>
-                  <div className="text-[12px] text-mute mt-2">관심고객 <span className="num">{comma(s.followers)}</span> · {s.grade}</div>
+                  <div className="text-[12px] text-mute mt-2">{s.grade}</div>
                 </div>
               </div>
             </Link>

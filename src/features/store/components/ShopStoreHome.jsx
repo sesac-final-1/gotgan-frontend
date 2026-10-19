@@ -1,7 +1,7 @@
 // 스토어 홈 (판매자 개별 스토어, 스마트스토어의 '내 스토어' 개념) — 담당 박지연
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Bell, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
@@ -28,7 +28,6 @@ function StoreBody({ s }) {
   const { data: products = [] } = useProductsQuery();
   const { data: categories = [] } = useCategoriesQuery();
   const { data: reviews = [] } = useReviewsQuery();
-  const [follow, setFollow] = useState(false);
   const [sub, setSub] = useState('전체');
 
   const items = useMemo(() => products.filter((p) => p.storeId === s.id && p.status !== '판매중지'), [products, s.id]);
@@ -36,9 +35,6 @@ function StoreBody({ s }) {
   const sum = useMemo(() => ratingSummary(reviews.filter((r) => r.storeId === s.id)), [reviews, s.id]);
   const shown = items.filter((p) => sub === '전체' || p.sub === sub);
   const catName = categories.find((c) => c.id === s.cat)?.name;
-
-  // TODO(박지연): useFollowStoreMutation
-  const onFollow = () => { setFollow(!follow); toast(follow ? '알림을 해제했어요' : '새 상품 소식을 알려드릴게요'); };
 
   return (
     <div>
@@ -58,16 +54,12 @@ function StoreBody({ s }) {
               <p className="mt-1.5 text-[14px] text-ink-2 max-w-xl leading-relaxed">{s.intro}</p>
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[12.5px] text-mute">
                 <span>{catName}</span>
-                <span>관심고객 <b className="text-ink num">{comma(s.followers + (follow ? 1 : 0))}</b></span>
                 <span className="flex items-center gap-1"><Stars value={sum.avg} size={11} /> <b className="text-ink">{sum.avg.toFixed(1)}</b></span>
                 <span>{ymd(s.since)} 오픈</span>
               </div>
             </div>
           </div>
           <div className="flex md:flex-col gap-2 md:w-40">
-            <button onClick={onFollow} className={cx('btn flex-1', follow ? 'btn-line' : 'btn-ink')}>
-              <Bell size={15} /> {follow ? '알림받는 중' : '알림받기'}
-            </button>
             <button onClick={() => toast('판매자 톡 연결 (목업)')} className="btn btn-line flex-1"><MessageSquare size={15} /> 문의하기</button>
           </div>
         </div>
