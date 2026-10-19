@@ -99,7 +99,7 @@ export const products = [
   P({ id: 'p901', storeId: 's9', cat: 'digital', sub: '키보드', name: '저소음 무접점 텐키리스 키보드', price: 219000, discount: 0.08, rating: 4.8, reviews: 690, sold: 1540, stock: 38, created: daysAgo(90), options: [{ name: '키압', values: ['35g', '45g'] }, { name: '배열', values: ['한글', '영문'] }], tags: ['무료배송'], material: 'PBT 키캡 / 정전용량 무접점', origin: '중국 (국내 기획)' }),
   P({ id: 'p902', storeId: 's9', cat: 'digital', sub: '음향', name: '노이즈캔슬링 무선 헤드폰', price: 249000, discount: 0.2, rating: 4.6, reviews: 1120, sold: 2700, stock: 52, created: daysAgo(130), options: [{ name: '컬러', values: ['샌드', '블랙'] }], tags: ['무료배송'], material: '-', origin: '중국' }),
   P({ id: 'p903', storeId: 's9', cat: 'digital', sub: '데스크', name: '월넛 원목 모니터 받침대', price: 89000, rating: 4.7, reviews: 380, sold: 1240, stock: 26, created: daysAgo(30), options: [{ name: '폭', values: ['600mm', '800mm'] }], tags: ['무료배송', 'NEW'], material: '북미산 월넛 원목', origin: '대한민국' }),
-  P({ id: 'p904', storeId: 's9', cat: 'digital', sub: '데스크', name: '비건 레더 데스크 매트 900×400', price: 34000, discount: 0.1, rating: 4.5, reviews: 950, sold: 6100, stock: 210, created: daysAgo(240), options: [{ name: '컬러', values: ['토프', '블랙', '올리브'] }], tags: [], material: 'PU 레더 / 스웨이드 백', origin: '중국' }),
+  P({ id: 'p904', storeId: 's9', cat: 'digital', sub: '데스크', name: '울 펠트 데스크 매트 900×400', price: 34000, discount: 0.1, rating: 4.5, reviews: 950, sold: 6100, stock: 210, created: daysAgo(240), options: [{ name: '컬러', values: ['차콜', '그레이', '오트밀'] }], tags: [], material: '울 펠트 / 논슬립 백', origin: '중국' }),
 ];
 export const productById = Object.fromEntries(products.map((p) => [p.id, p]));
 
