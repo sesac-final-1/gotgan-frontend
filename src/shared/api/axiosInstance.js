@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 모든 API 호출은 이 인스턴스로 — 상대경로 /api/... (운영: Vercel rewrite → DuckDNS, 로컬: Vite 프록시) · 쿠키(refresh) 전송
+// 모든 API 호출은 이 인스턴스로 — 상대경로 /api/... (운영: Vercel rewrite → https://api.gotgan.click, 로컬: Vite 프록시) · 쿠키(refresh) 전송
 export const axiosInstance = axios.create({
   baseURL: '',
   withCredentials: true,
