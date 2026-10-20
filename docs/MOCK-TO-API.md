@@ -32,7 +32,7 @@ export const fetchCategories = async () => (await axiosInstance.get('/api/catego
 - 각 함수 위의 `TODO(담당자)` 주석에 엔드포인트가 적혀 있다 — `grep -rn "TODO(내이름)" src` 로 내 몫을 찾는다
 - 응답 필드 이름은 **목업 필드 이름에 맞춰** DTO 를 만들면 화면을 안 고쳐도 된다. 다르게 가야 하면 api 함수에서 변환하고, 화면은 건드리지 않는다
 - 날짜: 목업은 `Date` 객체. 실제 응답은 ISO 문자열이므로 api 함수에서 `new Date()` 로 바꿔 넘기거나, 화면의 `format.js` 함수가 문자열도 받는지 확인
-- 경로는 상대경로 `/api/...` — 로컬은 Vite 프록시(8080), 운영은 Vercel rewrite → `gotgan-api.duckdns.org`
+- 경로는 상대경로 `/api/...` — 로컬은 Vite 프록시(8080), 운영은 Vercel rewrite → `https://api.gotgan.click`
 
 ## 3. 변경 — mutation 추가
 

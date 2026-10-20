@@ -10,7 +10,7 @@
 
 ```
 gotgan-frontend/
-├── vercel.json              /api/* → DuckDNS rewrite · SPA 새로고침
+├── vercel.json              /api/* → https://api.gotgan.click rewrite · SPA 새로고침
 ├── vite.config.js           로컬 /api 프록시 → localhost:8080 (gateway)
 ├── .env.example             VITE_PORTONE_STORE_ID · VITE_PORTONE_CHANNEL_KEY · VITE_GRAFANA_URL (값은 Vercel 환경 변수)
 └── src/
