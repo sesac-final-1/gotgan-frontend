@@ -94,6 +94,30 @@ export function useConfirmOrderItemsMutation() {
 
 화면 영역마다 부를 수 있는 API가 정해져 있다 (컨벤션 4-2 규칙 1): 관리자 화면 → `/api/admin/**` 만, 판매자 화면 → `/api/seller/**` · 공개 API. 임시 훅도 이 규칙을 지키도록 영역별로 따로 뒀다.
 
+### 필드명 — 화면을 API 이름으로 바꾼다 (10/20 결정 6번 A안)
+
+목업과 API 의 필드명이 다르면 **어댑터로 옛 이름에 맞추지 않고, 교체할 때 화면 · 훅을 API 이름으로 바꾼다** (이름은 한 벌만). 다른 도메인도 같은 방식.
+
+정산(`/api/seller/settlements` · `/api/admin/settlements`, 계약 backend `docs/api/settlement.md`) 대응표:
+
+| 목업 | API | 비고 |
+|---|---|---|
+| `orders` | `itemCount` | 정산 대상 상품주문 수 — 이 중 지난 주차 이월분 `carriedOverCount`("이월 n건" 표시) |
+| `gross` | `salesAmt` | 구매확정 매출 |
+| `refund` | (없음) | 정산은 구매확정 이후만 다룸 — 환불 · 취소 행 삭제 |
+| `commission` | `commissionAmt` | 판매수수료 |
+| `pgFee` | `paymentFeeAmt` | 결제수수료 2.2% |
+| `payout` | `payoutAmt` | 지급액 = 매출 − 판매수수료 − 결제수수료 |
+| `rate` | 상세 `items[].rate` | 율은 상세 항목에만 (상위 카테고리별) |
+| `start` · `end` (Date) | `weekStart` · `weekEnd` (`YYYY-MM-DD`) · `week`(`2026-W43`) | 주차 선택은 `week` |
+| `pay` (Date) | `scheduledPayDate` | 다음 주 목요일 |
+| `status` 한글(지급예정 · 지급보류 · 지급완료) | `SCHEDULED` · `HELD` · `PAID` | 표시 문구는 화면에서 매핑 |
+| `bank` 문자열 | `bank { bankName, accountNumber, accountHolder }` | |
+| `id` `ST-S1-0921` | `id` (숫자) | |
+
+- 쓰는 화면: `SellerSettlementList`(구지훈) · 관리자 `SettlementList` · `AdminDashboard` · `StoreDetail` · `StoreList`(관리자 — admin 구현 때 함께) · 판매자 `SellerDashboard`(박지연, 정산 수치는 `/internal/stats/settlements` 조합)
+- 대시보드 기준: "얼마 팔렸나"는 구매확정일, "얼마 받나 · 줬나"는 정산서 기준 — 이월 때문에 주차 합이 다를 수 있음
+
 ### 인증 — `shared/api/axiosInstance.js`
 
 Authorization 헤더 · 401 시 single-flight refresh 재시도는 TODO(이경석). 로그인 · 회원가입 화면(`ShopLogin` · `ShopSignup`)은 지금 토스트만.
