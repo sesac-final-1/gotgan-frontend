@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Checkbox } from '@/shared/components/ui';
 import { cx } from '@/shared/utils/format';
+import SocialLoginButtons from '@/features/auth/components/SocialLoginButtons';
 
 export default function ShopLogin() {
   const nav = useNavigate();
@@ -30,6 +31,7 @@ export default function ShopLogin() {
       </form>
       {tab === 'buyer' && (
         <>
+          <SocialLoginButtons />
           <p className="mt-8 text-center text-[13px] text-ink-2">아직 회원이 아니신가요? <Link to="/signup" className="font-bold underline">회원가입</Link></p>
         </>
       )}

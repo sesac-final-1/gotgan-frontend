@@ -11,6 +11,7 @@ import CheckoutPage from '@/pages/shop/CheckoutPage';
 import OrderCompletePage from '@/pages/shop/OrderCompletePage';
 import LoginPage from '@/pages/shop/LoginPage';
 import SignupPage from '@/pages/shop/SignupPage';
+import AuthCallbackPage from '@/pages/shop/AuthCallbackPage';
 import HelpPage from '@/pages/shop/HelpPage';
 import SellerApplyPage from '@/pages/shop/SellerApplyPage';
 import MyPageRoot from '@/pages/mypage/MyPageRoot';
@@ -67,6 +68,7 @@ export const router = createBrowserRouter([
           { path: 'order/complete', element: <OrderCompletePage /> },
           { path: 'login', element: <LoginPage /> },
           { path: 'signup', element: <SignupPage /> },
+          { path: 'auth/callback', element: <AuthCallbackPage /> },
           { path: 'help', element: <HelpPage /> },
           { path: 'seller/apply', element: <SellerApplyPage /> },
 
