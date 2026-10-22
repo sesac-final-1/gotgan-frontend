@@ -44,7 +44,7 @@ describe('axiosInstance 인증 인터셉터', () => {
   });
 
   it('401 이 동시에 두 번 — 재발급은 한 번, 두 요청 모두 새 토큰으로 재시도', async () => {
-    const refresh = vi.fn(async () => { token = 'new-at'; return 'new-at'; });
+    const refresh = vi.fn(async () => { token = 'new-at'; return { accessToken: 'new-at' }; });
     setAuthHandlers({ refresh });
     axiosInstance.defaults.adapter = vi.fn((config) => (
       config.headers.Authorization === 'Bearer new-at' ? ok(config, { url: config.url }) : fail(config, 401)));
