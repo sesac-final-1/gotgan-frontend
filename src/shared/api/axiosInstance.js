@@ -11,7 +11,7 @@ export const axiosInstance = axios.create({
 // 인증 연결 — shared 는 features 를 모르므로 app/bootstrap.js 가 authStore 와 이어 준다 (컨벤션 4-2 규칙 4)
 let authHandlers = {
   getAccessToken: () => null,
-  refresh: null, // () => Promise<accessToken>
+  refresh: null, // () => Promise<{ accessToken, ... }> — single-flight 로 감싸지 않은 원본 (여기서 refreshOnce 로 감싼다)
   onAuthFailed: () => {},
 };
 
@@ -36,7 +36,7 @@ axiosInstance.interceptors.response.use(undefined, async (error) => {
   if (!canRetry) return Promise.reject(error);
   config._retried = true;
   try {
-    const accessToken = await refreshOnce(authHandlers.refresh);
+    const { accessToken } = await refreshOnce(authHandlers.refresh);
     config.headers.Authorization = `Bearer ${accessToken}`;
     return axiosInstance(config);
   } catch {
