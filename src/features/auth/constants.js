@@ -22,6 +22,15 @@ export const roleMismatchMessage = (tab) => `${tab.label} 계정이 아니에요
 
 // 로그인 실패 — 서버 메시지(ApiResponse.message)가 없을 때 (네트워크 · 타임아웃)
 export const LOGIN_FALLBACK_MESSAGE = '로그인 서버에 연결할 수 없어요. 잠시 후 다시 시도해주세요';
+export const SIGNUP_FALLBACK_MESSAGE = '가입 서버에 연결할 수 없어요. 잠시 후 다시 시도해주세요';
+
+// 가입 약관 — required 를 모두 체크해야 가입. 마케팅 동의는 저장할 곳이 없어 화면에서만 (백엔드 SignupRequest 에 없음)
+export const SIGNUP_AGREEMENTS = [
+  { id: 'age', label: '(필수) 만 14세 이상입니다', required: true },
+  { id: 'terms', label: '(필수) 이용약관 동의', required: true },
+  { id: 'privacy', label: '(필수) 개인정보 수집·이용 동의', required: true },
+  { id: 'marketing', label: '(선택) 마케팅 정보 수신 동의', required: false },
+];
 
 // 소셜 로그인 결과 페이지 ?error= 코드 → 안내 문구 (백엔드 docs/api/error-codes.md)
 const SOCIAL_ERROR_MESSAGES = {
