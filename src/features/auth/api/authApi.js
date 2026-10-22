@@ -4,5 +4,11 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 // 소셜 로그인 시작 주소 — XHR 이 아니라 브라우저 이동(302 → Keycloak → 제공자). 상대경로라야 콜백 쿠키가 같은 출처에 남는다
 export const socialLoginUrl = (provider) => `/api/auth/social/${provider}`;
 
+// POST /api/auth/login — { email, password } → { accessToken, expiresIn, user }. RT 는 Set-Cookie(HttpOnly)
+export const login = (request) => axiosInstance.post('/api/auth/login', request).then((res) => res.data.data);
+
 // POST /api/auth/refresh — RT 쿠키로 AT 재발급 → { accessToken, expiresIn, user }
 export const refreshToken = () => axiosInstance.post('/api/auth/refresh').then((res) => res.data.data);
+
+// POST /api/auth/logout — Keycloak 세션 종료 · RT 쿠키 삭제
+export const logout = () => axiosInstance.post('/api/auth/logout');

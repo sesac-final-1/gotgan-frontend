@@ -1,7 +1,7 @@
 // 소셜 로그인 결과 — 담당 이경석. 백엔드 콜백이 RT 쿠키를 심고 이 화면으로 보낸다 (실패면 ?error=코드)
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { refreshToken } from '@/features/auth/api/authApi';
+import { refreshSession } from '@/features/auth/session';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { homePathFor, socialErrorMessage } from '@/features/auth/constants';
 import { toast } from '@/shared/stores/toastStore';
@@ -9,7 +9,7 @@ import { toast } from '@/shared/stores/toastStore';
 export default function SocialCallback() {
   const nav = useNavigate();
   const [params] = useSearchParams();
-  const started = useRef(false); // StrictMode 이중 실행 방지 — RT 로테이션이라 refresh 는 한 번만
+  const started = useRef(false); // StrictMode 이중 실행 방지 — RT 로테이션이라 refresh 는 한 번만 (부팅 refresh 와는 single-flight 로 합쳐짐)
 
   useEffect(() => {
     if (started.current) return;
@@ -20,9 +20,8 @@ export default function SocialCallback() {
       void nav('/login', { replace: true });
       return;
     }
-    refreshToken()
-      .then(({ accessToken, user }) => {
-        useAuthStore.getState().setAuth({ accessToken, user });
+    refreshSession()
+      .then(({ user }) => {
         toast(`${user.name}님, 반가워요`);
         void nav(homePathFor(user.roles), { replace: true });
       })

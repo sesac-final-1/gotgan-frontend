@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import RootLayout from '@/app/RootLayout';
+import RequireRole from '@/features/auth/components/RequireRole';
 import ShopRoot from '@/pages/shop/ShopRoot';
 import HomePage from '@/pages/shop/HomePage';
 import ProductListPage from '@/pages/shop/ProductListPage';
@@ -48,7 +49,7 @@ import AdminReviewsPage from '@/pages/admin/AdminReviewsPage';
 import AdminCategoriesPage from '@/pages/admin/AdminCategoriesPage';
 
 // 전체 라우트 — 단일 파일 (컨벤션 4-3). 영역 · 도메인별 주석 구획 안에서만 추가, catch-all(*)은 항상 맨 마지막
-// 경로는 목업과 같다
+// 경로는 목업과 같다. 접근 권한은 컨벤션 4-3 표 그대로 RequireRole 로 (공개 화면은 감싸지 않음)
 
 export const router = createBrowserRouter([
   {
@@ -63,19 +64,19 @@ export const router = createBrowserRouter([
           { path: 'products/:id', element: <ProductDetailPage /> },
           { path: 'stores', element: <StoreListPage /> },
           { path: 'store/:id', element: <StoreHomePage /> },
-          { path: 'cart', element: <CartPage /> },
-          { path: 'checkout', element: <CheckoutPage /> },
-          { path: 'order/complete', element: <OrderCompletePage /> },
+          { path: 'cart', element: <RequireRole role="BUYER"><CartPage /></RequireRole> },
+          { path: 'checkout', element: <RequireRole role="BUYER"><CheckoutPage /></RequireRole> },
+          { path: 'order/complete', element: <RequireRole role="BUYER"><OrderCompletePage /></RequireRole> },
           { path: 'login', element: <LoginPage /> },
           { path: 'signup', element: <SignupPage /> },
           { path: 'auth/callback', element: <AuthCallbackPage /> },
           { path: 'help', element: <HelpPage /> },
-          { path: 'seller/apply', element: <SellerApplyPage /> },
+          { path: 'seller/apply', element: <RequireRole role="BUYER"><SellerApplyPage /></RequireRole> },
 
           // ── mypage
           {
             path: 'mypage',
-            element: <MyPageRoot />,
+            element: <RequireRole role="BUYER"><MyPageRoot /></RequireRole>,
             children: [
               { index: true, element: <Navigate to="orders" replace /> },
               { path: 'orders', element: <MyOrdersPage /> },
@@ -95,7 +96,7 @@ export const router = createBrowserRouter([
       // ── seller (판매자센터)
       {
         path: 'seller',
-        element: <SellerLayout />,
+        element: <RequireRole role="SELLER"><SellerLayout /></RequireRole>,
         children: [
           { index: true, element: <SellerDashboardPage /> },
           { path: 'products', element: <SellerProductListPage /> },
@@ -114,7 +115,7 @@ export const router = createBrowserRouter([
       // ── admin (스토어 관리자)
       {
         path: 'admin',
-        element: <AdminLayout />,
+        element: <RequireRole role="ADMIN"><AdminLayout /></RequireRole>,
         children: [
           { index: true, element: <AdminDashboardPage /> },
           { path: 'applications', element: <AdminApplicationsPage /> },
