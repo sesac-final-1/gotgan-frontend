@@ -20,8 +20,8 @@ const NAV = [
   { to: '/stores', label: '스토어' },
 ];
 
-// 쇼핑몰 레이아웃 — 데이터(카테고리 · 장바구니 수)는 props 로 받는다 (shared 는 features 에 의존하지 않음, 연결은 pages/shop/ShopRoot.jsx)
-export default function ShopLayout({ categories = [], cartCount = 0 }) {
+// 쇼핑몰 레이아웃 — 데이터(카테고리 · 장바구니 수 · 로그인 사용자)는 props 로 받는다 (shared 는 features 에 의존하지 않음, 연결은 pages/shop/ShopRoot.jsx)
+export default function ShopLayout({ categories = [], cartCount = 0, user = null, onLogout }) {
   const [q, setQ] = useState('');
   const [menu, setMenu] = useState(false);
   const nav = useNavigate();
@@ -47,8 +47,17 @@ export default function ShopLayout({ categories = [], cartCount = 0 }) {
       {/* 유틸 바 */}
       <div className="hidden md:block border-b border-line">
         <div className="max-w-[1280px] mx-auto px-6 h-9 flex items-center justify-end gap-5 text-[12px] text-ink-2">
-          <Link to="/login" className="hover:text-ink">로그인</Link>
-          <Link to="/signup" className="hover:text-ink">회원가입</Link>
+          {user ? (
+            <>
+              <span className="text-ink font-semibold">{user.name}님</span>
+              <button type="button" onClick={onLogout} className="hover:text-ink">로그아웃</button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="hover:text-ink">로그인</Link>
+              <Link to="/signup" className="hover:text-ink">회원가입</Link>
+            </>
+          )}
           <Link to="/mypage/orders" className="hover:text-ink">주문조회</Link>
           <Link to="/help" className="hover:text-ink">고객센터</Link>
           <span className="w-px h-3 bg-line-2" />
@@ -103,7 +112,9 @@ export default function ShopLayout({ categories = [], cartCount = 0 }) {
           <div className="w-[82%] max-w-[340px] h-full bg-white p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6"><Wordmark /><button onClick={() => setMenu(false)}><X size={22} /></button></div>
             <div className="grid grid-cols-2 gap-2 mb-6">
-              <Link to="/login" className="btn btn-line btn-sm">로그인</Link>
+              {user
+                ? <button type="button" onClick={onLogout} className="btn btn-line btn-sm">로그아웃</button>
+                : <Link to="/login" className="btn btn-line btn-sm">로그인</Link>}
               <Link to="/seller/apply" className="btn btn-ink btn-sm">입점 신청</Link>
             </div>
             {categories.map((c) => (

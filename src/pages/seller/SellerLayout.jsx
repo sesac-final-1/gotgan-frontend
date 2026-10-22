@@ -6,9 +6,11 @@ import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { toMap } from '@/shared/utils/collection';
+import { useLogout } from '@/features/auth/hooks/useLogout';
 
 // 판매자센터 레이아웃 — 메뉴 배지 · 알림 숫자 · 계정은 각 훅에서 (목업은 모듈 변수에서 직접 계산)
 export default function SellerLayout() {
+  const logout = useLogout();
   const { data: orders = [] } = useSellerOrderItemsQuery();
   const { data: qnas = [] } = useQnasQuery();
   const { data: products = [] } = useProductsQuery();
@@ -41,6 +43,6 @@ export default function SellerLayout() {
     { text: '반품 요청이 접수되었습니다 — 3영업일 내 처리 필요', time: '2시간 전', to: '/seller/claims' },
     { text: '[공지] 10월 추석 연휴 정산 일정 안내', time: '어제', to: '/seller/settlements' },
   ];
-  return <ConsoleLayout kind="seller" badge="판매자센터" groups={groups} notices={notices}
+  return <ConsoleLayout kind="seller" badge="판매자센터" groups={groups} notices={notices} onLogout={logout}
     account={{ name: store?.name ?? '', role: store ? `${store.owner} 대표 · ${store.grade}` : '', avatar: '/images/avatar/u-6.jpg' }} />;
 }
