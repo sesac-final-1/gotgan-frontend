@@ -1,5 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { createWrapper } from '@/test/queryWrapper';
+import { axiosInstance } from '@/shared/api/axiosInstance';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { useAdminDashboardQuery } from '@/features/admin/hooks/useAdminDashboardQuery';
 import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
@@ -34,7 +35,13 @@ const LIST_HOOKS = {
   useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery, useSellerSettlementsQuery,
   useSellerDailySalesQuery, useStoresQuery, useMyAddressesQuery,
 };
-const OBJECT_HOOKS = { useAdminDashboardQuery, useSellerPendingQuery, useMyStoreQuery, useMeQuery, useMyPointsQuery };
+const OBJECT_HOOKS = { useAdminDashboardQuery, useSellerPendingQuery, useMyStoreQuery };
+// 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
+const API_HOOKS = {
+  useMeQuery: [{ userId: 4, name: '구매자1', grade: 'NORMAL', point: 0, totalSpent: 0, joinedAt: '2026-10-01T09:30:00+09:00' }, { id: 4 }],
+  useMyPointsQuery: [{ balance: 0, history: [] }, { balance: 0, history: [] }],
+};
+const API_HOOK_FNS = { useMeQuery, useMyPointsQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
@@ -52,6 +59,15 @@ describe('조회 훅', () => {
 
   it.each(Object.entries(OBJECT_HOOKS))('%s → 객체', async (_, hook) => {
     expect(await load(hook)).toBeTypeOf('object');
+  });
+
+  it.each(Object.entries(API_HOOKS))('%s → API 응답을 화면 필드로', async (name, [response, expected]) => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: response } });
+    try {
+      expect(await load(API_HOOK_FNS[name])).toMatchObject(expected);
+    } finally {
+      get.mockRestore();
+    }
   });
 
   it('회원 포인트 — userId 가 있을 때만 조회', async () => {
