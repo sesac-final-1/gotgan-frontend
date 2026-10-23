@@ -12,8 +12,6 @@ import { PAYMENT_FEE } from '@/features/settlement/constants';
 import { toast } from '@/shared/stores/toastStore';
 import { pct, cx } from '@/shared/utils/format';
 
-const DOCS_BY_CAT = { food: '영업신고증 / 농업경영체', beauty: '화장품 책임판매업 등록필증', digital: 'KC 인증서' };
-
 // 상위 · 하위 행을 한 줄씩 펼친 데이터. 정렬은 상위 카테고리 값으로만 비교해 하위 행이 상위 바로 아래에 붙어 있게 한다
 // (동률이면 TanStack 이 원래 순서로 정렬 → 하위 행 순서 유지). 검색은 상위 행에 하위 이름까지, 하위 행에 상위 이름까지 넣어 함께 걸리게
 const byParent = (key) => (a, b) => {
@@ -64,10 +62,6 @@ function buildColumns({ open, toggle, setEdit }) {
       id: 'total', accessorFn: (r) => r.parent.commission + PAYMENT_FEE, header: '합계', sortingFn: byParent('commission'),
       meta: { thClass: 'text-right', tdClass: 'text-right num', search: false },
       cell: ({ row, getValue }) => <span className={row.original.sub ? 'text-mute' : 'font-semibold'}>{pct(getValue(), 1)}</span>,
-    },
-    {
-      id: 'docs', accessorFn: (r) => (r.sub ? '' : DOCS_BY_CAT[r.parent.id] || '-'), header: '필수 인증 서류', sortingFn: byParent('id'),
-      meta: { tdClass: 'text-[12.5px] text-ink-2' },
     },
     {
       id: 'action', header: '관리', enableSorting: false, meta: { thClass: 'text-center', search: false },
@@ -137,7 +131,7 @@ export default function CategoryCommission() {
       <div className="flex flex-wrap items-center gap-2 mb-3 text-[12.5px]">
         <button onClick={() => setOpenSel(new Set(categories.map((c) => c.id)))} className="btn btn-line btn-xs">모두 펼치기</button>
         <button onClick={() => setOpenSel(new Set())} className="btn btn-line btn-xs">모두 접기</button>
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="카테고리명 · 코드 · 인증 서류" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="카테고리명 · 코드" className="ml-auto" />
       </div>
       <DataTable table={table} loading={isLoading} error={isError} />
 

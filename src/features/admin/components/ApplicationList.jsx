@@ -66,7 +66,7 @@ export default function ApplicationList() {
 
   return (
     <div>
-      <PageHead title="입점 심사" desc="심사 기준: 사업자 상태(국세청) · 통신판매업 신고 · 카테고리 적합성 · 정품/인증 서류 · 중복 입점 여부 / 처리 기한: 접수 후 영업일 3일" />
+      <PageHead title="입점 심사" desc="심사 기준: 사업자 상태(국세청) · 통신판매업 신고 · 카테고리 적합성 · 중복 입점 여부 / 처리 기한: 접수 후 영업일 3일" />
       <div className="flex flex-wrap gap-3 items-center">
         <Segments items={[...STATUS_TABS, HISTORY_TAB]} value={tab} onChange={setTab} counts={counts} />
         {tab !== HISTORY_TAB && (

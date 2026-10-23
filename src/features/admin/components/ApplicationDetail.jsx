@@ -11,7 +11,7 @@ import { toast } from '@/shared/stores/toastStore';
 import { ymdhm, pct, cx } from '@/shared/utils/format';
 
 const DOCS = [['biz', '사업자등록증'], ['ecom', '통신판매업 신고증'], ['bank', '통장 사본'], ['sample', '대표 상품 사진']];
-const CHECKLIST = [['biz', '사업자 상태 정상 (국세청 조회)'], ['ecom', '통신판매업 신고 확인'], ['dup', '기존 스토어 중복 입점 없음'], ['cat', '카테고리 · 상품 적합'], ['kc', '카테고리 필수 인증서 (KC 등)']];
+const CHECKLIST = [['biz', '사업자 상태 정상 (국세청 조회)'], ['ecom', '통신판매업 신고 확인'], ['dup', '기존 스토어 중복 입점 없음'], ['cat', '카테고리 · 상품 적합']];
 
 // 입점 심사 상세 — 담당 구지훈. 화면 · 문구는 목업 그대로, 처리는 mutation · 오른쪽에 상태 변경 타임라인(10/15 추가)
 export default function ApplicationDetail() {
@@ -30,7 +30,7 @@ function DetailBody({ a }) {
   const decide = useDecideApplicationMutation();
   const [modal, setModal] = useState(null);
   const [promo, setPromo] = useState(true);
-  const [checks, setChecks] = useState({ biz: a.docs.biz, ecom: a.docs.ecom, dup: true, cat: true, kc: a.cat !== 'digital' });
+  const [checks, setChecks] = useState({ biz: a.docs.biz, ecom: a.docs.ecom, dup: true, cat: true });
   const c = categories.find((x) => x.id === a.cat) ?? { name: a.cat, commission: 0 };
   const timeline = useMemo(() => history.filter((h) => h.appId === a.id).sort((x, y) => x.at - y.at), [history, a.id]);
   const allChecked = Object.values(checks).every(Boolean);
@@ -119,7 +119,7 @@ function DetailBody({ a }) {
       </Modal>
       <Modal open={modal === 'supplement'} onClose={() => setModal(null)} title="보완 요청" width={480}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setModal(null)}>취소</button><button className="btn btn-ink btn-sm" disabled={decide.isPending} onClick={() => submit('보완요청', '서류 보완 요청', '보완 요청을 보냈어요 (7일 내 미보완 시 자동 반려)')}>요청 보내기</button></>}>
-        <div className="space-y-2 text-[14px]">{['사업자등록증 재제출', '통신판매업 신고증 제출', 'KC 인증서 제출', '상품 사진 추가 제출', '정품 증빙 서류'].map((x) => <Checkbox key={x} checked={x === 'KC 인증서 제출' && a.cat === 'digital'} label={x} />)}</div>
+        <div className="space-y-2 text-[14px]">{['사업자등록증 재제출', '통신판매업 신고증 재제출', '통장 사본 재제출', '상품 사진 추가 제출'].map((x) => <Checkbox key={x} checked={false} label={x} />)}</div>
         <textarea rows={3} className="field mt-4" placeholder="판매자에게 전달할 메시지" />
       </Modal>
       <Modal open={modal === 'reject'} onClose={() => setModal(null)} title="입점 반려" width={480}
