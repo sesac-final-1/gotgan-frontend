@@ -20,6 +20,17 @@ export const passwordChangeSchema = z.object({
   newPasswordConfirm: z.string(),
 }).refine((v) => v.newPassword === v.newPasswordConfirm, { path: ['newPasswordConfirm'], message: '새 비밀번호가 일치하지 않아요' });
 
+// 배송지 — 서버 AddressRequest 와 같은 규칙. 우편번호 · 기본 주소는 주소 검색으로만 채운다
+export const addressSchema = z.object({
+  label: z.string().trim().min(1, '배송지 이름을 입력해주세요').max(30, '배송지 이름은 30자 이하로 입력해주세요'),
+  name: z.string().trim().min(1, '받는 분을 입력해주세요').max(50, '받는 분은 50자 이하로 입력해주세요'),
+  phone: z.string().trim().regex(PHONE, '휴대폰 번호 형식이 올바르지 않아요'),
+  zip: z.string().regex(/^\d{5}$/, '주소 검색으로 주소를 선택해주세요'),
+  addr: z.string().trim().min(1, '주소 검색으로 주소를 선택해주세요').max(200, '주소는 200자 이하예요'),
+  detail: z.string().trim().max(200, '상세 주소는 200자 이하로 입력해주세요'),
+  main: z.boolean(),
+});
+
 // 바뀐 항목만 요청에 — 서버는 생략한 항목을 그대로 둔다. 휴대폰은 비우면 보내지 않음(지우기는 지원 안 함)
 export function toUpdateMeRequest(me, values) {
   const request = {};
