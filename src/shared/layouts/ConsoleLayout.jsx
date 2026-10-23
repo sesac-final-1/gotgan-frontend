@@ -68,7 +68,7 @@ export default function ConsoleLayout({ kind, groups, account, badge, notices = 
             </div>
             <ChevronDown size={14} className="text-white/50" />
           </div>
-          {onLogout && <button type="button" onClick={onLogout} className="text-white/70 hover:text-white">로그아웃</button>}
+          {onLogout && <button type="button" onClick={onLogout} className="cursor-pointer text-white/70 hover:text-white">로그아웃</button>}
         </div>
       </header>
 
