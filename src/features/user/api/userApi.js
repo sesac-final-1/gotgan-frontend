@@ -22,6 +22,15 @@ export const toMe = (r) => ({
 
 export const fetchMe = async () => toMe((await axiosInstance.get('/api/users/me')).data.data);
 
+// PATCH /api/users/me — { name?, nick?, phone? } 보낸 항목만 수정(닉네임 '' = 삭제) → 수정 후 내 정보
+export const updateMe = async (request) => toMe((await axiosInstance.patch('/api/users/me', request)).data.data);
+
+// PATCH /api/users/me/password — { currentPassword, newPassword }. 토큰 · 세션은 그대로 (로그인 유지)
+export const changePassword = (request) => axiosInstance.patch('/api/users/me/password', request);
+
+// DELETE /api/users/me — 탈퇴 (Keycloak 계정 삭제 → 로그인 · 재발급 불가). 판매자는 스토어 폐점 전 409
+export const withdraw = () => axiosInstance.delete('/api/users/me');
+
 // TODO(이경석): GET /api/users/me/addresses
 export const fetchMyAddresses = () => mockResolve(myAddresses);
 

@@ -21,5 +21,8 @@ export const POINT_TYPE_BY_CODE = {
   RECLAIM: { label: '회수', sign: -1, desc: '취소 · 반품 적립 포인트 회수' },
 };
 
+// 가입 경로 — LOCAL 이 아니면(소셜 가입) Keycloak 비밀번호가 없어 비밀번호 변경 불가
+export const SIGNUP_PROVIDER_LABELS = { KAKAO: '카카오', NAVER: '네이버', GOOGLE: 'Google' };
+
 // 프로필 사진 — 서버에 없음(백엔드 범위 밖), 모든 회원 같은 기본 이미지
 export const DEFAULT_AVATAR = '/images/avatar/default.svg';
