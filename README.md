@@ -16,7 +16,7 @@ gotgan-frontend/
 └── src/
     ├── app/                 router.jsx · providers.jsx · bootstrap.js(부팅 시 refresh 1회)
     ├── pages/{shop,mypage,seller,admin}/   라우트 1개 = 파일 1개, features 조립만
-    ├── features/{auth,user,store,product,order,review,settlement,admin,support}/
+    ├── features/{auth,user,store,product,order,review,settlement,payment,admin,support}/
     │   └── api/ · hooks/ · components/ · schemas.js
     ├── shared/              api/(axiosInstance · queryKeys · refresh) · components/ui · layouts · utils
     ├── mocks/               MSW handlers · fixtures
@@ -30,7 +30,7 @@ gotgan-frontend/
 | `auth` · `user` | 이경석 |
 | `store` · `product` | 박지연 |
 | `order` · `review` | 이경석 |
-| `admin` · `settlement` | 구지훈 |
+| `admin` · `settlement` · `payment` | 구지훈 |
 
 다른 사람의 `features/` 폴더는 PR 없이 수정 금지. 공유 파일(`shared/api/queryKeys.js` · `app/router.jsx`)은 도메인별 주석 구획 안에서만.
 

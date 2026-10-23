@@ -61,4 +61,10 @@ export const queryKeys = {
     seller: () => ['settlement', 'seller'],
     sellerPending: () => ['settlement', 'seller', 'pending'],
   },
+
+  // ── payment (구지훈) — 포트원 결제창 · 결제 확인
+  payment: {
+    all: ['payment'],
+    redirect: (orderNo, search) => ['payment', 'redirect', orderNo, search], // 모바일 리다이렉트 결과 → 결제 확인
+  },
 };
