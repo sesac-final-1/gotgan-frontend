@@ -27,6 +27,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
   const nav = useNavigate();
   const loc = useLocation();
   useEffect(() => { window.scrollTo(0, 0); setMenu(false); }, [loc.pathname]);
+  const isAdmin = !!user?.roles?.includes('ADMIN'); // 운영자만 관리자 콘솔 바로가기 (실제 접근 제어는 가드 · 게이트웨이)
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -50,7 +51,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
           {user ? (
             <>
               <span className="text-ink font-semibold">{user.name}님</span>
-              <button type="button" onClick={onLogout} className="hover:text-ink">로그아웃</button>
+              <button type="button" onClick={onLogout} className="cursor-pointer hover:text-ink">로그아웃</button>
             </>
           ) : (
             <>
@@ -63,6 +64,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
           <span className="w-px h-3 bg-line-2" />
           <Link to="/seller/apply" className="font-semibold text-ink hover:text-point">입점 신청</Link>
           <Link to="/seller" className="hover:text-ink">판매자센터</Link>
+          {isAdmin && <Link to="/admin" className="font-semibold text-ink hover:text-point">운영관리</Link>}
         </div>
       </div>
 
@@ -113,9 +115,10 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
             <div className="flex justify-between items-center mb-6"><Wordmark /><button onClick={() => setMenu(false)}><X size={22} /></button></div>
             <div className="grid grid-cols-2 gap-2 mb-6">
               {user
-                ? <button type="button" onClick={onLogout} className="btn btn-line btn-sm">로그아웃</button>
+                ? <button type="button" onClick={onLogout} className="btn btn-line btn-sm cursor-pointer">로그아웃</button>
                 : <Link to="/login" className="btn btn-line btn-sm">로그인</Link>}
               <Link to="/seller/apply" className="btn btn-ink btn-sm">입점 신청</Link>
+              {isAdmin && <Link to="/admin" className="btn btn-point btn-sm col-span-2">운영관리</Link>}
             </div>
             {categories.map((c) => (
               <Link key={c.id} to={`/products?cat=${c.id}`} className="flex justify-between py-3 border-b border-line text-[15px] font-semibold">{c.name}<span className="text-mute text-xs font-mono">{c.en}</span></Link>
