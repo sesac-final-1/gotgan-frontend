@@ -6,7 +6,7 @@ import { daysAgo } from './_seed';
 const ADMIN = '곳간 운영팀 · 정다은';
 
 const extra = {
-  'AP-2609-028': [{ at: daysAgo(3, -2), from: '심사대기', to: '보완요청', by: ADMIN, reason: 'KC 전파인증서 사본 미제출' }],
+  'AP-2609-028': [{ at: daysAgo(3, -2), from: '심사대기', to: '보완요청', by: ADMIN, reason: '통신판매업 신고증 사본 식별 불가' }],
   'AP-2609-025': [
     { at: daysAgo(5), from: '심사대기', to: '보완요청', by: ADMIN, reason: '통신판매업 신고증 해상도 불량 — 재제출 요청' },
     { at: daysAgo(4, 6), from: '보완요청', to: '심사대기', by: '김태식(신청자)', reason: '서류 재제출' },
