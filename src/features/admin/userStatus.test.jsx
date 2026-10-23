@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { useToastStore } from '@/shared/stores/toastStore';
@@ -6,10 +6,13 @@ import { suspensionLabel, toUserStatusRequest } from '@/features/admin/constants
 import UserDetail from '@/features/admin/components/UserDetail';
 import UserList from '@/features/admin/components/UserList';
 
-// 상세 화면의 포인트 · 리뷰 목업 조회가 늦게 끝나도 act 안에서 반영되게 — 남은 비동기 갱신을 비우고 정리
+// 상세 화면의 포인트 · 리뷰 목업 조회가 늦게 끝나도 act 안에서 반영되게 — 진행 중인 조회가 모두 끝난 뒤 정리
+// (한 틱만 기다리면 커버리지 측정처럼 느린 실행에서 조회가 테스트보다 늦게 끝나 경고가 남)
+let queryClient;
 afterEach(async () => {
-  await act(() => new Promise((resolve) => { setTimeout(resolve, 0); }));
+  if (queryClient) await waitFor(() => expect(queryClient.isFetching()).toBe(0));
   cleanup();
+  queryClient = null;
 });
 
 describe('toUserStatusRequest — PATCH /api/admin/users/{id}/status 본문', () => {
@@ -30,8 +33,9 @@ describe('toUserStatusRequest — PATCH /api/admin/users/{id}/status 본문', ()
 });
 
 function renderAdmin(path) {
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/admin/users" element={<UserList />} />

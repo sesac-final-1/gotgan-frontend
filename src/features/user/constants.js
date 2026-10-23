@@ -12,3 +12,14 @@ export const nextGrade = (spent) => GRADES.find((g) => g.min > spent) || null;
 export const POINT_RATE = 0.05;
 export const earnOf = (paid) => Math.floor(paid * POINT_RATE);
 export const POINT_TYPES = ['적립', '사용', '회수', '환원'];
+
+// 서버 point_history.type → 화면 구분 · 부호 · 기본 문구 (서버 amount 는 항상 양수 — 증감은 type 으로)
+export const POINT_TYPE_BY_CODE = {
+  EARN: { label: '적립', sign: 1, desc: `결제 적립 ${POINT_RATE * 100}%` },
+  USE: { label: '사용', sign: -1, desc: '주문 결제 사용' },
+  RESTORE: { label: '환원', sign: 1, desc: '취소 · 반품 사용 포인트 환원' },
+  RECLAIM: { label: '회수', sign: -1, desc: '취소 · 반품 적립 포인트 회수' },
+};
+
+// 프로필 사진 — 서버에 없음(백엔드 범위 밖), 모든 회원 같은 기본 이미지
+export const DEFAULT_AVATAR = '/images/avatar/default.svg';
