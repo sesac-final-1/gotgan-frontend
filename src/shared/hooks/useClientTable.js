@@ -17,13 +17,18 @@ function canGlobalFilter(column) {
   return true; // 값 타입(문자열 · 숫자) 확인은 TanStack 기본 동작에 맡기지 않고 globalFilterFn 에서 문자열로 비교
 }
 
+// 빈 목록은 항상 같은 배열로 — `const { data = [] } = useXQuery()` 처럼 로딩 중 렌더마다 새 [] 가 오면
+// 행 모델이 매번 다시 계산되고 autoResetPageIndex 가 페이지를 되돌려 끝없이 다시 그릴 수 있다
+// (관리자 회원 상세에서 발생 — 회귀는 features/admin/userStatus.test.jsx 가 잡는다: 고치기 전에는 멈춤)
+const EMPTY = [];
+
 export function useClientTable({ data, columns, columnFilters, initialSorting = [], pageSize = 20 }) {
   const [sorting, setSorting] = useState(initialSorting);
   const [globalFilter, setGlobalFilter] = useState('');
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize });
 
   const table = useReactTable({
-    data,
+    data: data?.length ? data : EMPTY,
     columns,
     state: { sorting, globalFilter, pagination, ...(columnFilters ? { columnFilters } : {}) },
     onSortingChange: setSorting,
