@@ -21,6 +21,9 @@ export const POINT_TYPE_BY_CODE = {
   RECLAIM: { label: '회수', sign: -1, desc: '취소 · 반품 적립 포인트 회수' },
 };
 
+// 배송지 — 회원당 최대 개수 (서버 AddressService.MAX_ADDRESSES 와 같게, 넘으면 409 ADDRESS_LIMIT_EXCEEDED)
+export const MAX_ADDRESSES = 5;
+
 // 가입 경로 — LOCAL 이 아니면(소셜 가입) Keycloak 비밀번호가 없어 비밀번호 변경 불가
 export const SIGNUP_PROVIDER_LABELS = { KAKAO: '카카오', NAVER: '네이버', GOOGLE: 'Google' };
 
