@@ -9,7 +9,7 @@ import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { GRADES } from '@/features/user/constants';
 import { comma, ymd } from '@/shared/utils/format';
 
-const TABS = ['전체', '정상', '휴면', '이용정지'];
+const TABS = ['전체', '정상', '이용정지']; // 회원 상태는 ACTIVE · SUSPENDED 뿐 (휴면 없음)
 const GRADE_TABS = ['전체', ...GRADES.map((g) => g.id)];
 const NUM = { thClass: 'text-right', tdClass: 'text-right num', search: false };
 const DATE = { tdClass: 'num text-ink-2', search: false };
@@ -21,7 +21,7 @@ const COLUMNS = [
   },
   { accessorKey: 'email', header: '이메일', meta: { tdClass: 'text-ink-2' } },
   { accessorKey: 'grade', header: '등급', cell: ({ getValue }) => <GradeBadge grade={getValue()} /> },
-  { accessorKey: 'orders', header: '주문', meta: NUM },
+  // 주문 수는 order 데이터라 회원 목록 응답에 없음 — order 에 여러 회원 주문 수 내부 API 가 생기면 추가 (10/22 구지훈)
   { accessorKey: 'spent', header: '누적 구매확정', meta: NUM, cell: ({ getValue }) => comma(getValue()) },
   { accessorKey: 'point', header: '보유 포인트', meta: NUM, cell: ({ getValue }) => `${comma(getValue())}P` },
   { accessorKey: 'joined', header: '가입일', sortingFn: 'datetime', meta: DATE, cell: ({ getValue }) => ymd(getValue()) },

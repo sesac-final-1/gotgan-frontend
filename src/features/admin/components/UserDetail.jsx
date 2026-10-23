@@ -10,6 +10,7 @@ import { useAdminUserPointsQuery } from '@/features/admin/hooks/useAdminUserPoin
 import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
 import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
 import { nextGrade } from '@/features/user/constants';
+import { SUSPEND_DURATIONS, SUSPEND_REASONS, suspensionLabel, toUserStatusRequest } from '@/features/admin/constants';
 import { toMap } from '@/shared/utils/collection';
 import { toast } from '@/shared/stores/toastStore';
 import { won, comma, ymd, ymdhm, cx } from '@/shared/utils/format';
@@ -43,26 +44,38 @@ function DetailBody({ u }) {
   const next = nextGrade(u.spent);
   const { table, globalFilter, setGlobalFilter } = useClientTable({ data: ph, columns: POINT_COLUMNS, initialSorting: [{ id: 'date', desc: true }] });
 
+  const suspended = u.status === '이용정지';
+  const [duration, setDuration] = useState(SUSPEND_DURATIONS[0].value);
+  const [reason, setReason] = useState(SUSPEND_REASONS[0]);
+  const [releaseReason, setReleaseReason] = useState('');
+  const canConfirm = suspended ? releaseReason.trim() !== '' : true; // 해제도 사유 필수
+
   const handleBanConfirm = () => {
-    // TODO(구지훈): useChangeUserStatusMutation
+    const request = toUserStatusRequest({ suspend: !suspended, duration, reason: suspended ? releaseReason : reason });
+    // TODO(구지훈): useChangeUserStatusMutation — PATCH /api/admin/users/{id}/status 에 request 그대로
     setModal(null);
-    toast('처리되었어요');
+    setReleaseReason('');
+    toast(request.status === 'ACTIVE' ? '이용정지를 해제했어요' : `${request.days ? `${request.days}일` : '영구'} 이용정지했어요`);
   };
 
   return (
     <div>
       <PageHead crumbs="회원 · 콘텐츠 > 회원 관리" title={<span className="flex items-center gap-2">{u.name} <GradeBadge grade={u.grade} /></span>} desc={`${u.email} · 가입 ${ymd(u.joined)}`}
-        right={<button onClick={() => setModal('ban')} className={cx('btn btn-sm', u.status === '이용정지' ? 'btn-ink' : 'btn-line text-rust')}>{u.status === '이용정지' ? '정지 해제' : '이용 정지'}</button>} />
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        right={<button onClick={() => setModal('ban')} className={cx('btn btn-sm', suspended ? 'btn-ink' : 'btn-line text-rust')}>{suspended ? '정지 해제' : '이용 정지'}</button>} />
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
         <Kpi label="회원등급" value={u.grade} sub={next ? `${next.id}까지 ${won(next.min - u.spent)}` : '최고 등급'} />
-        <Kpi label="누적 주문" value={u.orders} unit="건" />
+        {/* 누적 주문 수는 order 데이터라 표시하지 않음 (10/22 구지훈) */}
         <Kpi label="누적 구매확정 금액" value={comma(u.spent)} unit="원" />
         <Kpi label="보유 포인트" value={comma(u.point)} unit="P" sub="적립률 5% (실결제금액 기준)" />
       </div>
       <div className="grid xl:grid-cols-[360px_1fr] gap-4 mt-4">
         <div className="panel">
           <div className="p-5 flex items-center gap-3 border-b border-line"><img src={u.avatar} alt="" className="w-12 h-12 rounded-full object-cover" /><div><b>{u.name}</b> <span className="text-mute text-[13px]">({u.nick})</span><div><StatusPill s={u.status} /></div></div></div>
-          <div className="p-5"><KV rows={[['회원번호', u.id.toUpperCase()], ['휴대폰', u.phone], ['회원등급', <GradeBadge grade={u.grade} />], ['최근 접속', ymdhm(u.lastLogin)], ['마케팅 수신', '동의 (2025.03.02)']]} /></div>
+          <div className="p-5"><KV rows={[
+            ['회원번호', u.id.toUpperCase()], ['휴대폰', u.phone], ['회원등급', <GradeBadge grade={u.grade} />], ['최근 접속', ymdhm(u.lastLogin)],
+            ...(suspended ? [['정지 기간', suspensionLabel(u.suspendedUntil, ymdhm)]] : []),
+            ['마케팅 수신', '동의 (2025.03.02)'],
+          ]} /></div>
           {u.memo && <div className="mx-5 mb-5 bg-rust-soft text-rust text-[13px] p-3">{u.memo}</div>}
         </div>
         <div className="space-y-4">
@@ -86,10 +99,27 @@ function DetailBody({ u }) {
           </div>
         </div>
       </div>
-      <Modal open={modal === 'ban'} onClose={() => setModal(null)} title={u.status === '이용정지' ? '이용 정지 해제' : '이용 정지'} width={440}
-        footer={<><button className="btn btn-line btn-sm" onClick={() => setModal(null)}>취소</button><button className="btn btn-ink btn-sm" onClick={handleBanConfirm}>확인</button></>}>
-        {u.status !== '이용정지' && <><label className="label">정지 기간</label><select className="field mb-3"><option>7일</option><option>30일</option><option>영구</option></select><label className="label">사유</label><select className="field mb-3"><option>허위 리뷰 / 리뷰 어뷰징</option><option>결제 도용 의심</option><option>욕설 · 비방</option></select></>}
-        <textarea rows={3} className="field" placeholder="내부 메모" />
+      <Modal open={modal === 'ban'} onClose={() => setModal(null)} title={suspended ? '이용 정지 해제' : '이용 정지'} width={440}
+        footer={<><button className="btn btn-line btn-sm" onClick={() => setModal(null)}>취소</button><button className="btn btn-ink btn-sm" onClick={handleBanConfirm} disabled={!canConfirm}>확인</button></>}>
+        {suspended ? (
+          <>
+            <label className="label" htmlFor="release-reason">해제 사유</label>
+            <textarea id="release-reason" rows={3} maxLength={255} className="field" placeholder="해제 사유를 입력해주세요 (필수)"
+              value={releaseReason} onChange={(e) => setReleaseReason(e.target.value)} />
+          </>
+        ) : (
+          <>
+            <label className="label" htmlFor="suspend-duration">정지 기간</label>
+            <select id="suspend-duration" className="field mb-3" value={duration} onChange={(e) => setDuration(e.target.value)}>
+              {SUSPEND_DURATIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+            </select>
+            <label className="label" htmlFor="suspend-reason">사유</label>
+            <select id="suspend-reason" className="field" value={reason} onChange={(e) => setReason(e.target.value)}>
+              {SUSPEND_REASONS.map((r) => <option key={r}>{r}</option>)}
+            </select>
+            <p className="mt-2 text-[12px] text-mute">정지하면 로그인 · 토큰 재발급이 막히고, 기간 정지는 끝나는 시각에 자동 해제돼요.</p>
+          </>
+        )}
       </Modal>
     </div>
   );
