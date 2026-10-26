@@ -140,7 +140,7 @@ export default function SellerDashboard() {
           </div>
         </div>
       </div>
-      {pending && <p className="text-[12px] text-mute mt-4">이번 주(9/28~) 구매확정 누적 {won(pending.confirmed)} · 다음 주 목요일 정산 예정</p>}
+      {pending && <p className="text-[12px] text-mute mt-4">이번 주 구매확정분 정산 예정 {won(pending.payout)} · 다음 주 목요일 지급</p>}
     </div>
   );
 }

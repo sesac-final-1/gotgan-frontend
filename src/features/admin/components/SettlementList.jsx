@@ -8,7 +8,9 @@ import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useAdminSettlementWeekQuery } from '@/features/admin/hooks/useAdminSettlementWeekQuery';
 import { recentWeeks } from '@/features/admin/constants';
-import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation } from '@/features/admin/hooks/useSettlementMutations';
+import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation, useAggregateSettlementsMutation } from '@/features/admin/hooks/useSettlementMutations';
+import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettlementQuery';
+import SettlementDetailBody from '@/features/settlement/components/SettlementDetailBody';
 import { toast } from '@/shared/stores/toastStore';
 import { won, comma, ymd, pct, shortWon } from '@/shared/utils/format';
 
@@ -19,7 +21,7 @@ const errMsg = (err, fallback) => err.response?.data?.message ?? fallback;
 const DAY = 864e5;
 
 // 선택 체크박스 · 보류 사유 버튼은 컴포넌트 상태를 쓰므로 열 정의를 useMemo 로 (컨벤션 4-7)
-function buildColumns({ sel, toggle, setHold }) {
+function buildColumns({ sel, toggle, setHold, setDetailId }) {
   return [
     {
       id: 'select', header: '', enableSorting: false, meta: { thClass: 'w-10', search: false },
@@ -41,7 +43,12 @@ function buildColumns({ sel, toggle, setHold }) {
     { accessorKey: 'status', header: '상태', cell: ({ getValue }) => <StatusPill s={getValue()} /> },
     {
       id: 'hold', header: '', enableSorting: false, meta: { search: false },
-      cell: ({ row }) => row.original.status === '지급보류' && <button onClick={() => setHold(row.original)} className="btn btn-line btn-xs">사유</button>,
+      cell: ({ row }) => (
+        <span className="inline-flex gap-1">
+          <button onClick={() => setDetailId(row.original.id)} className="btn btn-line btn-xs">상세</button>
+          {row.original.status === '지급보류' && <button onClick={() => setHold(row.original)} className="btn btn-line btn-xs">사유</button>}
+        </span>
+      ),
     },
   ];
 }
@@ -53,6 +60,9 @@ export default function SettlementList() {
   const pay = usePaySettlementsMutation();
   const holdMany = useHoldSettlementsMutation();
   const release = useReleaseSettlementHoldMutation();
+  const aggregate = useAggregateSettlementsMutation();
+  const [detailId, setDetailId] = useState(null); // 지급 전 확인 — 건별 상품주문 · 이력
+  const { data: detail } = useAdminSettlementQuery(detailId);
   const [sel, setSel] = useState(() => new Set());
   const [hold, setHold] = useState(null);
   const [holdOpen, setHoldOpen] = useState(false); // 선택 건 보류 사유 입력
@@ -63,7 +73,7 @@ export default function SettlementList() {
 
   const columns = useMemo(() => {
     const toggle = (id) => setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-    return buildColumns({ sel, toggle, setHold });
+    return buildColumns({ sel, toggle, setHold, setDetailId });
   }, [sel]);
   const { table, globalFilter, setGlobalFilter } = useClientTable({ data: list, columns });
 
@@ -88,6 +98,12 @@ export default function SettlementList() {
       },
     });
   };
+  const handleAggregate = () => {
+    aggregate.mutate(week, {
+      onSuccess: (r) => toast(`${r.week} 집계 — 새 정산서 ${r.created} · 다시 계산 ${r.updated} · 자동 보류 ${r.autoHeld} · 이월 ${r.carriedOver}건`),
+      onError: (err) => toast(errMsg(err, '집계하지 못했어요. 잠시 후 다시 시도해 주세요.')),
+    });
+  };
   const handleReleaseHold = () => {
     release.mutate(hold.id, {
       onSuccess: () => { setHold(null); toast('보류 해제 → 지급예정으로 변경'); },
@@ -104,6 +120,8 @@ export default function SettlementList() {
         <select value={week} onChange={(e) => { setWeek(e.target.value); setSel(new Set()); }} className="field field-sm h-9 w-auto">
           {weeks.map(({ key, start: w }) => <option key={key} value={key}>{ymd(w)} ~ {ymd(new Date(w.getTime() + 6 * DAY)).slice(5)} (지급 {ymd(new Date(w.getTime() + 10 * DAY)).slice(5)})</option>)}
         </select>
+        <button onClick={handleAggregate} disabled={aggregate.isPending} className="btn btn-line btn-sm ml-auto">{aggregate.isPending ? '집계 중…' : '이 주차 지금 집계'}</button>
+        <span className="text-[11.5px] text-mute w-full sm:w-auto">자동 집계: 매주 월 03:00 · 클러스터 기동 시 지난주 — 여러 번 눌러도 스토어 × 주차 1건</span>
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
         <Kpi label="구매확정 매출" value={shortWon(tot('gross'))} unit="원" />
@@ -124,6 +142,9 @@ export default function SettlementList() {
       <div className="mt-3">
         <DataTable table={table} loading={isLoading} error={isError} />
       </div>
+      <Modal open={detailId != null} onClose={() => setDetailId(null)} title={`정산 상세 · ${detail ? `${detail.storeName ?? ''} ${detail.week}` : ''}`} width={600}>
+        {detail ? <SettlementDetailBody d={detail} /> : <p className="text-mute py-6 text-center">불러오는 중…</p>}
+      </Modal>
       <Modal open={!!hold} onClose={() => setHold(null)} title="지급 보류 사유" width={440}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setHold(null)}>닫기</button><button className="btn btn-ink btn-sm" disabled={release.isPending} onClick={handleReleaseHold}>보류 해제</button></>}>
         <p className="text-[14px]">{hold?.holdReason}</p>
