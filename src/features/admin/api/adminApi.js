@@ -3,7 +3,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import { mockResolve } from '@/mocks/mockApi';
 import { DEFAULT_AVATAR } from '@/features/user/constants';
 import { toPointRow } from '@/features/user/api/userApi';
-import { categories, stores, products } from '@/mocks/fixtures/catalog';
+import { stores, products } from '@/mocks/fixtures/catalog';
 import { applications } from '@/mocks/fixtures/people';
 import { settlements, platformDaily } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
@@ -69,8 +69,36 @@ export const fetchAdminSettlements = () => mockResolve(settlements);
 // TODO(구지훈): GET /api/admin/reviews (검토 요청 · 블라인드 포함)
 export const fetchAdminReviews = () => mockResolve(reviews);
 
-// TODO(구지훈): GET /api/admin/categories (수수료 · 적용 시작일 포함)
-export const fetchAdminCategories = () => mockResolve(categories);
+// 카테고리 · 수수료 — admin-service: product 카테고리(GET /api/admin/categories) + settlement 수수료(GET /api/admin/commissions) (backend #95)
+// 스토어 · 상품은 아직 목업이라 목업과 같은 문자열 id(food 등)로 넘긴다 — 시드 상위 1~6 은 고정 번호, 새 카테고리는 숫자 문자열
+const CATEGORY_SLUG = { 1: 'food', 2: 'living', 3: 'fashion', 4: 'shoes-bags', 5: 'beauty', 6: 'digital' };
+export const toAdminCategory = (c, commission) => ({
+  id: CATEGORY_SLUG[c.id] ?? String(c.id),
+  categoryId: c.id,
+  name: c.name,
+  en: c.nameEn ?? '',
+  sortOrder: c.sortOrder,
+  active: c.active,
+  commission: commission?.current ? commission.current.rate / 100 : null, // 목업과 같은 비율(0.11)
+  reserved: commission?.reserved ?? [],
+  subs: c.children.map((s) => s.name),
+  children: c.children,
+});
+
+export const fetchAdminCategories = async () => {
+  const [tree, commissions] = await Promise.all([
+    axiosInstance.get('/api/admin/categories'), axiosInstance.get('/api/admin/commissions'),
+  ]);
+  const byId = Object.fromEntries(commissions.data.data.map((c) => [c.categoryId, c]));
+  return tree.data.data.map((c) => toAdminCategory(c, byId[c.id]));
+};
+
+// POST /api/admin/categories — 상위는 commissionRate 필수(수수료 등록 후 켜짐), 하위는 parentId · PUT /{id} — 이름 · 정렬 · 사용 여부
+export const saveCategory = async ({ categoryId, request }) =>
+  (categoryId ? await axiosInstance.put(`/api/admin/categories/${categoryId}`, request) : await axiosInstance.post('/api/admin/categories', request)).data.data;
+
+// PUT /api/admin/commissions — [{categoryId, rate(%)}], effectiveFrom 생략 = 다음 주 월요일부터
+export const reserveCommissions = async (rows) => (await axiosInstance.put('/api/admin/commissions', rows)).data.data;
 
 // TODO(구지훈): GET /api/admin/products (스토어별 상품 · 상태 — 상품 수 · 상세 표 · 리뷰 상품명)
 export const fetchAdminProducts = () => mockResolve(products);

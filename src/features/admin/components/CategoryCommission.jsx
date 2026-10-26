@@ -8,6 +8,7 @@ import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
 import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
+import { useReserveCommissionMutation, useSaveCategoryMutation } from '@/features/admin/hooks/useCategoryMutations';
 import { PAYMENT_FEE } from '@/features/settlement/constants';
 import { toast } from '@/shared/stores/toastStore';
 import { pct, cx } from '@/shared/utils/format';
@@ -19,7 +20,9 @@ const byParent = (key) => (a, b) => {
   return typeof x === 'string' ? x.localeCompare(y) : x - y;
 };
 
-function buildColumns({ open, toggle, setEdit }) {
+const rateText = (c) => (c.commission == null ? '' : String(Math.round(c.commission * 10000) / 100)); // 0.115 → '11.5'
+
+function buildColumns({ open, toggle, setEdit, rates, setRate, toggleActive }) {
   return [
     {
       id: 'name', accessorFn: (r) => (r.sub ? `${r.parent.name} ${r.sub}` : `${r.parent.name} ${r.parent.subs.join(' ')}`),
@@ -50,8 +53,12 @@ function buildColumns({ open, toggle, setEdit }) {
       meta: { thClass: 'w-36', search: false },
       cell: ({ row }) => {
         const { parent, sub } = row.original;
-        if (sub) return <span className="text-[12.5px] text-mute">상위와 동일 ({pct(parent.commission)})</span>;
-        return <div className="flex items-center gap-1"><input className="field field-sm num w-20" defaultValue={(parent.commission * 100).toFixed(1)} /> %</div>;
+        if (sub) return <span className="text-[12.5px] text-mute">상위와 동일 ({parent.commission == null ? '미등록' : pct(parent.commission)})</span>;
+        return (
+          <div className="flex items-center gap-1">
+            <input className="field field-sm num w-20" value={rates[parent.categoryId] ?? rateText(parent)} onChange={(e) => setRate(parent.categoryId, e.target.value)} /> %
+          </div>
+        );
       },
     },
     {
@@ -66,19 +73,15 @@ function buildColumns({ open, toggle, setEdit }) {
     {
       id: 'action', header: '관리', enableSorting: false, meta: { thClass: 'text-center', search: false },
       cell: ({ row }) => {
-        const { parent, sub, prodCount } = row.original;
-        if (sub) {
-          return (
-            <div className="flex gap-1 justify-center">
-              <button onClick={() => setEdit({ mode: 'edit', parent: parent.id, name: sub })} className="btn btn-line btn-xs">수정</button>
-              <button onClick={() => toast(prodCount ? '상품이 등록된 카테고리는 삭제할 수 없어요' : '삭제했어요') /* TODO(구지훈): useDeleteCategoryMutation */} className="btn btn-ghost btn-xs">삭제</button>
-            </div>
-          );
-        }
+        const { parent, sub } = row.original;
+        // 카테고리는 삭제하지 않고 사용 중지만 (store · settlement 가 category_id 를 참조 — product.md 7절)
+        const target = sub ? parent.children.find((c) => c.name === sub) : parent;
+        const editOf = (c, parentId) => ({ mode: 'edit', categoryId: c.categoryId ?? c.id, parentId, name: c.name, nameEn: c.nameEn ?? c.en ?? '', sortOrder: String(c.sortOrder), active: c.active });
         return (
           <div className="flex gap-1 justify-center">
-            <button onClick={() => setEdit({ mode: 'new', parent: parent.id })} className="btn btn-line btn-xs">하위 추가</button>
-            <button onClick={() => setEdit({ mode: 'edit', parent: '', name: parent.name })} className="btn btn-line btn-xs">수정</button>
+            {!sub && <button onClick={() => setEdit({ mode: 'new', parentId: String(parent.categoryId), name: '', sortOrder: '' })} className="btn btn-line btn-xs">하위 추가</button>}
+            <button onClick={() => setEdit(editOf(target, sub ? String(parent.categoryId) : ''))} className="btn btn-line btn-xs">수정</button>
+            <button onClick={() => toggleActive(target)} className="btn btn-ghost btn-xs">{target.active ? '사용 중지' : '사용'}</button>
           </div>
         );
       },
@@ -105,28 +108,51 @@ export default function CategoryCommission() {
     return [head, ...c.subs.map((s) => ({ id: `${c.id}-${s}`, parent, sub: s, prodCount: products.filter((p) => p.cat === c.id && p.sub === s).length }))];
   }), [categories, products, stores, open]);
 
+  const [rates, setRates] = useState({}); // categoryId → 입력한 율(%) 문자열 — 바뀐 것만 예약
+  const saveCategory = useSaveCategoryMutation();
+  const reserveCommission = useReserveCommissionMutation();
+  const fail = (err) => toast(err.response?.data?.message ?? '저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+
+  const toggleActive = (c) => saveCategory.mutate(
+    { categoryId: c.categoryId ?? c.id, request: { name: c.name, nameEn: c.nameEn ?? c.en ?? null, sortOrder: c.sortOrder, active: !c.active } },
+    { onSuccess: () => toast(c.active ? '사용 중지했어요' : '사용으로 바꿨어요'), onError: fail },
+  );
   const columns = useMemo(() => {
     const toggle = (id) => setOpenSel(() => { const n = new Set(open); n.has(id) ? n.delete(id) : n.add(id); return n; });
-    return buildColumns({ open, toggle, setEdit });
-  }, [open]);
+    const setRate = (id, v) => setRates((r) => ({ ...r, [id]: v }));
+    return buildColumns({ open, toggle, setEdit, rates, setRate, toggleActive });
+  }, [open, rates]); // eslint-disable-line react-hooks/exhaustive-deps -- toggleActive 는 mutate 래퍼라 매 렌더 같은 동작
   const { table, globalFilter, setGlobalFilter } = useClientTable({ data: rows, columns, pageSize: 50 });
 
   const handleReserve = () => {
-    // TODO(구지훈): useReserveCommissionMutation
-    toast('변경 사항이 2026.10.08부터 적용 예약되었어요');
+    const changed = categories
+      .filter((c) => rates[c.categoryId] !== undefined && rates[c.categoryId] !== rateText(c))
+      .map((c) => ({ categoryId: c.categoryId, rate: Number(rates[c.categoryId]) }));
+    if (!changed.length) { toast('바뀐 수수료가 없어요'); return; }
+    reserveCommission.mutate(changed, {
+      onSuccess: () => { setRates({}); toast('다음 주 월요일부터 적용되도록 예약했어요'); },
+      onError: fail,
+    });
   };
   const handleSave = () => {
-    // TODO(구지훈): useSaveCategoryMutation
-    setEdit(null);
-    toast('저장했어요');
+    const isNew = edit.mode === 'new';
+    const top = !edit.parentId;
+    const request = isNew
+      ? { parentId: top ? null : Number(edit.parentId), name: edit.name, sortOrder: edit.sortOrder ? Number(edit.sortOrder) : null, ...(top ? { commissionRate: Number(edit.rate) } : {}) }
+      : { name: edit.name, nameEn: edit.nameEn || null, sortOrder: Number(edit.sortOrder), active: edit.active };
+    saveCategory.mutate({ categoryId: isNew ? null : edit.categoryId, request }, {
+      onSuccess: () => { setEdit(null); toast('저장했어요'); },
+      onError: fail,
+    });
   };
+  const setField = (k) => (e) => setEdit((v) => ({ ...v, [k]: e.target.value }));
 
   return (
     <div>
       <PageHead title="카테고리 · 수수료" desc="상위 / 하위 2단계 카테고리 · 판매자는 상품 등록 시 이 목록에서만 선택합니다 · 수수료율 변경은 판매자 공지 후 7일 뒤 적용"
         right={<>
-          <button onClick={() => setEdit({ mode: 'new', parent: '' })} className="btn btn-line btn-sm">+ 상위 카테고리</button>
-          <button onClick={handleReserve} className="btn btn-ink btn-sm">수수료 변경 예약</button>
+          <button onClick={() => setEdit({ mode: 'new', parentId: '', name: '', sortOrder: '', rate: '' })} className="btn btn-line btn-sm">+ 상위 카테고리</button>
+          <button onClick={handleReserve} disabled={reserveCommission.isPending} className="btn btn-ink btn-sm">수수료 변경 예약</button>
         </>} />
       <div className="flex flex-wrap items-center gap-2 mb-3 text-[12.5px]">
         <button onClick={() => setOpenSel(new Set(categories.map((c) => c.id)))} className="btn btn-line btn-xs">모두 펼치기</button>
@@ -136,19 +162,22 @@ export default function CategoryCommission() {
       <DataTable table={table} loading={isLoading} error={isError} />
 
       <Modal open={!!edit} onClose={() => setEdit(null)} title={edit?.mode === 'edit' ? '카테고리 수정' : '카테고리 추가'} width={440}
-        footer={<><button className="btn btn-line btn-sm" onClick={() => setEdit(null)}>취소</button><button className="btn btn-ink btn-sm" onClick={handleSave}>저장</button></>}>
+        footer={<><button className="btn btn-line btn-sm" onClick={() => setEdit(null)}>취소</button><button className="btn btn-ink btn-sm" onClick={handleSave} disabled={saveCategory.isPending}>저장</button></>}>
         {edit && (
           <div className="space-y-3">
             <div>
-              <label className="label">상위 카테고리</label>
-              <select className="field" defaultValue={edit.parent}>
+              <label className="label" htmlFor="cat-parent">상위 카테고리</label>
+              {/* 상위 · 하위 이동은 안 됨(수수료 기준이 바뀜 — product.md 결정 11) → 수정할 때는 고정 */}
+              <select id="cat-parent" className="field" value={edit.parentId} onChange={setField('parentId')} disabled={edit.mode === 'edit'}>
                 <option value="">없음 (상위 카테고리로 등록)</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {categories.map((c) => <option key={c.id} value={String(c.categoryId)}>{c.name}</option>)}
               </select>
             </div>
-            <div><label className="label">카테고리명</label><input className="field" defaultValue={edit.name || ''} placeholder="예: 셔츠" /></div>
-            {!edit.parent && <div><label className="label">판매수수료 (%)</label><input className="field num" placeholder="예: 10.0" /></div>}
-            <div><label className="label">노출 순서</label><input className="field num" defaultValue="1" /></div>
+            <div><label className="label" htmlFor="cat-name">카테고리명</label><input id="cat-name" className="field" value={edit.name} onChange={setField('name')} placeholder="예: 셔츠" /></div>
+            {edit.mode === 'new' && !edit.parentId && (
+              <div><label className="label" htmlFor="cat-rate">판매수수료 (%)</label><input id="cat-rate" className="field num" value={edit.rate} onChange={setField('rate')} placeholder="예: 10.0 — 오늘부터 적용" /></div>
+            )}
+            <div><label className="label" htmlFor="cat-sort">노출 순서</label><input id="cat-sort" className="field num" value={edit.sortOrder} onChange={setField('sortOrder')} placeholder="비우면 맨 뒤" /></div>
           </div>
         )}
       </Modal>
