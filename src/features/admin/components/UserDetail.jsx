@@ -10,6 +10,9 @@ import { useChangeUserStatusMutation } from '@/features/admin/hooks/useChangeUse
 import { useAdminUserPointsQuery } from '@/features/admin/hooks/useAdminUserPointsQuery';
 import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
 import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
+import { useAdminReportQuery } from '@/features/admin/hooks/useAdminReportQuery';
+import { REPORT_ACTION_LABEL } from '@/features/admin/constants';
+import { REPORT_REASON_LABEL } from '@/features/report/constants';
 import { nextGrade } from '@/features/user/constants';
 import { SUSPEND_DURATIONS, SUSPEND_REASONS, suspensionLabel, toUserStatusRequest } from '@/features/admin/constants';
 import { toMap } from '@/shared/utils/collection';
@@ -39,6 +42,7 @@ function DetailBody({ u }) {
   const { data: ph = [], isLoading: pointsLoading } = useAdminUserPointsQuery(u.id);
   const { data: reviews = [] } = useAdminReviewsQuery();
   const { data: products = [] } = useAdminProductsQuery();
+  const { data: moderation } = useAdminReportQuery('USER', u.id); // 이 회원이 받은 신고 · 신고 관리에서 한 조치
   const productById = useMemo(() => toMap(products), [products]);
   const urev = useMemo(() => reviews.filter((r) => r.userId === u.id).slice(0, 5), [reviews, u.id]);
   const next = nextGrade(u.spent);
@@ -100,6 +104,16 @@ function DetailBody({ u }) {
                 <div className="flex items-center gap-2"><Stars value={r.rating} size={11} /><span className="text-mute">{ymd(r.date)} · {productById[r.productId]?.name}</span>{r.blinded && <Pill tone="rust">블라인드</Pill>}</div>
                 <p className="mt-1 text-ink-2">{r.body}</p>
               </div>
+            ))}
+          </div>
+          <div className="panel">
+            <div className="panel-head"><span className="panel-title">받은 신고 · 제재 이력</span><span className="text-[11.5px] text-mute">신고 관리에서 처리한 조치</span></div>
+            {!moderation?.reports.length && !moderation?.actions.length && <div className="py-8 text-center text-mute text-sm">받은 신고가 없습니다.</div>}
+            {moderation?.actions.map((a) => (
+              <div key={`a${a.moderationActionId}`} className="px-5 py-2.5 border-b border-line text-[13px]"><Pill tone={a.action === 'SUSPEND' ? 'rust' : 'mute'}>{REPORT_ACTION_LABEL[a.action]}</Pill> <span className="text-ink-2">{a.reason}</span>{a.action === 'SUSPEND' && <span className="text-mute"> · {a.suspendDays ? `${a.suspendDays}일` : '영구'}</span>}<div className="text-[11.5px] text-mute num">{ymdhm(a.createdAt)} · 신고 {a.reportCount}건</div></div>
+            ))}
+            {moderation?.reports.map((r) => (
+              <div key={`r${r.reportId}`} className="px-5 py-2.5 border-b border-line last:border-0 text-[13px]">{REPORT_REASON_LABEL[r.reasonCode] ?? r.reasonCode}{r.detail && <span className="text-ink-2"> — {r.detail}</span>}<div className="text-[11.5px] text-mute num">{ymdhm(r.createdAt)} · 신고자 #{r.reporterId}</div></div>
             ))}
           </div>
         </div>

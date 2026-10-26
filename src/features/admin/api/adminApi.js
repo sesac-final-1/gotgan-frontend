@@ -96,7 +96,7 @@ export const fetchAdminSettlement = async (id) => toSettlementDetail((await axio
 // POST /api/admin/settlements/aggregate {week} → {week, created, updated, autoHeld, carriedOver} — 멱등(스토어 × 주차 1건)
 export const aggregateSettlements = async (week) => (await axiosInstance.post('/api/admin/settlements/aggregate', { week })).data.data;
 
-// TODO(구지훈): GET /api/admin/reviews (검토 요청 · 블라인드 포함)
+// 스토어 목록 · 상세 · 회원 상세의 평점 · 작성 리뷰 표시용 목업 — review 목록 API 가 생기면 교체. 리뷰 신고 · 블라인드는 아래 신고 API
 export const fetchAdminReviews = () => mockResolve(reviews);
 
 // 카테고리 · 수수료 — admin-service: product 카테고리(GET /api/admin/categories) + settlement 수수료(GET /api/admin/commissions) (backend #95)
@@ -181,3 +181,23 @@ export const fetchApplication = async (id) => toApplication((await axiosInstance
 // PATCH /api/admin/applications/{id}/approve (본문 없음) · /reject {reason} · /supplement {message, requestedDocs[]}
 export const decideApplication = async ({ id, action, body }) =>
   (await axiosInstance.patch(`/api/admin/applications/${id}/${action}`, body)).data.data;
+
+// 신고 — admin-service 가 직접 갖는 신고 · 조치 이력 (backend #106, docs/api/admin.md). 리뷰 블라인드 · 회원 정지도 여기서
+const at = (v) => (v ? new Date(v) : null);
+const toActionRow = (a) => a && { ...a, createdAt: at(a.createdAt) };
+
+// GET /api/admin/reports?targetType= — 대상별 묶음(처리 대기 많은 순), 전체 배열
+export const fetchAdminReports = async () =>
+  (await axiosInstance.get('/api/admin/reports')).data.data.map((t) => ({
+    ...t, id: `${t.targetType}-${t.targetId}`, lastReportedAt: at(t.lastReportedAt), lastAction: toActionRow(t.lastAction),
+  }));
+
+// GET /api/admin/reports/{type}/{id} — 신고 · 조치 이력 + 대상 현재 값(못 불러오면 target null + targetError)
+export const fetchAdminReport = async ({ type, id }) => {
+  const d = (await axiosInstance.get(`/api/admin/reports/${type}/${id}`)).data.data;
+  return { ...d, reports: d.reports.map((r) => ({ ...r, createdAt: at(r.createdAt) })), actions: d.actions.map(toActionRow) };
+};
+
+// POST /api/admin/reports/{type}/{id}/resolve {action, reason, days?} → {action, closedReports, target}
+export const resolveReport = async ({ type, id, action, reason, days }) =>
+  (await axiosInstance.post(`/api/admin/reports/${type}/${id}/resolve`, { action, reason, ...(days ? { days } : {}) })).data.data;

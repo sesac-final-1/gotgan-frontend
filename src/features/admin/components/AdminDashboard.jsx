@@ -6,7 +6,7 @@ import { PageHead, Kpi, BarChart, HBars } from '@/shared/components/ui';
 import { useAdminDashboardQuery } from '@/features/admin/hooks/useAdminDashboardQuery';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
 import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
-import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
+import { useAdminReportsQuery } from '@/features/admin/hooks/useAdminReportsQuery';
 import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { won, comma, pct, shortWon, ymd, cx } from '@/shared/utils/format';
@@ -16,7 +16,7 @@ export default function AdminDashboard() {
   const { data: dash, isLoading } = useAdminDashboardQuery();
   const { data: apps = [] } = useApplicationsQuery();
   const { data: stores = [] } = useAdminStoresQuery();
-  const { data: reviews = [] } = useAdminReviewsQuery();
+  const { data: reports = [] } = useAdminReportsQuery();
   const { data: users = [] } = useAdminUsersQuery();
   const { data: categories = [] } = useAdminCategoriesQuery();
   const platformDaily = useMemo(() => dash?.platformDaily ?? [], [dash]);
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
     ['보완 요청 중', apps.filter((a) => a.status === '보완요청').length, '/admin/applications'],
     ['정산 지급 승인', count(settlement?.scheduledCount), '/admin/settlements'],
     ['지급 보류', count(settlement?.heldCount), '/admin/settlements'],
-    ['리뷰 검토', reviews.filter((r) => r.flag && !r.blinded).length, '/admin/reviews'],
+    ['신고 처리 대기', reports.reduce((a, t) => a + t.openCount, 0), '/admin/reports'],
     ['이용정지 회원', users.filter((u) => u.status === '이용정지').length, '/admin/users'],
   ];
   return (

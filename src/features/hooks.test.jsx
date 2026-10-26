@@ -5,6 +5,10 @@ import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategori
 import { useAdminDashboardQuery } from '@/features/admin/hooks/useAdminDashboardQuery';
 import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
 import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
+import { useAdminReportsQuery } from '@/features/admin/hooks/useAdminReportsQuery';
+import { useAdminReportQuery } from '@/features/admin/hooks/useAdminReportQuery';
+import { useResolveReportMutation } from '@/features/admin/hooks/useResolveReportMutation';
+import { useCreateReportMutation } from '@/features/report/hooks/useCreateReportMutation';
 import { useAdminSettlementWeekQuery } from '@/features/admin/hooks/useAdminSettlementWeekQuery';
 import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
 import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
@@ -288,6 +292,61 @@ describe('판매자 정산 · 관리자 정산 상세 · 지금 집계 (settleme
       expect(await act(() => result.current.mutateAsync('2026-W43'))).toMatchObject({ created: 2 });
       expect(post).toHaveBeenCalledWith('/api/admin/settlements/aggregate', { week: '2026-W43' });
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'settlements'] });
+    } finally {
+      post.mockRestore();
+    }
+  });
+});
+
+describe('신고 (admin-service — 접수 · 대상별 묶음 · 상세 · 처리)', () => {
+  it('목록 — 대상별 묶음에 화면 id · 시각 변환, 상세는 신고 · 조치 시각 변환', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data: url === '/api/admin/reports'
+      ? [{ targetType: 'REVIEW', targetId: 31, summary: '광고', openCount: 2, totalCount: 2, reasonCounts: { SPAM: 2 },
+        lastReportedAt: '2026-10-26T15:00:00+09:00', lastAction: null }]
+      : { targetType: 'USER', targetId: 12, target: { name: '홍길동' }, targetError: null,
+        reports: [{ reportId: 7, reasonCode: 'FRAUD', status: 'RESOLVED', createdAt: '2026-10-26T15:00:00+09:00' }],
+        actions: [{ moderationActionId: 3, action: 'SUSPEND', suspendDays: 7, createdAt: '2026-10-26T16:00:00+09:00' }] } } }));
+    try {
+      const list = await load(useAdminReportsQuery);
+      expect(list[0]).toMatchObject({ id: 'REVIEW-31', openCount: 2, lastAction: null });
+      expect(list[0].lastReportedAt).toBeInstanceOf(Date);
+      const detail = await load(useAdminReportQuery, 'USER', 12);
+      expect(detail).toMatchObject({ target: { name: '홍길동' }, actions: [{ action: 'SUSPEND', suspendDays: 7 }] });
+      expect(detail.reports[0].createdAt).toBeInstanceOf(Date);
+      expect(get).toHaveBeenLastCalledWith('/api/admin/reports/USER/12');
+    } finally {
+      get.mockRestore();
+    }
+    const { Wrapper } = createWrapper();
+    expect(renderHook(() => useAdminReportQuery('USER', undefined), { wrapper: Wrapper }).result.current.fetchStatus).toBe('idle');
+  });
+
+  it('처리 — 정지는 days 포함 · 기각은 days 없이, 끝나면 신고 목록과(회원이면) 회원도 다시 불러오기', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { action: { action: 'SUSPEND' }, closedReports: 1, target: {} } } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      const { result } = renderHook(() => useResolveReportMutation(), { wrapper: Wrapper });
+      await act(() => result.current.mutateAsync({ type: 'USER', id: 12, action: 'SUSPEND', reason: '결제 도용', days: 7 }));
+      expect(post).toHaveBeenLastCalledWith('/api/admin/reports/USER/12/resolve', { action: 'SUSPEND', reason: '결제 도용', days: 7 });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'reports'] });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'users'] });
+
+      await act(() => result.current.mutateAsync({ type: 'REVIEW', id: 31, action: 'DISMISS', reason: '정상', days: null }));
+      expect(post).toHaveBeenLastCalledWith('/api/admin/reports/REVIEW/31/resolve', { action: 'DISMISS', reason: '정상' });
+    } finally {
+      post.mockRestore();
+    }
+  });
+
+  it('신고 접수 — POST /api/reports 본문 그대로', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { reportId: 7, status: 'OPEN' } } });
+    const { Wrapper } = createWrapper();
+    try {
+      const { result } = renderHook(() => useCreateReportMutation(), { wrapper: Wrapper });
+      const body = { targetType: 'REVIEW', targetId: 31, reasonCode: 'SELLER_REQUEST', detail: '욕설' };
+      expect(await act(() => result.current.mutateAsync(body))).toEqual({ reportId: 7, status: 'OPEN' });
+      expect(post).toHaveBeenCalledWith('/api/reports', body);
     } finally {
       post.mockRestore();
     }
