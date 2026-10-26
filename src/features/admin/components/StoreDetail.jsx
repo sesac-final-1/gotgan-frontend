@@ -122,7 +122,7 @@ function DetailBody({ s }) {
             <div className="panel-title mb-2">관리 메모</div>
             <ul className="text-[12.5px] text-ink-2 space-y-1.5">
               <li><span className="num text-mute">2026.09.12</span> 추석 기획전 참여 확정</li>
-              {s.id === 's5' && <li><span className="num text-mute">2026.09.25</span> 반품 미처리 3건 → 정산 보류 / 휴면 전환</li>}
+              {s.id === 's5' && <li><span className="num text-mute">2026.09.25</span> 반품 미처리 3건 → 정산 보류 / 운영 정지</li>}
               <li><span className="num text-mute">{ymd(s.since)}</span> 입점 승인</li>
             </ul>
           </div>
@@ -130,10 +130,9 @@ function DetailBody({ s }) {
       </div>
       <Modal open={modal} onClose={() => setModal(false)} title="스토어 상태 변경" width={460}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setModal(false)}>취소</button><button className="btn btn-ink btn-sm" onClick={handleStatusSubmit}>변경</button></>}>
-        <Segments items={['운영중', '휴면', '정지']} value={status} onChange={setStatus} />
+        <Segments items={['운영중', '정지']} value={status} onChange={setStatus} />
         <div className="mt-4 text-[13px] text-ink-2 bg-cream p-3 leading-relaxed">
           {status === '운영중' && '스토어와 판매중 상품이 쇼핑몰에 노출됩니다.'}
-          {status === '휴면' && '스토어/상품이 비노출됩니다. 진행 중 주문은 처리 가능하며, 정산은 클레임 완료 후 지급됩니다.'}
           {status === '정지' && '즉시 비노출 + 판매자센터 기능 제한. 미정산 금액은 지급보류되며, 분쟁 해소 후 지급됩니다.'}
         </div>
         {status !== '운영중' && <><label className="label mt-4">사유 (판매자에게 통보)</label><textarea rows={3} className="field" /></>}
