@@ -12,6 +12,7 @@ import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useApplicationHistoryQuery } from '@/features/admin/hooks/useApplicationHistoryQuery';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
 import { useDecideApplicationMutation } from '@/features/admin/hooks/useDecideApplicationMutation';
+import { useSaveCategoryMutation, useReserveCommissionMutation } from '@/features/admin/hooks/useCategoryMutations';
 import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useSellerBuyersQuery } from '@/features/order/hooks/useSellerBuyersQuery';
 import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
@@ -124,5 +125,30 @@ describe('입점 처리 mutation', () => {
     expect(after[0]).toMatchObject({ appId: target.id, from: '심사대기', to: '보완요청', reason: '통장 사본 재제출' });
     expect((await load(useApplicationsQuery)).find((a) => a.id === target.id).status).toBe('보완요청');
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'applications'] });
+  });
+});
+
+describe('카테고리 · 수수료 mutation', () => {
+  it('새 카테고리는 POST · 수정은 PUT /{id} · 수수료 예약은 PUT /commissions — 끝나면 카테고리 목록 다시 불러오기', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { id: 604 } } });
+    const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: { id: 3 } } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      const save = renderHook(() => useSaveCategoryMutation(), { wrapper: Wrapper }).result;
+      await act(() => save.current.mutateAsync({ request: { name: '반려동물', commissionRate: 8 } }));
+      expect(post).toHaveBeenCalledWith('/api/admin/categories', { name: '반려동물', commissionRate: 8 });
+      await act(() => save.current.mutateAsync({ categoryId: 3, request: { name: '패션', active: true } }));
+      expect(put).toHaveBeenCalledWith('/api/admin/categories/3', { name: '패션', active: true });
+
+      const reserve = renderHook(() => useReserveCommissionMutation(), { wrapper: Wrapper }).result;
+      await act(() => reserve.current.mutateAsync([{ categoryId: 3, rate: 12 }]));
+      expect(put).toHaveBeenCalledWith('/api/admin/commissions', [{ categoryId: 3, rate: 12 }]);
+      expect(invalidate).toHaveBeenCalledTimes(3);
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'categories'] });
+    } finally {
+      post.mockRestore();
+      put.mockRestore();
+    }
   });
 });
