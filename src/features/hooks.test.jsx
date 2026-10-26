@@ -30,7 +30,7 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
-  useAdminCategoriesQuery, useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
+  useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
   useApplicationHistoryQuery, useApplicationsQuery, useMyOrdersQuery, useSellerBuyersQuery,
   useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery, useSellerSettlementsQuery,
   useSellerDailySalesQuery, useStoresQuery,
@@ -68,6 +68,21 @@ describe('조회 훅', () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: response } });
     try {
       expect(await load(API_HOOK_FNS[name])).toMatchObject(expected);
+    } finally {
+      get.mockRestore();
+    }
+  });
+
+  it('관리자 카테고리 — 카테고리 트리 + 수수료를 합쳐 목업 모양(문자열 id · 비율 · 하위 이름)으로', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data: url === '/api/admin/categories'
+      ? [{ id: 3, name: '패션의류', nameEn: 'Apparel', sortOrder: 1, active: true, children: [{ id: 301, name: '셔츠', nameEn: null, sortOrder: 1, active: true }] },
+        { id: 604, name: '반려동물', nameEn: null, sortOrder: 7, active: false, children: [] }]
+      : [{ categoryId: 3, current: { rate: 11.5, effectiveFrom: '2026-01-01' }, reserved: [] }] } }));
+    try {
+      expect(await load(useAdminCategoriesQuery)).toMatchObject([
+        { id: 'fashion', categoryId: 3, name: '패션의류', en: 'Apparel', commission: 0.115, subs: ['셔츠'], active: true },
+        { id: '604', categoryId: 604, commission: null, subs: [], active: false },
+      ]);
     } finally {
       get.mockRestore();
     }
