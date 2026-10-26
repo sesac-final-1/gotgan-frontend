@@ -13,7 +13,7 @@ import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useApplicationHistoryQuery } from '@/features/admin/hooks/useApplicationHistoryQuery';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
 import { useDecideApplicationMutation } from '@/features/admin/hooks/useDecideApplicationMutation';
-import { usePaySettlementsMutation, useHoldSettlementsMutation } from '@/features/admin/hooks/useSettlementMutations';
+import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation } from '@/features/admin/hooks/useSettlementMutations';
 import { isoWeek, recentWeeks } from '@/features/admin/constants';
 import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useSellerBuyersQuery } from '@/features/order/hooks/useSellerBuyersQuery';
@@ -144,7 +144,7 @@ describe('정산 관리 (A안 — 고른 주차만 API 조회)', () => {
     }
   });
 
-  it('지급 실행 {ids} · 선택 보류는 건마다 PATCH — 끝나면 정산 목록 다시 불러오기', async () => {
+  it('지급 실행 {ids} · 선택 보류는 건마다 PATCH · 보류 해제 — 끝나면 정산 목록 다시 불러오기', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { success: [1], failed: [] } } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: {} } });
     const { client, Wrapper } = createWrapper();
@@ -158,6 +158,10 @@ describe('정산 관리 (A안 — 고른 주차만 API 조회)', () => {
       await act(() => hold.current.mutateAsync({ ids: [3, 7], reason: '계좌 확인' }));
       expect(patch).toHaveBeenCalledWith('/api/admin/settlements/3/hold', { hold: true, reason: '계좌 확인' });
       expect(patch).toHaveBeenCalledWith('/api/admin/settlements/7/hold', { hold: true, reason: '계좌 확인' });
+      const release = renderHook(() => useReleaseSettlementHoldMutation(), { wrapper: Wrapper }).result;
+      await act(() => release.current.mutateAsync(6));
+      expect(patch).toHaveBeenCalledWith('/api/admin/settlements/6/hold', { hold: false, reason: undefined });
+      expect(invalidate).toHaveBeenCalledTimes(3);
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'settlements'] });
     } finally {
       post.mockRestore();
