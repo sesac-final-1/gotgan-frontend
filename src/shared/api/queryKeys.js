@@ -12,6 +12,7 @@ export const queryKeys = {
     user: (userId) => ['admin', 'users', userId], // users() 아래라 목록을 무효화하면 상세도 함께
     userPoints: (userId) => ['admin', 'users', userId, 'points'],
     settlements: () => ['admin', 'settlements'],
+    settlement: (id) => ['admin', 'settlements', 'detail', id],
     settlementWeek: (week) => ['admin', 'settlements', 'week', week ?? 'last'], // settlements() 아래라 목록을 무효화하면 함께
     reviews: () => ['admin', 'reviews'],
     categories: () => ['admin', 'categories'],
@@ -60,6 +61,7 @@ export const queryKeys = {
   settlement: {
     all: ['settlement'],
     seller: () => ['settlement', 'seller'],
+    sellerDetail: (id) => ['settlement', 'seller', 'detail', id],
     sellerPending: () => ['settlement', 'seller', 'pending'],
   },
 

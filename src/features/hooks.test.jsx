@@ -13,7 +13,7 @@ import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useApplicationQuery } from '@/features/admin/hooks/useApplicationQuery';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
 import { useDecideApplicationMutation } from '@/features/admin/hooks/useDecideApplicationMutation';
-import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation } from '@/features/admin/hooks/useSettlementMutations';
+import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation, useAggregateSettlementsMutation } from '@/features/admin/hooks/useSettlementMutations';
 import { isoWeek, recentWeeks } from '@/features/admin/constants';
 import { useSaveCategoryMutation, useReserveCommissionMutation } from '@/features/admin/hooks/useCategoryMutations';
 import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
@@ -25,6 +25,8 @@ import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useSellerPendingQuery } from '@/features/settlement/hooks/useSellerPendingQuery';
 import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSellerSettlementsQuery';
+import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
+import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettlementQuery';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useSellerDailySalesQuery } from '@/features/store/hooks/useSellerDailySalesQuery';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
@@ -36,10 +38,10 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 const LIST_HOOKS = {
   useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
   useMyOrdersQuery, useSellerBuyersQuery,
-  useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery, useSellerSettlementsQuery,
+  useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery,
   useSellerDailySalesQuery, useStoresQuery,
 };
-const OBJECT_HOOKS = { useSellerPendingQuery, useMyStoreQuery };
+const OBJECT_HOOKS = { useMyStoreQuery };
 // 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
 const API_HOOKS = {
   useApplicationsQuery: [[{ applicationId: 27, applicationNo: 'AP-2610-027', storeName: '곳간상회', ownerName: '홍길동', bizType: 'INDIVIDUAL',
@@ -232,6 +234,62 @@ describe('카테고리 · 수수료 mutation', () => {
     } finally {
       post.mockRestore();
       put.mockRestore();
+    }
+  });
+});
+
+describe('판매자 정산 · 관리자 정산 상세 · 지금 집계 (settlement API)', () => {
+  const SUMMARY = { id: 2, storeId: 1, storeName: '산골농부 박씨네', week: '2026-W42', weekStart: '2026-10-12', weekEnd: '2026-10-18',
+    itemCount: 2, carriedOverCount: 1, salesAmt: 58000, commissionAmt: 4060, paymentFeeAmt: 1276, payoutAmt: 52664, status: 'PAID',
+    holdReason: null, scheduledPayDate: '2026-10-22', paidAt: '2026-10-22T10:00:00+09:00', bank: { bankName: '곳간은행', accountNumber: '100-01', accountHolder: '박씨' } };
+  const DETAIL = { settlement: SUMMARY,
+    items: [{ orderItemId: 1004, orderNo: '20261012-901004', productName: '한라봉 3kg', confirmedAt: '2026-10-13T10:00:00+09:00', itemAmt: 39000,
+      categoryId: 1, rate: 7.0, commission: 2730, paymentFee: 858, payout: 35412, carriedOver: true }],
+    history: [{ at: '2026-10-19T03:00:00+09:00', actor: 'SYSTEM', from: null, to: 'SCHEDULED', reason: null },
+      { at: '2026-10-22T10:00:00+09:00', actor: 'ADMIN', from: 'SCHEDULED', to: 'PAID', reason: null }] };
+
+  it('판매자 목록 + 요약 — 카테고리 이름은 공개 트리에서, 율은 비율로', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data: url === '/api/categories'
+      ? [{ id: 1, name: '식품', children: [] }]
+      : { summary: { nextPayout: { settlementId: 1, week: '2026-W43', payoutAmt: 61744, scheduledPayDate: '2026-10-29', status: 'SCHEDULED' },
+        paidRecent8WeeksAmt: 52664, pendingPayoutAmt: 12000, appliedRates: [{ categoryId: 1, rate: 7.0 }] }, settlements: [SUMMARY] } } }));
+    try {
+      const data = await load(useSellerSettlementsQuery);
+      expect(data.summary).toMatchObject({ pendingPayout: 12000, paidRecent8Weeks: 52664, nextPayout: { payout: 61744 }, rates: [{ name: '식품', rate: 0.07 }] });
+      expect(data.rows[0]).toMatchObject({ id: 2, week: '2026-W42', orders: 2, carriedOver: 1, payout: 52664, status: '지급완료', bank: '곳간은행 100-01 (박씨)' });
+      expect(await load(useSellerPendingQuery)).toEqual({ payout: 12000 });
+    } finally {
+      get.mockRestore();
+    }
+  });
+
+  it('상세 — 판매자 · 관리자 같은 모양(건별 이월 · 율 · 이력 라벨), id 없으면 조회 안 함', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: DETAIL } });
+    try {
+      const expected = { storeName: '산골농부 박씨네', items: [{ productName: '한라봉 3kg', rate: 0.07, carriedOver: true }],
+        history: [{ from: null, to: '지급예정', actor: 'SYSTEM' }, { from: '지급예정', to: '지급완료' }] };
+      expect(await load(useSellerSettlementQuery, 2)).toMatchObject(expected);
+      expect(get).toHaveBeenLastCalledWith('/api/seller/settlements/2');
+      expect(await load(useAdminSettlementQuery, 2)).toMatchObject(expected);
+      expect(get).toHaveBeenLastCalledWith('/api/admin/settlements/2');
+    } finally {
+      get.mockRestore();
+    }
+    const { Wrapper } = createWrapper();
+    expect(renderHook(() => useSellerSettlementQuery(null), { wrapper: Wrapper }).result.current.fetchStatus).toBe('idle');
+  });
+
+  it('지금 집계 — 고른 주차로 POST, 끝나면 정산 목록 다시 불러오기', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { week: '2026-W43', created: 2, updated: 0, autoHeld: 0, carriedOver: 0 } } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      const { result } = renderHook(() => useAggregateSettlementsMutation(), { wrapper: Wrapper });
+      expect(await act(() => result.current.mutateAsync('2026-W43'))).toMatchObject({ created: 2 });
+      expect(post).toHaveBeenCalledWith('/api/admin/settlements/aggregate', { week: '2026-W43' });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'settlements'] });
+    } finally {
+      post.mockRestore();
     }
   });
 });

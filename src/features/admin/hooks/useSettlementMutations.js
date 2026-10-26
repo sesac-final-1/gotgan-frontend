@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
-import { holdSettlement, paySettlements } from '@/features/admin/api/adminApi';
+import { aggregateSettlements, holdSettlement, paySettlements } from '@/features/admin/api/adminApi';
 
 // 정산 지급 · 보류 — 담당 구지훈. 성공하면 정산 목록을 다시 불러온다 (일부 실패여도 성공한 건은 반영)
 function useSettlementMutation(mutationFn) {
@@ -16,3 +16,5 @@ export const usePaySettlementsMutation = () => useSettlementMutation(paySettleme
 export const useHoldSettlementsMutation = () =>
   useSettlementMutation(({ ids, reason }) => Promise.allSettled(ids.map((id) => holdSettlement({ id, hold: true, reason }))));
 export const useReleaseSettlementHoldMutation = () => useSettlementMutation((id) => holdSettlement({ id, hold: false }));
+// 지금 집계 — 고른 주차를 바로 집계 (자동 집계는 월 03:00 · 기동 시 지난주라 시연 때 필요)
+export const useAggregateSettlementsMutation = () => useSettlementMutation(aggregateSettlements);

@@ -3,6 +3,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import { mockResolve } from '@/mocks/mockApi';
 import { DEFAULT_AVATAR } from '@/features/user/constants';
 import { toPointRow } from '@/features/user/api/userApi';
+import { toSettlementDetail } from '@/features/settlement/api/settlementApi';
 import { stores, products } from '@/mocks/fixtures/catalog';
 import { settlements, platformDaily } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
@@ -88,6 +89,12 @@ export const paySettlements = async (ids) => (await axiosInstance.post('/api/adm
 // PATCH /api/admin/settlements/{id}/hold {hold, reason} — hold=true 면 reason 필수
 export const holdSettlement = async ({ id, hold, reason }) =>
   (await axiosInstance.patch(`/api/admin/settlements/${id}/hold`, { hold, reason })).data.data;
+
+// GET /api/admin/settlements/{id} — 지급 전 확인: 건별 상품주문 · 수수료율 · 이월 · 상태 이력 (판매자 상세와 같은 모양)
+export const fetchAdminSettlement = async (id) => toSettlementDetail((await axiosInstance.get(`/api/admin/settlements/${id}`)).data.data);
+
+// POST /api/admin/settlements/aggregate {week} → {week, created, updated, autoHeld, carriedOver} — 멱등(스토어 × 주차 1건)
+export const aggregateSettlements = async (week) => (await axiosInstance.post('/api/admin/settlements/aggregate', { week })).data.data;
 
 // TODO(구지훈): GET /api/admin/reviews (검토 요청 · 블라인드 포함)
 export const fetchAdminReviews = () => mockResolve(reviews);
