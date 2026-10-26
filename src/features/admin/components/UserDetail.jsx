@@ -5,7 +5,8 @@ import { PageHead, StatusPill, Modal, KV, Kpi, Stars, Pill, GradeBadge } from '@
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
-import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
+import { useAdminUserQuery } from '@/features/admin/hooks/useAdminUserQuery';
+import { useChangeUserStatusMutation } from '@/features/admin/hooks/useChangeUserStatusMutation';
 import { useAdminUserPointsQuery } from '@/features/admin/hooks/useAdminUserPointsQuery';
 import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
 import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
@@ -27,8 +28,7 @@ const POINT_COLUMNS = [
 
 export default function UserDetail() {
   const { id } = useParams();
-  const { data: users = [], isLoading } = useAdminUsersQuery();
-  const u = users.find((x) => x.id === id);
+  const { data: u, isLoading } = useAdminUserQuery(id);
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
   if (!u) return <p className="text-mute py-10 text-center">회원을 찾을 수 없어요</p>;
   return <DetailBody key={u.id} u={u} />; // key: 다른 회원으로 이동하면 모달 · 검색 상태 초기화
@@ -48,14 +48,19 @@ function DetailBody({ u }) {
   const [duration, setDuration] = useState(SUSPEND_DURATIONS[0].value);
   const [reason, setReason] = useState(SUSPEND_REASONS[0]);
   const [releaseReason, setReleaseReason] = useState('');
-  const canConfirm = suspended ? releaseReason.trim() !== '' : true; // 해제도 사유 필수
+  const changeStatus = useChangeUserStatusMutation();
+  const canConfirm = (suspended ? releaseReason.trim() !== '' : true) && !changeStatus.isPending; // 해제도 사유 필수
 
   const handleBanConfirm = () => {
     const request = toUserStatusRequest({ suspend: !suspended, duration, reason: suspended ? releaseReason : reason });
-    // TODO(구지훈): useChangeUserStatusMutation — PATCH /api/admin/users/{id}/status 에 request 그대로
-    setModal(null);
-    setReleaseReason('');
-    toast(request.status === 'ACTIVE' ? '이용정지를 해제했어요' : `${request.days ? `${request.days}일` : '영구'} 이용정지했어요`);
+    changeStatus.mutate({ userId: u.id, request }, {
+      onSuccess: () => {
+        setModal(null);
+        setReleaseReason('');
+        toast(request.status === 'ACTIVE' ? '이용정지를 해제했어요' : `${request.days ? `${request.days}일` : '영구'} 이용정지했어요`);
+      },
+      onError: (err) => toast(err.response?.data?.message ?? '상태를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.'),
+    });
   };
 
   return (

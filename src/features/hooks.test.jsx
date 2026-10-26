@@ -31,18 +31,20 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
   useAdminCategoriesQuery, useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
-  useAdminUsersQuery, useApplicationHistoryQuery, useApplicationsQuery, useMyOrdersQuery, useSellerBuyersQuery,
+  useApplicationHistoryQuery, useApplicationsQuery, useMyOrdersQuery, useSellerBuyersQuery,
   useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery, useSellerSettlementsQuery,
   useSellerDailySalesQuery, useStoresQuery,
 };
 const OBJECT_HOOKS = { useAdminDashboardQuery, useSellerPendingQuery, useMyStoreQuery };
 // 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
 const API_HOOKS = {
+  useAdminUsersQuery: [{ content: [{ userId: 4, name: '구매자1', status: 'SUSPENDED', totalSpent: 0, joinedAt: '2026-10-01T09:30:00+09:00' }], hasNext: false },
+    [{ id: '4', name: '구매자1', status: '이용정지' }]],
   useMeQuery: [{ userId: 4, name: '구매자1', grade: 'NORMAL', point: 0, totalSpent: 0, joinedAt: '2026-10-01T09:30:00+09:00' }, { id: 4 }],
   useMyPointsQuery: [{ balance: 0, history: [] }, { balance: 0, history: [] }],
   useMyAddressesQuery: [[{ id: 10, label: '집', main: true }], [{ id: 10, label: '집', main: true }]],
 };
-const API_HOOK_FNS = { useMeQuery, useMyPointsQuery, useMyAddressesQuery };
+const API_HOOK_FNS = { useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
@@ -72,7 +74,11 @@ describe('조회 훅', () => {
   });
 
   it('회원 포인트 — userId 가 있을 때만 조회', async () => {
-    expect(await load(useAdminUserPointsQuery, 'u1')).toBeDefined();
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { balance: 100, history: { content: [
+      { id: 1, type: 'EARN', amount: 100, balanceAfter: 100, orderNo: '20261026-000001', createdAt: '2026-10-26T10:00:00+09:00' }] } } } });
+    expect(await load(useAdminUserPointsQuery, '4')).toMatchObject([{ id: '1', type: '적립', amount: 100 }]);
+    expect(get).toHaveBeenCalledWith('/api/admin/users/4/points', { params: { size: 100 } });
+    get.mockRestore();
 
     const { Wrapper } = createWrapper();
     const { result } = renderHook(() => useAdminUserPointsQuery(undefined), { wrapper: Wrapper });
