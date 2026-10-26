@@ -3,16 +3,22 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ChevronRight } from 'lucide-react';
 import { useCart } from '@/features/order/hooks/useCart';
+import { useCreateOrderMutation } from '@/features/order/hooks/useCreateOrderMutation';
+import { toOrderRequest } from '@/features/order/utils/orderRequest';
+import { usePayOrderMutation } from '@/features/payment/hooks/usePayOrderMutation';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useMyAddressesQuery } from '@/features/user/hooks/useMyAddressesQuery';
 import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 import { POINT_RATE } from '@/features/user/constants';
 import ShopOrderSummary, { groupByStore, totalsOf } from '@/features/order/components/ShopOrderSummary';
 import { Checkbox, Empty, Modal } from '@/shared/components/ui';
+import { toast } from '@/shared/stores/toastStore';
 import { toMap } from '@/shared/utils/collection';
 import { cx, won, comma } from '@/shared/utils/format';
 
 const PAY_METHODS = ['신용/체크카드', '곳간페이', '카카오페이', '네이버페이', '토스페이', '무통장입금'];
+const MEMO_OPTIONS = ['문 앞에 놓아주세요', '경비실에 맡겨주세요', '배송 전 연락 바랍니다'];
+const MEMO_CUSTOM = '직접 입력';
 
 function Section({ n, title, children, right }) {
   return (
@@ -44,8 +50,30 @@ export default function ShopCheckout() {
   const applyPoint = (v) => setPoint(Math.max(0, Math.min(maxUse, v)));
   const t = totalsOf(groups, point);
 
-  // TODO(이경석): useCreateOrderMutation + PortOne 결제 — 지금은 장바구니 선택분 비우고 완료 화면으로
-  const pay = (amount, earn) => { clearChecked(); void nav('/order/complete', { state: { pay: amount, method, point, earn } }); };
+  const [memoChoice, setMemoChoice] = useState('');
+  const [memoText, setMemoText] = useState('');
+  const createOrder = useCreateOrderMutation();
+  const payOrder = usePayOrderMutation();
+  const paying = createOrder.isPending || payOrder.isPending;
+
+  // 주문 생성 → 결제창 → 결제 확인 (payOrder). 금액은 서버 응답 기준 — 화면 합계는 안내용
+  // 결제창 취소 · 실패 · 결과 모름은 주문이 결제 대기로 남고 15분 뒤 서버가 정리 → 안내만 하고 주문서에 머문다
+  const pay = async (earn) => {
+    if (!addr) { toast('배송지를 먼저 등록해 주세요'); return; }
+    const memo = memoChoice === MEMO_CUSTOM ? memoText : memoChoice;
+    let created;
+    try {
+      created = await createOrder.mutateAsync(toOrderRequest({ lines, address: addr, memo, point }));
+    } catch (err) {
+      toast(err.response?.data?.message ?? '주문하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    const r = await payOrder.mutateAsync(created);
+    if (r.status === 'REDIRECTED') return; // 결제사 페이지로 이동 — 돌아오면 주문 완료 화면이 결제 확인
+    if (r.status !== 'PAID') { toast(r.message); return; }
+    clearChecked(); // TODO(이경석, 장바구니 API 연동 시): 서버가 결제 확정 때 비우므로 장바구니 쿼리 무효화로 교체
+    void nav('/order/complete', { state: { orderNo: r.orderNo, pay: r.payAmt, method, point, earn, address: `${addr.addr} ${addr.detail ?? ''}`.trim() } });
+  };
 
   if (!lines.length) return <Empty title="주문할 상품이 없어요" action={<Link to="/cart" className="btn btn-ink">장바구니로</Link>} />;
 
@@ -65,7 +93,11 @@ export default function ShopCheckout() {
                 <div className="text-ink-2">({addr.zip}) {addr.addr} {addr.detail}</div>
               </div>
             )}
-            <select className="field mt-4"><option>배송 요청사항을 선택해주세요</option><option>문 앞에 놓아주세요</option><option>경비실에 맡겨주세요</option><option>배송 전 연락 바랍니다</option><option>직접 입력</option></select>
+            <select value={memoChoice} onChange={(e) => setMemoChoice(e.target.value)} className="field mt-4">
+              <option value="">배송 요청사항을 선택해주세요</option>
+              {[...MEMO_OPTIONS, MEMO_CUSTOM].map((m) => <option key={m}>{m}</option>)}
+            </select>
+            {memoChoice === MEMO_CUSTOM && <input value={memoText} onChange={(e) => setMemoText(e.target.value)} maxLength={200} className="field mt-2" placeholder="배송 요청사항을 입력해주세요" />}
           </Section>
 
           <Section n="02" title={`주문상품 ${lines.length}개`}>
@@ -134,7 +166,7 @@ export default function ShopCheckout() {
 
         <div className="lg:sticky lg:top-24 self-start">
           <ShopOrderSummary groups={groups} point={point} label="실결제금액" cta={(amount, earn) => (
-            <button disabled={!agree} onClick={() => pay(amount, earn)} className="btn btn-point btn-lg w-full">{won(amount)} 결제하기</button>
+            <button disabled={!agree || paying} onClick={() => void pay(earn)} className="btn btn-point btn-lg w-full">{paying ? '결제 진행 중…' : `${won(amount)} 결제하기`}</button>
           )} />
           {!agree && <p className="text-[12px] text-mute mt-2 text-center">약관에 동의해야 결제할 수 있어요</p>}
         </div>
