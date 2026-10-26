@@ -2,41 +2,35 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { ArrowRight } from 'lucide-react';
-import { PageHead, Kpi, BarChart, HBars, StatusPill } from '@/shared/components/ui';
+import { PageHead, Kpi, BarChart, HBars } from '@/shared/components/ui';
 import { useAdminDashboardQuery } from '@/features/admin/hooks/useAdminDashboardQuery';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
 import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
-import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
 import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
 import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
-import { toMap } from '@/shared/utils/collection';
-import { won, comma, pct, shortWon, cx } from '@/shared/utils/format';
+import { won, comma, pct, shortWon, ymd, cx } from '@/shared/utils/format';
 
-// 스토어 거래액 순위는 요약 표라 목업 <table> 그대로 (검색 · 정렬 없음)
+// 카테고리별 거래액 · 스토어 순위 = 정산 통계의 최근 8주 구매확정분 (backend #103). 순위는 요약 표라 목업 <table> 그대로 (검색 · 정렬 없음)
 export default function AdminDashboard() {
   const { data: dash, isLoading } = useAdminDashboardQuery();
   const { data: apps = [] } = useApplicationsQuery();
   const { data: stores = [] } = useAdminStoresQuery();
-  const { data: settlements = [] } = useAdminSettlementsQuery();
   const { data: reviews = [] } = useAdminReviewsQuery();
   const { data: users = [] } = useAdminUsersQuery();
   const { data: categories = [] } = useAdminCategoriesQuery();
-  const catById = useMemo(() => toMap(categories), [categories]);
   const platformDaily = useMemo(() => dash?.platformDaily ?? [], [dash]);
 
+  // 매출이 있는 카테고리만 온다 — 이름 · 수수료율은 카테고리 목록에서 (사용 중지 등으로 못 찾으면 번호)
   const catRows = useMemo(() => {
-    const storeCat = Object.fromEntries(stores.map((s) => [s.id, s.cat]));
-    return categories.map((c) => ({
-      label: c.name,
-      value: settlements.filter((s) => storeCat[s.storeId] === c.id).reduce((a, s) => a + s.gross, 0),
-      note: pct(c.commission),
-    })).sort((a, b) => b.value - a.value);
-  }, [categories, settlements, stores]);
-  const storeRank = useMemo(() => stores.map((s) => {
-    const ss = settlements.filter((x) => x.storeId === s.id);
-    return { s, gross: ss.reduce((a, x) => a + x.gross, 0), last: ss[0] };
-  }).sort((a, b) => b.gross - a.gross), [stores, settlements]);
+    const byId = Object.fromEntries(categories.map((c) => [c.categoryId, c]));
+    return (dash?.settlement?.categorySales ?? []).map((r) => ({
+      label: byId[r.categoryId]?.name ?? `카테고리 ${r.categoryId}`,
+      value: r.salesAmt,
+      note: byId[r.categoryId]?.commission == null ? '' : pct(byId[r.categoryId].commission),
+    }));
+  }, [categories, dash]);
+  const storeRank = dash?.settlement?.topStores ?? [];
 
   if (isLoading || platformDaily.length < 2) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
 
@@ -73,28 +67,28 @@ export default function AdminDashboard() {
           <div className="p-5"><BarChart data={platformDaily} /></div>
         </div>
         <div className="panel">
-          <div className="panel-head"><span className="panel-title">카테고리별 거래액 (8주)</span><span className="text-[11.5px] text-mute">수수료율</span></div>
-          <div className="p-5"><HBars rows={catRows} format={(v) => `${shortWon(v)}원`} /></div>
+          <div className="panel-head"><span className="panel-title">카테고리별 거래액 (8주 · 구매확정)</span><span className="text-[11.5px] text-mute">수수료율</span></div>
+          <div className="p-5">{catRows.length ? <HBars rows={catRows} format={(v) => `${shortWon(v)}원`} /> : <p className="text-mute text-[13px] text-center py-6">{settlement ? '최근 8주 구매확정이 없어요' : '정산 통계를 불러오지 못했어요'}</p>}</div>
         </div>
       </div>
       <div className="panel mt-4 overflow-x-auto">
-        <div className="panel-head"><span className="panel-title">스토어 거래액 순위 (최근 8주)</span><Link to="/admin/stores" className="text-[12px] text-mute flex items-center gap-1">스토어 관리 <ArrowRight size={12} /></Link></div>
+        <div className="panel-head"><span className="panel-title">스토어 거래액 순위 (최근 8주 · 구매확정 · 상위 10)</span><Link to="/admin/stores" className="text-[12px] text-mute flex items-center gap-1">스토어 관리 <ArrowRight size={12} /></Link></div>
         <table className="tbl">
-          <thead><tr><th className="w-12">순위</th><th>스토어</th><th>카테고리</th><th className="text-right">거래액</th><th className="text-right">수수료 수익</th><th>등급</th><th>상태</th></tr></thead>
+          <thead><tr><th className="w-12">순위</th><th>스토어</th><th className="text-right">구매확정</th><th className="text-right">거래액</th><th className="text-right">수수료 수익</th></tr></thead>
           <tbody>
-            {storeRank.map(({ s, gross }, i) => (
-              <tr key={s.id}>
+            {storeRank.map((r, i) => (
+              <tr key={r.storeId}>
                 <td className="num font-bold">{i + 1}</td>
-                <td><Link to={`/admin/stores/${s.id}`} className="flex items-center gap-2 hover:underline"><span className="w-6 h-6 text-white text-[11px] font-bold flex items-center justify-center" style={{ background: s.color }}>{s.name[0]}</span>{s.name}</Link></td>
-                <td className="text-ink-2">{catById[s.cat]?.name}</td>
-                <td className="text-right num">{won(gross)}</td>
-                <td className="text-right num">{won(gross * (catById[s.cat]?.commission ?? 0))}</td>
-                <td>{s.grade}</td>
-                <td><StatusPill s={s.status} /></td>
+                <td className="font-semibold">{r.storeName ?? `스토어 ${r.storeId}`}</td>
+                <td className="text-right num">{comma(r.itemCount)}건</td>
+                <td className="text-right num">{won(r.salesAmt)}</td>
+                <td className="text-right num">{won(r.commissionAmt)}</td>
               </tr>
             ))}
+            {!storeRank.length && <tr><td colSpan={5} className="text-mute text-center py-6">{settlement ? '최근 8주 구매확정이 없어요' : '정산 통계를 불러오지 못했어요'}</td></tr>}
           </tbody>
         </table>
+        {settlement?.salesFrom && <p className="px-4 py-2 text-[11.5px] text-mute">{ymd(new Date(`${settlement.salesFrom}T00:00:00+09:00`))}부터 · 정산 데이터 기준 (거래액은 포인트 차감 전 상품주문 금액)</p>}
       </div>
     </div>
   );
