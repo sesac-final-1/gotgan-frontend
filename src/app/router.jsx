@@ -45,7 +45,7 @@ import AdminStoreDetailPage from '@/pages/admin/AdminStoreDetailPage';
 import AdminSettlementsPage from '@/pages/admin/AdminSettlementsPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage';
-import AdminReviewsPage from '@/pages/admin/AdminReviewsPage';
+import AdminReportsPage from '@/pages/admin/AdminReportsPage';
 import AdminCategoriesPage from '@/pages/admin/AdminCategoriesPage';
 
 // 전체 라우트 — 단일 파일 (컨벤션 4-3). 영역 · 도메인별 주석 구획 안에서만 추가, catch-all(*)은 항상 맨 마지막
@@ -125,7 +125,7 @@ export const router = createBrowserRouter([
           { path: 'settlements', element: <AdminSettlementsPage /> },
           { path: 'users', element: <AdminUsersPage /> },
           { path: 'users/:id', element: <AdminUserDetailPage /> },
-          { path: 'reviews', element: <AdminReviewsPage /> },
+          { path: 'reports', element: <AdminReportsPage /> },
           { path: 'categories', element: <AdminCategoriesPage /> },
         ],
       },

@@ -51,3 +51,11 @@ export const DOC_TYPES = [
   { value: 'BANK_COPY', label: '통장 사본' },
   { value: 'PRODUCT_PHOTO', label: '상품 사진' },
 ];
+
+// 신고 처리 — 대상마다 할 수 있는 조치 (backend docs/api/admin.md 4절). SUSPEND 만 기간(days) — 정지 기간 선택지는 SUSPEND_DURATIONS
+export const REPORT_ACTIONS = {
+  REVIEW: [{ value: 'BLIND', label: '블라인드' }, { value: 'UNBLIND', label: '블라인드 해제' }, { value: 'DISMISS', label: '기각 (조치 없음)' }],
+  USER: [{ value: 'SUSPEND', label: '이용정지' }, { value: 'UNSUSPEND', label: '정지 해제' }, { value: 'DISMISS', label: '기각 (조치 없음)' }],
+};
+export const REPORT_ACTION_LABEL = { BLIND: '블라인드', UNBLIND: '블라인드 해제', SUSPEND: '이용정지', UNSUSPEND: '정지 해제', DISMISS: '기각' };
+export const REPORT_STATUS_LABEL = { OPEN: '처리대기', RESOLVED: '조치완료', DISMISSED: '기각' };
