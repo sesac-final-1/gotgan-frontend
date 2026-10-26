@@ -2,7 +2,7 @@
 //   PAID(결제 완료) · CANCELLED(결제창 닫음) · FAILED(결제 실패 · 주문 취소) · PENDING(결과 모름) · REDIRECTED(결제사 페이지로 이동)
 // CANCELLED · 결제창 FAILED · PENDING 은 주문이 결제 대기로 남는다 — 15분 뒤 서버가 확정하거나 재고 · 포인트를 되돌린다 (ORD-07)
 import { confirmOrderPayment } from '@/features/payment/api/paymentApi';
-import { readPaymentRedirect, requestCardPayment } from '@/features/payment/portone';
+import { readPaymentRedirect, requestPortOnePayment } from '@/features/payment/portone';
 
 // 모바일 리다이렉트로 돌아올 곳 — 주문 완료 화면이 쿼리로 결과를 읽어 결제 확인을 이어서 부른다
 export const paymentRedirectUrl = (orderNo) =>
@@ -27,11 +27,11 @@ async function confirm(orderNo) {
   }
 }
 
-// created = 주문 생성 응답 { orderNo, status, payAmt, portonePaymentId, orderName }
+// created = 주문 생성 응답 { orderNo, status, payAmt, portonePaymentId, orderName } + 주문서에서 고른 payMethod(생략 = 카드)
 export async function payOrder(created) {
   const { orderNo } = created;
   if (created.payAmt === 0) return { status: 'PAID', orderNo, payAmt: 0, message: '' }; // 전액 포인트 — 주문 생성 때 이미 PAID, 결제창 없음
-  const result = await requestCardPayment({ ...created, redirectUrl: paymentRedirectUrl(orderNo) });
+  const result = await requestPortOnePayment({ ...created, redirectUrl: paymentRedirectUrl(orderNo) });
   if (!result) return { status: 'REDIRECTED', orderNo, message: '' };
   if (result.status !== 'APPROVED') return { ...result, orderNo };
   return confirm(orderNo);

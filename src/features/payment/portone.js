@@ -1,5 +1,6 @@
-// 포트원 결제창 — 담당 구지훈. 토스페이먼츠 V2 테스트 채널 · 카드만 (backend docs/api/payment.md 결정 11)
+// 포트원 결제창 — 담당 구지훈. 토스페이먼츠 V2 테스트 채널 · 카드 · 간편결제 (backend docs/api/payment.md 결정 11)
 import * as PortOne from '@portone/browser-sdk/v2';
+import { DEFAULT_PAY_METHOD } from '@/features/payment/constants';
 
 // 사용자가 결제창을 닫음 — PG 가 주는 코드 (토스페이먼츠 PAY_PROCESS_CANCELED)
 const CANCEL_PG_CODES = new Set(['PAY_PROCESS_CANCELED', 'USER_CANCEL']);
@@ -13,8 +14,9 @@ export function toPaymentResult(r) {
 }
 
 // paymentId 는 order 가 주는 portonePaymentId(pay-{orderNo}) — 금액 · 주문명도 주문 생성 응답 그대로 (서버 계산값).
+// payMethod = constants 의 PAY_METHODS 항목 (생략 = 카드). 간편결제는 easyPayProvider 로 그 결제사 창을 바로 띄운다
 // 모바일처럼 결제사 페이지로 이동하는 경우 SDK 가 undefined 를 주고 redirectUrl 로 돌아온다 → null
-export async function requestCardPayment({ portonePaymentId, payAmt, orderName, redirectUrl }) {
+export async function requestPortOnePayment({ portonePaymentId, payAmt, orderName, redirectUrl, payMethod = DEFAULT_PAY_METHOD }) {
   try {
     const response = await PortOne.requestPayment({
       storeId: import.meta.env.VITE_PORTONE_STORE_ID,
@@ -23,7 +25,8 @@ export async function requestCardPayment({ portonePaymentId, payAmt, orderName, 
       orderName,
       totalAmount: payAmt,
       currency: 'KRW',
-      payMethod: 'CARD',
+      payMethod: payMethod.payMethod,
+      ...(payMethod.easyPayProvider && { easyPay: { easyPayProvider: payMethod.easyPayProvider } }),
       redirectUrl,
     });
     return response ? toPaymentResult(response) : null;
