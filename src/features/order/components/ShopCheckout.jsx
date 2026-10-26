@@ -6,6 +6,7 @@ import { useCart } from '@/features/order/hooks/useCart';
 import { useCreateOrderMutation } from '@/features/order/hooks/useCreateOrderMutation';
 import { toOrderRequest } from '@/features/order/utils/orderRequest';
 import { usePayOrderMutation } from '@/features/payment/hooks/usePayOrderMutation';
+import { PAY_METHODS } from '@/features/payment/constants';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useMyAddressesQuery } from '@/features/user/hooks/useMyAddressesQuery';
 import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
@@ -16,7 +17,6 @@ import { toast } from '@/shared/stores/toastStore';
 import { toMap } from '@/shared/utils/collection';
 import { cx, won, comma } from '@/shared/utils/format';
 
-const PAY_METHODS = ['신용/체크카드', '곳간페이', '카카오페이', '네이버페이', '토스페이', '무통장입금'];
 const MEMO_OPTIONS = ['문 앞에 놓아주세요', '경비실에 맡겨주세요', '배송 전 연락 바랍니다'];
 const MEMO_CUSTOM = '직접 입력';
 
@@ -43,7 +43,7 @@ export default function ShopCheckout() {
   const addr = myAddresses.find((a) => a.id === addrId) ?? myAddresses[0];
   const [addrModal, setAddrModal] = useState(false);
   const [point, setPoint] = useState(0);
-  const [method, setMethod] = useState(PAY_METHODS[0]);
+  const [method, setMethod] = useState(PAY_METHODS[0].label);
   const [agree, setAgree] = useState(false);
   const base = totalsOf(groups);
   const maxUse = Math.min(myPointBalance, base.sale + base.ship);
@@ -68,7 +68,7 @@ export default function ShopCheckout() {
       toast(err.response?.data?.message ?? '주문하지 못했어요. 잠시 후 다시 시도해 주세요.');
       return;
     }
-    const r = await payOrder.mutateAsync(created);
+    const r = await payOrder.mutateAsync({ ...created, payMethod: PAY_METHODS.find((m) => m.label === method) });
     if (r.status === 'REDIRECTED') return; // 결제사 페이지로 이동 — 돌아오면 주문 완료 화면이 결제 확인
     if (r.status !== 'PAID') { toast(r.message); return; }
     clearChecked(); // TODO(이경석, 장바구니 API 연동 시): 서버가 결제 확정 때 비우므로 장바구니 쿼리 무효화로 교체
@@ -140,9 +140,9 @@ export default function ShopCheckout() {
           </Section>
 
           <Section n="04" title="결제수단">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {PAY_METHODS.map((m) => (
-                <button key={m} onClick={() => setMethod(m)} className={cx('h-12 border text-[14px]', method === m ? 'border-ink border-2 font-bold' : 'border-line-2 hover:border-ink')}>{m}</button>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {PAY_METHODS.map(({ label }) => (
+                <button key={label} onClick={() => setMethod(label)} className={cx('h-12 border text-[14px]', method === label ? 'border-ink border-2 font-bold' : 'border-line-2 hover:border-ink')}>{label}</button>
               ))}
             </div>
             {method === '신용/체크카드' && (
@@ -151,7 +151,6 @@ export default function ShopCheckout() {
                 <select className="field"><option>일시불</option><option>2개월 무이자</option><option>3개월 무이자</option></select>
               </div>
             )}
-            {method === '무통장입금' && <p className="mt-3 text-[13px] text-ink-2 bg-cream p-3">주문 후 24시간 이내 미입금 시 자동 취소됩니다. 가상계좌가 발급됩니다.</p>}
           </Section>
 
           <section className="border-t border-ink pt-5 text-[13px] space-y-2">

@@ -3,8 +3,9 @@ import * as PortOne from '@portone/browser-sdk/v2';
 import { createWrapper } from '@/test/queryWrapper';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { queryKeys } from '@/shared/api/queryKeys';
-import { readPaymentRedirect, requestCardPayment, toPaymentResult } from '@/features/payment/portone';
+import { readPaymentRedirect, requestPortOnePayment, toPaymentResult } from '@/features/payment/portone';
 import { finishRedirectPayment, payOrder, paymentRedirectUrl } from '@/features/payment/payOrder';
+import { PAY_METHODS } from '@/features/payment/constants';
 import { usePayOrderMutation } from '@/features/payment/hooks/usePayOrderMutation';
 import { useRedirectPaymentQuery } from '@/features/payment/hooks/useRedirectPaymentQuery';
 
@@ -28,11 +29,11 @@ describe('toPaymentResult — 결제창 응답 · 리다이렉트 쿼리 정리'
   });
 });
 
-describe('requestCardPayment — 포트원 SDK 호출', () => {
+describe('requestPortOnePayment — 포트원 SDK 호출', () => {
   it('주문 생성 응답 그대로 카드 · KRW 결제창, 응답을 결과로', async () => {
     PortOne.requestPayment.mockResolvedValue({ transactionType: 'PAYMENT', txId: 't', paymentId: CREATED.portonePaymentId });
 
-    const result = await requestCardPayment({ ...CREATED, redirectUrl: 'https://x/order/complete' });
+    const result = await requestPortOnePayment({ ...CREATED, redirectUrl: 'https://x/order/complete' });
 
     expect(PortOne.requestPayment).toHaveBeenCalledWith(expect.objectContaining({
       paymentId: 'pay-20261023-000001', orderName: '유기농 사과 외 1건', totalAmount: 64400,
@@ -41,12 +42,22 @@ describe('requestCardPayment — 포트원 SDK 호출', () => {
     expect(result.status).toBe('APPROVED');
   });
 
+  it('간편결제 — EASY_PAY + easyPayProvider 로 그 결제사 창을 바로, 카드는 easyPay 없이', async () => {
+    PortOne.requestPayment.mockResolvedValue({ paymentId: CREATED.portonePaymentId });
+
+    await requestPortOnePayment({ ...CREATED, payMethod: PAY_METHODS.find((m) => m.label === '카카오페이') });
+
+    expect(PortOne.requestPayment).toHaveBeenLastCalledWith(expect.objectContaining({ payMethod: 'EASY_PAY', easyPay: { easyPayProvider: 'KAKAOPAY' } }));
+    await requestPortOnePayment(CREATED);
+    expect(PortOne.requestPayment.mock.lastCall[0]).not.toHaveProperty('easyPay');
+  });
+
   it('리다이렉트 방식(undefined) → null, 결제창을 띄우기 전 예외 → FAILED', async () => {
     PortOne.requestPayment.mockResolvedValueOnce(undefined);
-    expect(await requestCardPayment(CREATED)).toBeNull();
+    expect(await requestPortOnePayment(CREATED)).toBeNull();
 
     PortOne.requestPayment.mockRejectedValueOnce(new Error('load failed'));
-    expect((await requestCardPayment(CREATED)).status).toBe('FAILED');
+    expect((await requestPortOnePayment(CREATED)).status).toBe('FAILED');
   });
 });
 
