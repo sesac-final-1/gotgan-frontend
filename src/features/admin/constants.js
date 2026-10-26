@@ -22,3 +22,18 @@ export function toUserStatusRequest({ suspend, duration, reason }) {
 
 // 상세의 정지 기간 표시 — 종료 시각이 없으면 영구
 export const suspensionLabel = (suspendedUntil, format) => (suspendedUntil ? `${format(suspendedUntil)}까지` : '영구');
+
+// 정산 주차 = 월 ~ 일(KST), API 는 ISO 주차("2026-W43" — 그 주 목요일이 속한 해의 몇째 주)
+export const isoWeek = (monday) => {
+  const thu = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 3);
+  const jan4 = new Date(thu.getFullYear(), 0, 4);
+  const firstThu = new Date(thu.getFullYear(), 0, 4 + 3 - ((jan4.getDay() + 6) % 7));
+  return `${thu.getFullYear()}-W${String(1 + Math.round((thu - firstThu) / (7 * 864e5))).padStart(2, '0')}`;
+};
+
+// 정산 관리 주차 선택 — 지난주부터 8주 (최신 순). 첫 항목이 기본값 = 서버의 week 생략과 같은 지난주
+export const recentWeeks = (today = new Date()) =>
+  Array.from({ length: 8 }, (_, i) => {
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7) - 7 * (i + 1));
+    return { key: isoWeek(start), start };
+  });

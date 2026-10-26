@@ -63,8 +63,37 @@ export const fetchAdminUserPoints = async (userId) =>
 export const changeUserStatus = async ({ userId, request }) =>
   toAdminUser((await axiosInstance.patch(`/api/admin/users/${userId}/status`, request)).data.data);
 
-// TODO(구지훈): GET /api/admin/settlements?week=
+// 스토어 목록 · 상세 · 대시보드의 8주 추이용 목업 — 스토어 API 로 바꿀 때 함께 교체. 정산 관리 화면은 아래 fetchAdminSettlementWeek
 export const fetchAdminSettlements = () => mockResolve(settlements);
+
+// 정산 — admin-service 가 settlement /internal/settlements 응답을 그대로 전달 (backend #94). 목업 필드 이름으로 바꿔 넘긴다
+const SETTLEMENT_STATUS_LABEL = { SCHEDULED: '지급예정', HELD: '지급보류', PAID: '지급완료' };
+export const toAdminSettlement = (s) => ({
+  id: s.id,
+  storeId: s.storeId,
+  storeName: s.storeName ?? String(s.storeId),
+  orders: s.itemCount,
+  carriedOver: s.carriedOverCount,
+  gross: s.salesAmt,
+  rate: s.salesAmt ? s.commissionAmt / s.salesAmt : 0, // 건마다 카테고리 수수료율이 달라 정산서 전체의 실효율
+  commission: s.commissionAmt,
+  pgFee: s.paymentFeeAmt,
+  payout: s.payoutAmt,
+  status: SETTLEMENT_STATUS_LABEL[s.status] ?? s.status,
+  holdReason: s.holdReason ?? '',
+  start: new Date(`${s.weekStart}T00:00:00+09:00`),
+});
+
+// GET /api/admin/settlements?week=2026-W43 — week 생략 = 지난주. 화면은 고른 주차만 받는다
+export const fetchAdminSettlementWeek = async (week) =>
+  (await axiosInstance.get('/api/admin/settlements', { params: { week } })).data.data.settlements.map(toAdminSettlement);
+
+// POST /api/admin/settlements/pay {ids} → {success[], failed[{id, code, message}]} — 건마다 따로 커밋
+export const paySettlements = async (ids) => (await axiosInstance.post('/api/admin/settlements/pay', { ids })).data.data;
+
+// PATCH /api/admin/settlements/{id}/hold {hold, reason} — hold=true 면 reason 필수
+export const holdSettlement = async ({ id, hold, reason }) =>
+  (await axiosInstance.patch(`/api/admin/settlements/${id}/hold`, { hold, reason })).data.data;
 
 // TODO(구지훈): GET /api/admin/reviews (검토 요청 · 블라인드 포함)
 export const fetchAdminReviews = () => mockResolve(reviews);
