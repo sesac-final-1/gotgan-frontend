@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Stars, Pill } from '@/shared/components/ui';
 import { MyPageHead } from '@/shared/layouts/MyPageLayout';
-import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
+import { useMyOrdersMockQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useMeQuery } from '@/features/user/hooks/useMeQuery';
@@ -13,7 +13,7 @@ import { cx, ymd } from '@/shared/utils/format';
 export default function MyReviews() {
   const [tab, setTab] = useState('todo');
   const [review, setReview] = useState(null);
-  const { data: orders = [] } = useMyOrdersQuery();
+  const { data: orders = [] } = useMyOrdersMockQuery();
   const { data: products = [] } = useProductsQuery();
   const { data: reviews = [] } = useReviewsQuery();
   const { data: me } = useMeQuery();

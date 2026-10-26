@@ -6,7 +6,7 @@ import { MyPageHead } from '@/shared/layouts/MyPageLayout';
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
-import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
+import { useMyOrdersMockQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import MyRefundBox from '@/features/order/components/MyRefundBox';
@@ -40,7 +40,7 @@ function buildColumns(onOpen) {
 export default function MyClaims() {
   const [type, setType] = useState('전체');
   const [open, setOpen] = useState(null);
-  const { data: orders = [], isLoading, isError } = useMyOrdersQuery();
+  const { data: orders = [], isLoading, isError } = useMyOrdersMockQuery();
   const { data: products = [] } = useProductsQuery();
   const { data: stores = [] } = useStoresQuery();
   const productById = useMemo(() => toMap(products), [products]);

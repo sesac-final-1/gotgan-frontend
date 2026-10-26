@@ -1,11 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
-import { fetchMyOrders } from '@/features/order/api/orderApi';
+import { fetchMyOrders, fetchMyOrdersMock } from '@/features/order/api/orderApi';
 
-// 내 주문 전체 — 담당 이경석. 화면은 이 훅만 쓴다 (API 교체 시 이 파일 · 화면은 그대로, api 파일만 수정)
+// 내 주문 전체 { statusCounts, orders } — 담당 이경석 (GET /api/orders)
 export function useMyOrdersQuery() {
   return useQuery({
     queryKey: queryKeys.order.my(),
     queryFn: () => fetchMyOrders(),
+  });
+}
+
+// TODO(이경석): 임시 — 클레임 내역(MyClaims) · 리뷰 작성 가능 목록(MyReviews · 마이페이지 배지)은 claim · reviewed 필드가 있는 목업. 클레임 목록 · 리뷰 API 가 나오면 삭제
+export function useMyOrdersMockQuery() {
+  return useQuery({
+    queryKey: queryKeys.order.myMock(),
+    queryFn: () => fetchMyOrdersMock(),
   });
 }
