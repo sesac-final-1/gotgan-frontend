@@ -45,6 +45,9 @@ export const queryKeys = {
   order: {
     all: ['order'],
     my: () => ['order', 'my'],
+    myOrder: (orderNo) => ['order', 'my', orderNo], // my() 아래라 목록을 무효화하면 상세 · 환불 예정액도 함께
+    claimPreview: (orderNo, params) => ['order', 'my', orderNo, 'claim-preview', params],
+    myMock: () => ['order', 'my-mock'], // 임시 — 클레임 내역 · 리뷰 작성 가능 목록 (API 가 나오면 삭제)
     sellerItems: (params) => ['order', 'seller', 'items', params ?? {}], // 서버 페이징 대상 (컨벤션 4-7)
     sellerBuyers: () => ['order', 'seller', 'buyers'], // 임시 — 응답에 작성자 · 구매자 요약이 들어오면 삭제
   },

@@ -16,7 +16,7 @@ import { useDecideApplicationMutation } from '@/features/admin/hooks/useDecideAp
 import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation } from '@/features/admin/hooks/useSettlementMutations';
 import { isoWeek, recentWeeks } from '@/features/admin/constants';
 import { useSaveCategoryMutation, useReserveCommissionMutation } from '@/features/admin/hooks/useCategoryMutations';
-import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
+import { useMyOrdersMockQuery, useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useSellerBuyersQuery } from '@/features/order/hooks/useSellerBuyersQuery';
 import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
@@ -35,7 +35,7 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
   useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
-  useMyOrdersQuery, useSellerBuyersQuery,
+  useMyOrdersMockQuery, useSellerBuyersQuery,
   useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery, useSellerSettlementsQuery,
   useSellerDailySalesQuery, useStoresQuery,
 };
@@ -52,8 +52,10 @@ const API_HOOKS = {
   useMeQuery: [{ userId: 4, name: '구매자1', grade: 'NORMAL', point: 0, totalSpent: 0, joinedAt: '2026-10-01T09:30:00+09:00' }, { id: 4 }],
   useMyPointsQuery: [{ balance: 0, history: [] }, { balance: 0, history: [] }],
   useMyAddressesQuery: [[{ id: 10, label: '집', main: true }], [{ id: 10, label: '집', main: true }]],
+  useMyOrdersQuery: [{ statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001', status: 'PAID', items: [] }] },
+    { statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001' }] }],
 };
-const API_HOOK_FNS = { useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery };
+const API_HOOK_FNS = { useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
