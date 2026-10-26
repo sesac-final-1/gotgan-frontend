@@ -14,7 +14,7 @@ import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQu
 import { ratingSummary } from '@/features/review/utils/ratingSummary';
 import { ymd, shortWon } from '@/shared/utils/format';
 
-const TABS = ['전체', '운영중', '휴면', '정지'];
+const TABS = ['전체', '운영중', '정지'];
 const NUM = { thClass: 'text-right', tdClass: 'text-right num', search: false };
 
 const COLUMNS = [

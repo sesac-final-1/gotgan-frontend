@@ -21,7 +21,7 @@ export const stores = [
   { id: 's2', name: '무드앤로우', slug: 'mood-and-row', cat: 'fashion', owner: '오세훈', bizNo: '000-00-00002', phone: '070-0000-0002', email: 'cs@moodrow.example.com', intro: '매일 입는 옷을 더 오래. 두꺼운 원단, 단정한 핏의 베이직 웨어.', since: daysAgo(890), grade: '빅파워', followers: 42110, color: '#2b2b2b', cover: cover(2), status: '운영중', courier: '롯데택배', shipFee: 0, freeOver: 0, dispatch: '결제 후 1~2영업일 출고' },
   { id: 's3', name: '걸음상회', slug: 'georum', cat: 'shoes-bags', owner: '최민재', bizNo: '000-00-00003', phone: '051-0000-0003', email: 'georum@georum.example.com', intro: '부산 신발 공장 3대째. 오래 걸어도 편한 가죽 신발과 가방.', since: daysAgo(1320), grade: '빅파워', followers: 30560, color: '#7a4b2a', cover: cover(3), status: '운영중', courier: '우체국택배', shipFee: 3000, freeOver: 70000, dispatch: '주문 제작 상품 3~5영업일' },
   { id: 's4', name: '토담공방', slug: 'todam', cat: 'living', owner: '이수아', bizNo: '000-00-00004', phone: '063-0000-0004', email: 'todam.pottery@example.com', intro: '전주 한옥마을 옆 작은 도자기 공방. 손으로 빚어 하나하나 모양이 다릅니다.', since: daysAgo(455), grade: '파워', followers: 9870, color: '#8c6d4f', cover: cover(4), status: '운영중', courier: 'CJ대한통운', shipFee: 3500, freeOver: 50000, dispatch: '결제 후 2영업일 출고 (파손 대비 3중 포장)' },
-  { id: 's5', name: '볕드는집', slug: 'byeot-house', cat: 'living', owner: '정다은', bizNo: '000-00-00005', phone: '031-0000-0005', email: 'house@byeot.example.com', intro: '햇볕 잘 드는 방을 위한 조명과 패브릭.', since: daysAgo(301), grade: '새싹', followers: 4120, color: '#c08a2e', cover: cover(5), status: '휴면', courier: '한진택배', shipFee: 3000, freeOver: 40000, dispatch: '평일 13시 이전 결제 시 당일 출고' },
+  { id: 's5', name: '볕드는집', slug: 'byeot-house', cat: 'living', owner: '정다은', bizNo: '000-00-00005', phone: '031-0000-0005', email: 'house@byeot.example.com', intro: '햇볕 잘 드는 방을 위한 조명과 패브릭.', since: daysAgo(301), grade: '새싹', followers: 4120, color: '#c08a2e', cover: cover(5), status: '정지', courier: '한진택배', shipFee: 3000, freeOver: 40000, dispatch: '평일 13시 이전 결제 시 당일 출고' },
   { id: 's6', name: '산골농부 박씨네', slug: 'park-farm', cat: 'food', owner: '박영철', bizNo: '000-00-00006', phone: '064-0000-0006', email: 'parkfarm@example.com', intro: '제주 서귀포에서 3대째 귤 농사를 짓습니다. 따는 날 바로 보내드려요.', since: daysAgo(980), grade: '빅파워', followers: 51200, color: '#d0701f', cover: cover(6), status: '운영중', courier: '우체국택배', shipFee: 0, freeOver: 0, dispatch: '수확 후 당일 발송 (일요일 휴무)' },
   { id: 's7', name: '로스터리 하루', slug: 'haru-roastery', cat: 'food', owner: '윤하루', bizNo: '000-00-00007', phone: '02-0000-0007', email: 'roast@haru.example.com', intro: '월·목 로스팅, 화·금 발송. 볶은 지 3일 이내 원두만 보냅니다.', since: daysAgo(540), grade: '파워', followers: 12890, color: '#3d2b22', cover: cover(7), status: '운영중', courier: 'CJ대한통운', shipFee: 3000, freeOver: 30000, dispatch: '화·금 발송' },
   { id: 's8', name: '피부정원', slug: 'skin-garden', cat: 'beauty', owner: '강예린', bizNo: '000-00-00008', phone: '02-0000-0008', email: 'garden@skingarden.example.com', intro: '성분은 줄이고 효과는 그대로. 민감 피부를 위한 저자극 스킨케어.', since: daysAgo(720), grade: '파워', followers: 23400, color: '#6f8f7a', cover: cover(8), status: '운영중', courier: '롯데택배', shipFee: 2500, freeOver: 30000, dispatch: '결제 후 1영업일 출고' },
@@ -88,7 +88,7 @@ export const products = [
   P({ id: 'p703', storeId: 's7', cat: 'food', sub: '커피', name: '콜드브루 원액 500ml × 2', price: 26000, rating: 4.6, reviews: 770, sold: 4100, stock: 0, status: '품절', created: daysAgo(100), options: [], tags: ['냉장배송'], material: '커피추출액 100%', origin: '국내 제조' }),
   P({ id: 'p704', storeId: 's7', cat: 'food', sub: '커피', name: '스테인리스 구스넥 드립 케틀 600ml', price: 54000, discount: 0.15, rating: 4.8, reviews: 410, sold: 1500, stock: 60, created: daysAgo(50), options: [{ name: '컬러', values: ['실버', '매트블랙'] }], tags: ['무료배송'], material: 'STS304', origin: '대만' }),
 
-  // s8 피부정원 (휴면 스토어)
+  // s8 피부정원
   P({ id: 'p801', storeId: 's8', cat: 'beauty', sub: '스킨케어', name: '시카 9 진정 토너 200ml', price: 24000, discount: 0.2, rating: 4.7, reviews: 4410, sold: 22000, stock: 800, created: daysAgo(420), options: [{ name: '구성', values: ['단품', '1+1'] }], tags: ['베스트'], material: '병풀추출물 외', origin: '대한민국' }),
   P({ id: 'p802', storeId: 's8', cat: 'beauty', sub: '스킨케어', name: '세라마이드 장벽 수분크림 50ml', price: 32000, discount: 0.1, rating: 4.8, reviews: 2890, sold: 13100, stock: 600, created: daysAgo(380), options: [], tags: [], material: '세라마이드NP 외', origin: '대한민국' }),
   P({ id: 'p803', storeId: 's8', cat: 'beauty', sub: '바디·핸드', name: '시어버터 핸드크림 50ml 3입', price: 19000, rating: 4.6, reviews: 1320, sold: 9400, stock: 900, created: daysAgo(150), options: [{ name: '향', values: ['무향', '베르가못', '라벤더'] }], tags: ['선물포장'], material: '시어버터 외', origin: '대한민국' }),
@@ -103,7 +103,7 @@ export const products = [
 ];
 export const productById = Object.fromEntries(products.map((p) => [p.id, p]));
 
-/** 쇼핑몰에 노출되는 상품: 판매중지 상품 & 휴면/정지 스토어 상품 제외 */
+/** 쇼핑몰에 노출되는 상품: 판매중지 상품 & 운영중이 아닌(정지 · 폐점) 스토어 상품 제외 */
 export const visibleProducts = products.filter(
   (p) => p.status !== '판매중지' && storeById[p.storeId].status === '운영중',
 );
