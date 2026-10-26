@@ -37,3 +37,17 @@ export const recentWeeks = (today = new Date()) =>
     const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7) - 7 * (i + 1));
     return { key: isoWeek(start), start };
   });
+
+// 입점 심사 — store 내부 API 값 → 화면 라벨 (store.md 2 · 3절)
+export const APPLICATION_STATUS_LABEL = { PENDING: '심사대기', SUPPLEMENT: '보완요청', APPROVED: '승인', REJECTED: '반려' };
+export const BIZ_TYPE_LABEL = { INDIVIDUAL: '개인', CORPORATE: '법인' };
+export const EXPECTED_SALES_LABEL = { UNDER_5M: '월 500만원 미만', FROM_5M_TO_20M: '월 500만 ~ 2,000만원', FROM_20M_TO_100M: '월 2,000만 ~ 1억원', OVER_100M: '월 1억원 이상' };
+// 처리자는 종류만 내려온다 — 관리자 개인 이름은 저장하지 않음 (store.md 관리자 공통)
+export const ACTOR_LABEL = { APPLICANT: '신청자', ADMIN: '곳간 운영팀', SYSTEM: '자동 처리', SELLER: '판매자' };
+// 서류 종류 — 보완요청 requestedDocs 와 같은 값 (상품 사진은 3~10장)
+export const DOC_TYPES = [
+  { value: 'BUSINESS_REG', label: '사업자등록증' },
+  { value: 'ECOMMERCE_REG', label: '통신판매업 신고증' },
+  { value: 'BANK_COPY', label: '통장 사본' },
+  { value: 'PRODUCT_PHOTO', label: '상품 사진' },
+];

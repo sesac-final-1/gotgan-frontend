@@ -22,7 +22,7 @@ export const SCREENS = [
     ['/seller/settlements', '정산 내역'], ['/seller/store', '스토어 설정'],
   ]],
   ['스토어 관리자', [
-    ['/admin', '운영 대시보드'], ['/admin/applications', '입점 심사 목록'], ['/admin/applications/AP-2609-031', '입점 심사 상세'], ['/admin/stores', '스토어 관리'],
+    ['/admin', '운영 대시보드'], ['/admin/applications', '입점 심사 목록'], ['/admin/applications/1', '입점 심사 상세'], ['/admin/stores', '스토어 관리'],
     ['/admin/stores/s5', '스토어 상세 (정지)'], ['/admin/settlements', '정산 관리'], ['/admin/users', '회원 관리'], ['/admin/users/u11', '회원 상세 (정지)'],
     ['/admin/users/u1', '회원 상세 (포인트 · 등급)'], ['/admin/reviews', '리뷰 관리'], ['/admin/categories', '카테고리 · 수수료'],
   ]],

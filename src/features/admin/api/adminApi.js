@@ -4,20 +4,13 @@ import { mockResolve } from '@/mocks/mockApi';
 import { DEFAULT_AVATAR } from '@/features/user/constants';
 import { toPointRow } from '@/features/user/api/userApi';
 import { stores, products } from '@/mocks/fixtures/catalog';
-import { applications } from '@/mocks/fixtures/people';
 import { settlements, platformDaily } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
-import { applicationHistory } from '@/mocks/fixtures/applicationHistory';
+import { APPLICATION_STATUS_LABEL, BIZ_TYPE_LABEL, EXPECTED_SALES_LABEL, ACTOR_LABEL, DOC_TYPES } from '@/features/admin/constants';
 
 // GET /api/admin/dashboard — settlement · order 통계 조합, 한 곳이 실패하면 그 영역 null + unavailable[] (backend #95)
 // 일별 거래액(platformDaily)은 내부 통계 API 가 없어 목업 그대로 — order 일별 통계가 생기면 교체
 export const fetchAdminDashboard = async () => ({ ...(await axiosInstance.get('/api/admin/dashboard')).data.data, platformDaily });
-
-// TODO(구지훈): GET /api/admin/applications (전체 1회 로드 — 화면에서 검색 · 정렬, 컨벤션 4-7)
-export const fetchApplications = () => mockResolve(applications);
-
-// TODO(구지훈 · 박지연): GET /api/admin/applications/history — store-service store_application_history (10/15 추가)
-export const fetchApplicationHistory = () => mockResolve(applicationHistory);
 
 // TODO(구지훈): GET /api/admin/stores
 export const fetchAdminStores = () => mockResolve(stores);
@@ -133,12 +126,51 @@ export const reserveCommissions = async (rows) => (await axiosInstance.put('/api
 // TODO(구지훈): GET /api/admin/products (스토어별 상품 · 상태 — 상품 수 · 상세 표 · 리뷰 상품명)
 export const fetchAdminProducts = () => mockResolve(products);
 
-// TODO(구지훈): PATCH /api/admin/applications/{id} { status, reason } → store-service 상태 변경 + 이력 기록 (승인 시 StoreApproved 발행)
-// 목업: 메모리의 목업 데이터를 직접 바꾸고 이력을 한 줄 추가 (새로고침하면 초기화)
-export const decideApplication = ({ id, status, reason }) => {
-  const app = applications.find((a) => a.id === id);
-  const from = app.status;
-  Object.assign(app, { status, decided: new Date() });
-  applicationHistory.unshift({ id: `AH-${Date.now()}`, appId: id, storeName: app.storeName, at: new Date(), from, to: status, by: '곳간 운영팀 · 정다은', reason });
-  return mockResolve({ id, status });
-};
+// 입점 심사 — admin-service 가 store /internal/applications 응답 + categoryName 을 그대로 전달 (backend #98, store.md 3 ~ 7절)
+const appStatus = (v) => (v ? APPLICATION_STATUS_LABEL[v] ?? v : null);
+const DOC_LABEL = Object.fromEntries(DOC_TYPES.map((d) => [d.value, d.label]));
+// 소개는 판매자가 쓴 HTML — 관리자 화면은 태그를 빼고 글자만 보여 준다 (innerHTML 로 넣지 않음)
+const htmlText = (html) => (html ? new DOMParser().parseFromString(html, 'text/html').body.textContent.trim() : '');
+
+export const toApplicationRow = (r) => ({
+  id: String(r.applicationId), // 라우트 /admin/applications/:id
+  no: r.applicationNo,
+  storeName: r.storeName,
+  owner: r.ownerName,
+  categoryId: r.categoryId,
+  catName: r.categoryName ?? String(r.categoryId),
+  bizType: BIZ_TYPE_LABEL[r.bizType] ?? r.bizType,
+  expected: EXPECTED_SALES_LABEL[r.expectedMonthlySales] ?? '-',
+  applied: toDate(r.submittedAt),
+  status: appStatus(r.status),
+});
+
+export const toApplication = (r) => ({
+  ...toApplicationRow(r),
+  note: r.statusReason ?? '', // 보완요청 · 반려 사유
+  storeId: r.storeId,
+  companyName: r.companyName,
+  bizNo: r.bizRegNo,
+  ecomNo: r.ecommerceRegNo,
+  phone: r.managerPhone,
+  email: r.managerEmail,
+  address: r.businessAddress,
+  slug: r.slug,
+  intro: htmlText(r.intro),
+  products: r.representativeProducts ?? [],
+  channel: r.salesChannel ?? '-',
+  account: r.settlementAccount,
+  documents: (r.documents ?? []).map((d) => ({ ...d, label: DOC_LABEL[d.docType] ?? d.docType })),
+  history: (r.history ?? []).map((h) => ({ from: appStatus(h.fromStatus), to: appStatus(h.toStatus), by: ACTOR_LABEL[h.actor] ?? h.actor, reason: h.reason ?? '', at: toDate(h.changedAt) })),
+  sameBizRegNo: { applications: r.sameBizRegNo?.applications ?? [], stores: r.sameBizRegNo?.stores ?? [] },
+});
+
+// GET /api/admin/applications — 전체 배열(페이징 없음), 탭 · 검색 · 정렬은 화면에서 (컨벤션 4-7)
+export const fetchApplications = async () => (await axiosInstance.get('/api/admin/applications')).data.data.map(toApplicationRow);
+
+// GET /api/admin/applications/{id} — 서류 링크는 presigned 10분, 만료되면 상세를 다시 조회
+export const fetchApplication = async (id) => toApplication((await axiosInstance.get(`/api/admin/applications/${id}`)).data.data);
+
+// PATCH /api/admin/applications/{id}/approve (본문 없음) · /reject {reason} · /supplement {message, requestedDocs[]}
+export const decideApplication = async ({ id, action, body }) =>
+  (await axiosInstance.patch(`/api/admin/applications/${id}/${action}`, body)).data.data;

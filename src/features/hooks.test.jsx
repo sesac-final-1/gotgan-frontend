@@ -10,7 +10,7 @@ import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlem
 import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
 import { useAdminUserPointsQuery } from '@/features/admin/hooks/useAdminUserPointsQuery';
 import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
-import { useApplicationHistoryQuery } from '@/features/admin/hooks/useApplicationHistoryQuery';
+import { useApplicationQuery } from '@/features/admin/hooks/useApplicationQuery';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
 import { useDecideApplicationMutation } from '@/features/admin/hooks/useDecideApplicationMutation';
 import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation } from '@/features/admin/hooks/useSettlementMutations';
@@ -35,13 +35,16 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
   useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
-  useApplicationHistoryQuery, useApplicationsQuery, useMyOrdersQuery, useSellerBuyersQuery,
+  useMyOrdersQuery, useSellerBuyersQuery,
   useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery, useSellerSettlementsQuery,
   useSellerDailySalesQuery, useStoresQuery,
 };
 const OBJECT_HOOKS = { useSellerPendingQuery, useMyStoreQuery };
 // 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
 const API_HOOKS = {
+  useApplicationsQuery: [[{ applicationId: 27, applicationNo: 'AP-2610-027', storeName: '곳간상회', ownerName: '홍길동', bizType: 'INDIVIDUAL',
+    categoryId: 1, categoryName: '식품', expectedMonthlySales: 'FROM_5M_TO_20M', status: 'PENDING', submittedAt: '2026-10-22T14:05:11+09:00' }],
+  [{ id: '27', no: 'AP-2610-027', owner: '홍길동', catName: '식품', bizType: '개인', expected: '월 500만 ~ 2,000만원', status: '심사대기' }]],
   useAdminDashboardQuery: [{ settlement: null, order: { totalTradeAmt: 662000, orderCount: 14 }, unavailable: ['settlement'] },
     { settlement: null, order: { orderCount: 14 }, unavailable: ['settlement'] }],
   useAdminUsersQuery: [{ content: [{ userId: 4, name: '구매자1', status: 'SUSPENDED', totalSpent: 0, joinedAt: '2026-10-01T09:30:00+09:00' }], hasNext: false },
@@ -50,7 +53,7 @@ const API_HOOKS = {
   useMyPointsQuery: [{ balance: 0, history: [] }, { balance: 0, history: [] }],
   useMyAddressesQuery: [[{ id: 10, label: '집', main: true }], [{ id: 10, label: '집', main: true }]],
 };
-const API_HOOK_FNS = { useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery };
+const API_HOOK_FNS = { useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
@@ -114,22 +117,42 @@ describe('조회 훅', () => {
   });
 });
 
-describe('입점 처리 mutation', () => {
-  it('보완요청 → 신청 상태 변경 · 이력 1줄 추가 · 목록 다시 불러오기', async () => {
+describe('입점 심사 (store 계약 — 상세 · 승인 · 반려 · 보완요청)', () => {
+  it('상세 → 소개 HTML 은 글자만 · 서류 라벨 · 이력 처리자 · 같은 사업자번호', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: {
+      applicationId: 27, applicationNo: 'AP-2610-027', status: 'SUPPLEMENT', statusReason: '사본이 흐립니다', categoryId: 1, categoryName: '식품',
+      bizType: 'CORPORATE', intro: '<p>리넨 <b>의류</b><img src=x onerror="alert(1)"></p>', settlementAccount: { bank: '국민', number: '0', holder: '홍길동' },
+      documents: [{ documentId: 101, docType: 'ECOMMERCE_REG', current: true, url: 'https://s3/doc' }],
+      history: [{ fromStatus: 'PENDING', toStatus: 'SUPPLEMENT', actor: 'ADMIN', reason: '사본이 흐립니다', changedAt: '2026-10-23T10:00:00+09:00' }],
+      sameBizRegNo: { applications: [{ applicationId: 9 }], stores: [] },
+    } } });
+    try {
+      expect(await load(useApplicationQuery, '27')).toMatchObject({
+        id: '27', status: '보완요청', note: '사본이 흐립니다', bizType: '법인', intro: '리넨 의류',
+        documents: [{ documentId: 101, label: '통신판매업 신고증' }],
+        history: [{ from: '심사대기', to: '보완요청', by: '곳간 운영팀', reason: '사본이 흐립니다' }],
+        sameBizRegNo: { applications: [{ applicationId: 9 }], stores: [] },
+      });
+      expect(get).toHaveBeenCalledWith('/api/admin/applications/27');
+    } finally {
+      get.mockRestore();
+    }
+  });
+
+  it('승인 · 반려 · 보완요청은 PATCH /{id}/{action} — 끝나면 목록 · 상세 다시 불러오기', async () => {
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { applicationId: 27 } } });
     const { client, Wrapper } = createWrapper();
-    const apps = await load(useApplicationsQuery);
-    const before = await load(useApplicationHistoryQuery);
-    const target = apps.find((a) => a.status === '심사대기');
     const invalidate = vi.spyOn(client, 'invalidateQueries');
-
-    const { result } = renderHook(() => useDecideApplicationMutation(), { wrapper: Wrapper });
-    await act(() => result.current.mutateAsync({ id: target.id, status: '보완요청', reason: '통장 사본 재제출' }));
-
-    const after = await load(useApplicationHistoryQuery);
-    expect(after).toHaveLength(before.length + 1);
-    expect(after[0]).toMatchObject({ appId: target.id, from: '심사대기', to: '보완요청', reason: '통장 사본 재제출' });
-    expect((await load(useApplicationsQuery)).find((a) => a.id === target.id).status).toBe('보완요청');
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'applications'] });
+    try {
+      const { result } = renderHook(() => useDecideApplicationMutation(), { wrapper: Wrapper });
+      await act(() => result.current.mutateAsync({ id: '27', action: 'approve' }));
+      expect(patch).toHaveBeenCalledWith('/api/admin/applications/27/approve', undefined);
+      await act(() => result.current.mutateAsync({ id: '27', action: 'supplement', body: { message: '사본 재제출', requestedDocs: ['ECOMMERCE_REG'] } }));
+      expect(patch).toHaveBeenCalledWith('/api/admin/applications/27/supplement', { message: '사본 재제출', requestedDocs: ['ECOMMERCE_REG'] });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'applications'] });
+    } finally {
+      patch.mockRestore();
+    }
   });
 });
 

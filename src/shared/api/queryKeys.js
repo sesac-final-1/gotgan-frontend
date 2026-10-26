@@ -7,7 +7,6 @@ export const queryKeys = {
     dashboard: () => ['admin', 'dashboard'],
     applications: () => ['admin', 'applications'],
     application: (id) => ['admin', 'applications', id],
-    applicationHistory: () => ['admin', 'applications', 'history'],
     stores: () => ['admin', 'stores'],
     users: () => ['admin', 'users'],
     user: (userId) => ['admin', 'users', userId], // users() 아래라 목록을 무효화하면 상세도 함께
