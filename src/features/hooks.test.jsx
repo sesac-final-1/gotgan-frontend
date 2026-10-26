@@ -38,16 +38,18 @@ const LIST_HOOKS = {
   useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery, useSellerSettlementsQuery,
   useSellerDailySalesQuery, useStoresQuery,
 };
-const OBJECT_HOOKS = { useAdminDashboardQuery, useSellerPendingQuery, useMyStoreQuery };
+const OBJECT_HOOKS = { useSellerPendingQuery, useMyStoreQuery };
 // 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
 const API_HOOKS = {
+  useAdminDashboardQuery: [{ settlement: null, order: { totalTradeAmt: 662000, orderCount: 14 }, unavailable: ['settlement'] },
+    { settlement: null, order: { orderCount: 14 }, unavailable: ['settlement'] }],
   useAdminUsersQuery: [{ content: [{ userId: 4, name: '구매자1', status: 'SUSPENDED', totalSpent: 0, joinedAt: '2026-10-01T09:30:00+09:00' }], hasNext: false },
     [{ id: '4', name: '구매자1', status: '이용정지' }]],
   useMeQuery: [{ userId: 4, name: '구매자1', grade: 'NORMAL', point: 0, totalSpent: 0, joinedAt: '2026-10-01T09:30:00+09:00' }, { id: 4 }],
   useMyPointsQuery: [{ balance: 0, history: [] }, { balance: 0, history: [] }],
   useMyAddressesQuery: [[{ id: 10, label: '집', main: true }], [{ id: 10, label: '집', main: true }]],
 };
-const API_HOOK_FNS = { useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery };
+const API_HOOK_FNS = { useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();

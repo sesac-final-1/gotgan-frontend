@@ -25,10 +25,6 @@ export default function AdminDashboard() {
   const catById = useMemo(() => toMap(categories), [categories]);
   const platformDaily = useMemo(() => dash?.platformDaily ?? [], [dash]);
 
-  const lastWeek = useMemo(
-    () => (settlements.length ? settlements.filter((s) => s.start.getTime() === settlements[0].start.getTime()) : []),
-    [settlements],
-  );
   const catRows = useMemo(() => {
     const storeCat = Object.fromEntries(stores.map((s) => [s.id, s.cat]));
     return categories.map((c) => ({
@@ -44,33 +40,32 @@ export default function AdminDashboard() {
 
   if (isLoading || platformDaily.length < 2) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
 
-  const today = platformDaily.at(-1), yday = platformDaily.at(-2);
-  const gmv = platformDaily.reduce((a, d) => a + d.amount, 0);
-  const revenue = lastWeek.reduce((a, s) => a + s.commission, 0);
+  const { settlement, order } = dash; // 영역이 실패하면 null — 숫자 대신 '–'
+  const count = (v) => v ?? '–';
   const todo = [
     ['입점 심사 대기', apps.filter((a) => a.status === '심사대기').length, '/admin/applications'],
     ['보완 요청 중', apps.filter((a) => a.status === '보완요청').length, '/admin/applications'],
-    ['정산 지급 승인', lastWeek.filter((s) => s.status === '지급예정').length, '/admin/settlements'],
-    ['지급 보류', settlements.filter((s) => s.status === '지급보류').length, '/admin/settlements'],
+    ['정산 지급 승인', count(settlement?.scheduledCount), '/admin/settlements'],
+    ['지급 보류', count(settlement?.heldCount), '/admin/settlements'],
     ['리뷰 검토', reviews.filter((r) => r.flag && !r.blinded).length, '/admin/reviews'],
     ['이용정지 회원', users.filter((u) => u.status === '이용정지').length, '/admin/users'],
   ];
   return (
     <div>
-      <PageHead title="운영 대시보드" desc="2026.10.01 (목) 10:00 기준 · 거래액은 결제 기준, 수수료 수익은 구매확정 기준" />
+      <PageHead title="운영 대시보드" desc="거래액은 결제 기준, 수수료 수익 · 지급액은 정산서 기준" />
       <div className="panel grid grid-cols-3 md:grid-cols-6">
         {todo.map(([k, n, to], i) => (
           <Link key={k} to={to} className={cx('px-4 py-4 hover:bg-cream border-line', i % 3 && 'border-l', i >= 3 && 'border-t md:border-t-0', i % 6 && 'md:border-l')}>
             <div className="text-[12.5px] text-ink-2">{k}</div>
-            <div className={cx('mt-1 text-[24px] font-bold num', n ? 'text-point' : 'text-line-2')}>{n}</div>
+            <div className={cx('mt-1 text-[24px] font-bold num', n && n !== '–' ? 'text-point' : 'text-line-2')}>{n}</div>
           </Link>
         ))}
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
-        <Kpi label="오늘 거래액 (GMV)" value={shortWon(today.amount)} unit="원" delta={((today.amount - yday.amount) / yday.amount) * 100} sub="전일 대비" />
-        <Kpi label="최근 30일 거래액" value={shortWon(gmv)} unit="원" delta={8.7} sub="직전 30일 대비" />
-        <Kpi label="지난주 수수료 수익" value={comma(revenue / 10000)} unit="만원" sub="판매수수료 (결제수수료 제외)" />
-        <Kpi label="운영 스토어 / 회원" value={`${stores.filter((s) => s.status === '운영중').length}`} unit={`곳 · ${comma(48210)}명`} sub="신규 회원 오늘 +128" />
+        <Kpi label="누적 거래액 (GMV)" value={order ? shortWon(order.totalTradeAmt) : '–'} unit="원" sub={order ? `결제 완료 주문 ${comma(order.orderCount)}건` : '주문 통계를 불러오지 못했어요'} />
+        <Kpi label="이번 달 수수료 수익" value={settlement ? comma(settlement.commissionRevenueThisMonth / 10000) : '–'} unit="만원" sub="판매수수료 (결제수수료 제외)" />
+        <Kpi label="지급 예정 · 보류" value={settlement ? shortWon(settlement.scheduledAmt) : '–'} unit="원" sub={settlement ? `보류 ${won(settlement.heldAmt)} · 이번 달 지급 ${shortWon(settlement.paidThisMonthAmt)}원` : '정산 통계를 불러오지 못했어요'} />
+        <Kpi label="운영 스토어 / 회원" value={`${stores.filter((s) => s.status === '운영중').length}`} unit={`곳 · ${comma(users.length)}명`} />
       </div>
       <div className="grid xl:grid-cols-[1fr_360px] gap-4 mt-4">
         <div className="panel">

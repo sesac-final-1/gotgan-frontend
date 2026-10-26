@@ -9,8 +9,9 @@ import { settlements, platformDaily } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
 import { applicationHistory } from '@/mocks/fixtures/applicationHistory';
 
-// TODO(구지훈): GET /api/admin/dashboard — 조합 · 부분 응답 (가이드라인 03장)
-export const fetchAdminDashboard = () => mockResolve({ platformDaily });
+// GET /api/admin/dashboard — settlement · order 통계 조합, 한 곳이 실패하면 그 영역 null + unavailable[] (backend #95)
+// 일별 거래액(platformDaily)은 내부 통계 API 가 없어 목업 그대로 — order 일별 통계가 생기면 교체
+export const fetchAdminDashboard = async () => ({ ...(await axiosInstance.get('/api/admin/dashboard')).data.data, platformDaily });
 
 // TODO(구지훈): GET /api/admin/applications (전체 1회 로드 — 화면에서 검색 · 정렬, 컨벤션 4-7)
 export const fetchApplications = () => mockResolve(applications);
