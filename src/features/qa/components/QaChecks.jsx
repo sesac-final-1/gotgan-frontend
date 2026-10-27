@@ -1,4 +1,5 @@
-// 임시 점검 화면 (/qa) — 담당 구지훈. 화면 연결이 아직 안 된 실제 API 를 직접 눌러 보고, 이 화면 안에서 생긴 CSP 위반을 모아 보여 준다
+// 임시 점검 화면 (/qa) — 담당 구지훈, 팀원 공용. 화면 연결이 아직 안 된 실제 API 를 직접 눌러 보고, 이 화면 안에서 생긴 CSP 위반을 모아 보여 준다
+// 점검 칸 추가 방법은 QaGuide(화면 맨 아래)
 // TODO(구지훈): 장바구니 · 리뷰 · 스토어 화면이 실제 API 로 바뀌면 이 화면과 /qa 경로를 지운다 (시연 전 삭제)
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
@@ -8,6 +9,8 @@ import { usePayOrderMutation } from '@/features/payment/hooks/usePayOrderMutatio
 import { PAY_METHODS } from '@/features/payment/constants';
 import { useMyAddressesQuery } from '@/features/user/hooks/useMyAddressesQuery';
 import ReportModal from '@/features/report/components/ReportModal';
+import ApiConsole from '@/features/qa/components/ApiConsole';
+import QaGuide from '@/features/qa/components/QaGuide';
 import { useAdminStoreProductsQuery } from '@/features/admin/hooks/useAdminStoreProductsQuery';
 import { useBlockProductMutation } from '@/features/admin/hooks/useBlockProductMutation';
 import { PostcodeSearch } from '@/shared/components/common/PostcodeSearch';
@@ -49,6 +52,8 @@ export default function QaChecks() {
       <PostcodeCheck />
       {(has(user, 'BUYER') || has(user, 'SELLER')) && <ReportCheck />}
       {has(user, 'ADMIN') && <BlockCheck />}
+      {user && <ApiConsole />}
+      <QaGuide />
     </div>
   );
 }
