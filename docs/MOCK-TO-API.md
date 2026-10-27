@@ -84,6 +84,19 @@ export function useConfirmOrderItemsMutation() {
 `GET /api/carts` + 담기 · 수량 · 선택 · 삭제(`POST · PATCH · DELETE /api/carts/items`). 반환 `{ cart, lines, cartCount, addToCart(items), setQty, toggleLine, toggleAll, removeLines }` — 필드는 API 이름(`productOptionId · quantity · checked · lineAmt`, 스토어 묶음 `stores[]`).
 상품 상세의 담기는 구매자 상품 API(옵션 ID)가 나오면 연결 (`ShopProductDetail` TODO).
 
+### 알림 · 채팅 — 처음부터 실제 API (목업 없음, 10/27 · 구지훈)
+
+교체할 것이 없다 — `mocks/` 를 쓰지 않고 처음부터 실제 API 로 만들었다.
+
+| 기능 | api · 훅 | 화면 · 경로 | 계약 |
+|---|---|---|---|
+| 알림 센터 | `notification/api/notificationApi.js` · `useNotificationsQuery` · `useUnreadCountQuery` · `useReadNotificationMutation` · `useNotificationStream` | 헤더 · 판매자센터 · 관리자 콘솔의 알림 벨 `NotificationBell` (목록 · 안 읽은 수 · 모두 읽음 · 새 알림 토스트) | backend `docs/api/admin.md` 5절 |
+| 1:1 채팅 | `chat/api/chatApi.js` · `useChatQueries` · `useChatRoomSocket` · `chat/realtime/chatSocket.js` | `/mypage/chats(/:roomId)` '1:1 채팅' · `/seller/chats(/:roomId)` '채팅' · `/admin/chats(/:roomId)` '상담함' | backend `docs/api/chat.md` |
+
+- REST 는 다른 도메인처럼 상대경로(`/api/notifications/**` · `/api/chats/**`). 실시간만 배포에서 `api.gotgan.click` 에 직접 연결한다 — SSE `https://api.gotgan.click/api/notifications/stream`(`@microsoft/fetch-event-source`, Authorization 헤더), WebSocket `wss://api.gotgan.click/ws/chat`(STOMP, 토큰은 CONNECT 프레임). 로컬은 Vite 프록시
+- 알림 SSE 로 `CHAT_MESSAGE` 가 오면 채팅 queryKey(`queryKeys.chat.all`)를 무효화해 채팅 목록 · 배지를 갱신한다
+- 채팅 진입 버튼: 상품 상세 '판매자에게 문의' · 고객센터 '운영팀과 채팅' · 판매자센터 채팅 '운영팀에 문의' · 관리자 스토어 상세 '판매자와 상담' · 스토어 톡 안 '운영팀에 도움 요청' (`OpenChatButton`)
+
 ### 임시 훅 — 응답에 필드가 들어오면 삭제
 
 | 임시 | 어디서 | 대신 필요한 것 | 담당 |
