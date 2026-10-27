@@ -141,8 +141,6 @@ export const fetchAdminProducts = () => mockResolve(products);
 // 입점 심사 — admin-service 가 store /internal/applications 응답 + categoryName 을 그대로 전달 (backend #98, store.md 3 ~ 7절)
 const appStatus = (v) => (v ? APPLICATION_STATUS_LABEL[v] ?? v : null);
 const DOC_LABEL = Object.fromEntries(DOC_TYPES.map((d) => [d.value, d.label]));
-// 소개는 판매자가 쓴 HTML — 관리자 화면은 태그를 빼고 글자만 보여 준다 (innerHTML 로 넣지 않음)
-const htmlText = (html) => (html ? new DOMParser().parseFromString(html, 'text/html').body.textContent.trim() : '');
 
 export const toApplicationRow = (r) => ({
   id: String(r.applicationId), // 라우트 /admin/applications/:id
@@ -168,7 +166,7 @@ export const toApplication = (r) => ({
   email: r.managerEmail,
   address: r.businessAddress,
   slug: r.slug,
-  intro: htmlText(r.intro),
+  intro: r.intro ?? '', // 판매자가 쓴 HTML — 화면은 safeHtml 로 한 번 더 정화해 서식을 살려 보여 준다
   products: r.representativeProducts ?? [],
   channel: r.salesChannel ?? '-',
   account: r.settlementAccount,
