@@ -8,6 +8,7 @@ const kstDate = (ymd) => (ymd ? new Date(`${ymd}T00:00:00+09:00`) : null);
 export const toSellerSettlement = (s) => ({
   id: s.id,
   week: s.week,
+  storeId: s.storeId,
   storeName: s.storeName,
   start: kstDate(s.weekStart),
   end: kstDate(s.weekEnd),

@@ -95,7 +95,7 @@ export function useConfirmOrderItemsMutation() {
 
 - REST 는 다른 도메인처럼 상대경로(`/api/notifications/**` · `/api/chats/**`). 실시간만 배포에서 `api.gotgan.click` 에 직접 연결한다 — SSE `https://api.gotgan.click/api/notifications/stream`(`@microsoft/fetch-event-source`, Authorization 헤더), WebSocket `wss://api.gotgan.click/ws/chat`(STOMP, 토큰은 CONNECT 프레임). 로컬은 Vite 프록시
 - 알림 SSE 로 `CHAT_MESSAGE` 가 오면 채팅 queryKey(`queryKeys.chat.all`)를 무효화해 채팅 목록 · 배지를 갱신한다
-- 채팅 진입 버튼: 상품 상세 '판매자에게 문의' · 고객센터 '운영팀과 채팅' · 판매자센터 채팅 '운영팀에 문의' · 관리자 스토어 상세 '판매자와 상담' · 스토어 톡 안 '운영팀에 도움 요청' (`OpenChatButton`)
+- 채팅 진입 버튼: 상품 상세 '판매자에게 문의' · 고객센터 '운영팀과 채팅' · 판매자센터 채팅 '운영팀에 문의' · 관리자 스토어 상세 '판매자와 상담' · 스토어 톡 안 '운영팀에 도움 요청' · 내 주문 상세 '판매자 문의'(상품마다) · '결제 · 환불 문의' · 판매자 정산 상세 '이 정산 문의' · 관리자 정산 상세 '판매자와 상담' · 신고 접수 완료 '운영팀에 처리 문의' (`OpenChatButton`)
 
 ### 임시 훅 — 응답에 필드가 들어오면 삭제
 

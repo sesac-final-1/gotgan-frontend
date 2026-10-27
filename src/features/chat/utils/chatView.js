@@ -3,6 +3,13 @@
 export const ROOM_TYPE_LABEL = { STORE_INQUIRY: '스토어 톡', SELLER_SUPPORT: '판매자 운영 상담', BUYER_SUPPORT: '고객센터 1:1 상담' };
 export const MAX_LENGTH = 1000;
 
+// 문맥 카드 머리 — 어떤 화면에서 무엇을 두고 묻는지 (chat.md 문맥 카드)
+const CONTEXT_LABEL = {
+  PRODUCT: '상품 문의', ORDER: '주문 · 결제 문의', ORDER_ITEM: '주문 상품 문의', SETTLEMENT: '정산 문의',
+  STORE: '스토어 문의', REPORT: '신고 처리 문의', CHAT_ROOM: '스토어 톡 도움 요청',
+};
+export const contextLabel = (type) => CONTEXT_LABEL[type] ?? '문의 대상';
+
 /** 이 방에서 내 자리 — 상대(counterpart.role)와 방 종류로 정한다 (실시간 프레임엔 mine 이 없어 화면이 판단) */
 export function mySide(room) {
   const other = room?.counterpart?.role;

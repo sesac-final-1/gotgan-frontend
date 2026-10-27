@@ -1,6 +1,6 @@
 // 판매자 정산 내역 — 담당 구지훈
 import { useMemo, useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download, MessagesSquare } from 'lucide-react';
 import { PageHead, StatusPill, Modal, Kpi } from '@/shared/components/ui';
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
@@ -9,6 +9,7 @@ import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSeller
 import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
 import { fetchSettlementReportUrl } from '@/features/settlement/api/settlementApi';
 import SettlementDetailBody from '@/features/settlement/components/SettlementDetailBody';
+import OpenChatButton from '@/features/chat/components/OpenChatButton';
 import { PAYMENT_FEE } from '@/features/settlement/constants';
 import { toast } from '@/shared/stores/toastStore';
 import { comma, ymd, pct } from '@/shared/utils/format';
@@ -75,7 +76,12 @@ export default function SellerSettlementList() {
       </div>
       <DataTable table={table} loading={isLoading} error={isError} empty="아직 정산 내역이 없어요" className="mt-3" />
       <Modal open={detailId != null} onClose={() => setDetailId(null)} title={`정산 상세 · ${detail?.week ?? ''}`} width={600}
-        footer={detail?.status === '지급완료' && <button className="btn btn-line btn-sm" onClick={() => void openReport(detail.id)}><Download size={14} /> 정산 명세서 (CSV)</button>}>
+        footer={detail && <>
+          <OpenChatButton basePath="/seller/chats" request={{ type: 'SELLER_SUPPORT', context: { type: 'SETTLEMENT', id: detail.id } }}>
+            <MessagesSquare size={14} /> 이 정산 문의
+          </OpenChatButton>
+          {detail.status === '지급완료' && <button className="btn btn-line btn-sm" onClick={() => void openReport(detail.id)}><Download size={14} /> 정산 명세서 (CSV)</button>}
+        </>}>
         {detail ? <SettlementDetailBody d={detail} /> : <p className="text-mute py-6 text-center">불러오는 중…</p>}
       </Modal>
     </div>

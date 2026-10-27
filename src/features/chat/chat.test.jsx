@@ -84,7 +84,7 @@ describe('채팅함', () => {
 
     expect((await screen.findAllByText('스토어 #5')).length).toBeGreaterThan(0);
     expect(await screen.findByText('배송 언제 되나요?')).toBeInTheDocument();
-    expect(screen.getByText('문의 대상')).toBeInTheDocument();
+    expect(screen.getByText('상품 문의')).toBeInTheDocument();
     expect([...fake.handlers.keys()]).toEqual([7]);
     await waitFor(() => expect(axiosInstance.patch).toHaveBeenCalledWith('/api/chats/rooms/7/read', { lastMessageId: 2 }));
 
