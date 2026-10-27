@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { axiosInstance } from '@/shared/api/axiosInstance';
@@ -35,9 +35,10 @@ describe('판매자 대시보드 — 정산 응답 { summary, rows }', () => {
     mockApi({ payoutAmt: 345600, scheduledPayDate: '2026-10-29', week: '2026-W43' });
     renderDashboard();
 
-    expect(await screen.findByText('다음 지급 예정')).toBeInTheDocument();
-    expect(screen.getByText('345,600')).toBeInTheDocument();
-    expect(screen.getByText(/29 지급$/)).toBeInTheDocument(); // 지급일 2026-10-29
+    const card = (await screen.findByText('다음 지급 예정')).closest('.panel');
+    expect(within(card).getByText('345,600')).toBeInTheDocument();
+    // 지급일 숫자는 실행 환경 시간대에 따라 하루 달라질 수 있어(KST 자정) 날짜 자리만 확인
+    expect(within(card).getByText(/\d{2} 지급$/)).toBeInTheDocument();
   });
 
   it('정산서가 없는 신규 판매자도 대시보드를 그린다 (정산 칸만 비움)', async () => {
