@@ -9,6 +9,7 @@ import { DOC_TYPES, APPLICATION_STATUS_LABEL } from '@/features/admin/constants'
 import { PAYMENT_FEE } from '@/features/settlement/constants';
 import { toast } from '@/shared/stores/toastStore';
 import { won, ymdhm, pct, cx } from '@/shared/utils/format';
+import { safeHtml } from '@/shared/utils/safeHtml';
 
 const CHECKLIST = [['biz', '사업자 상태 정상 (국세청 조회)'], ['ecom', '통신판매업 신고 확인'], ['dup', '기존 스토어 중복 입점 없음'], ['cat', '카테고리 · 상품 적합']];
 const REJECT_REASONS = ['사업자 정보 확인 불가', '판매 금지 품목 포함', '정품/인증 증빙 불가', '기존 스토어 중복 입점', '기타'];
@@ -72,7 +73,7 @@ function DetailBody({ a }) {
           <div className="panel">
             <div className="panel-head"><span className="panel-title">스토어 소개 · 판매 예정 상품</span></div>
             <div className="p-5">
-              <p className="text-[14px] text-ink-2 leading-relaxed whitespace-pre-line">{a.intro}</p>
+              <div className="text-[14px] text-ink-2 leading-relaxed [&_p]:mb-2 [&_img]:max-w-full [&_a]:underline" dangerouslySetInnerHTML={safeHtml(a.intro)} />
               <ul className="mt-4 border-t border-line">{a.products.map((p) => <li key={p.name} className="py-2.5 border-b border-line text-[13px] flex justify-between">{p.name}<span className="text-mute">{p.subCategory} · {won(p.price)}</span></li>)}</ul>
             </div>
           </div>

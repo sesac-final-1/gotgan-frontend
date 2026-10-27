@@ -130,7 +130,7 @@ describe('조회 훅', () => {
 });
 
 describe('입점 심사 (store 계약 — 상세 · 승인 · 반려 · 보완요청)', () => {
-  it('상세 → 소개 HTML 은 글자만 · 서류 라벨 · 이력 처리자 · 같은 사업자번호', async () => {
+  it('상세 → 소개 HTML 은 그대로(화면이 safeHtml 로 정화) · 서류 라벨 · 이력 처리자 · 같은 사업자번호', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: {
       applicationId: 27, applicationNo: 'AP-2610-027', status: 'SUPPLEMENT', statusReason: '사본이 흐립니다', categoryId: 1, categoryName: '식품',
       bizType: 'CORPORATE', intro: '<p>리넨 <b>의류</b><img src=x onerror="alert(1)"></p>', settlementAccount: { bank: '국민', number: '0', holder: '홍길동' },
@@ -140,7 +140,7 @@ describe('입점 심사 (store 계약 — 상세 · 승인 · 반려 · 보완�
     } } });
     try {
       expect(await load(useApplicationQuery, '27')).toMatchObject({
-        id: '27', status: '보완요청', note: '사본이 흐립니다', bizType: '법인', intro: '리넨 의류',
+        id: '27', status: '보완요청', note: '사본이 흐립니다', bizType: '법인', intro: '<p>리넨 <b>의류</b><img src=x onerror="alert(1)"></p>',
         documents: [{ documentId: 101, label: '통신판매업 신고증' }],
         history: [{ from: '심사대기', to: '보완요청', by: '곳간 운영팀', reason: '사본이 흐립니다' }],
         sameBizRegNo: { applications: [{ applicationId: 9 }], stores: [] },
