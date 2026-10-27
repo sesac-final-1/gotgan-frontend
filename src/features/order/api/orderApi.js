@@ -44,6 +44,13 @@ export const shipOrderItems = async (items) => (await axiosInstance.patch('/api/
 export const deliverOrderItems = async (orderItemIds) =>
   (await axiosInstance.patch('/api/seller/order-items/deliver', { orderItemIds })).data.data;
 
+// POST /api/orders/{orderNo}/items/{orderItemId}/confirm — 구매확정 (배송완료만, 확정 후 반품 · 교환 불가) → 상품주문
+export const confirmPurchase = async (orderNo, orderItemId) =>
+  (await axiosInstance.post(`/api/orders/${encodeURIComponent(orderNo)}/items/${orderItemId}/confirm`)).data.data;
+
+// PATCH /api/claims/{claimId}/withdraw — 반품 · 교환 철회 (판매자 승인 전만) → 클레임(WITHDRAWN)
+export const withdrawClaim = async (claimId) => (await axiosInstance.patch(`/api/claims/${claimId}/withdraw`)).data.data;
+
 // GET /api/claims — 내 클레임 전체(최신 먼저) → [{ claimId, type, status, reasonCode, reasonDetail, rejectReason, refundAmt, restorePoint,
 //   requestedAt, processedAt, orderItemId, itemNo, orderNo, productName, optionName, thumbnailUrl, quantity, itemAmt, itemStatus, courier, trackingNo }]
 export const fetchMyClaims = async () => (await axiosInstance.get('/api/claims')).data.data;

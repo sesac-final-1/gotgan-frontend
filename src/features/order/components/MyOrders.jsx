@@ -5,6 +5,9 @@ import { ChevronRight } from 'lucide-react';
 import { StatusPill } from '@/shared/components/ui';
 import { MyPageHead } from '@/shared/layouts/MyPageLayout';
 import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
+import { useMyClaimsQuery } from '@/features/order/hooks/useClaimsQuery';
+import { useConfirmPurchaseMutation, useWithdrawClaimMutation } from '@/features/order/hooks/useClaimMutations';
+import { canWithdraw } from '@/features/order/utils/claimView';
 import { flowCounts, lineStatusLabel, toDate } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
 import { cx, won, ymd } from '@/shared/utils/format';
@@ -12,22 +15,41 @@ import { cx, won, ymd } from '@/shared/utils/format';
 // 클레임 신청 경로의 lineId = 상품주문번호(itemNo)
 const claimPath = (l, type) => `/mypage/claim/${l.itemNo}?type=${type}`;
 
-function LineActions({ o, l }) {
+// 처리 결과 토스트 — 실패하면 서버 메시지 (이미 확정 · 승인됨 등)
+async function run(mutation, payload, message) {
+  try {
+    await mutation.mutateAsync(payload);
+    toast(message);
+  } catch (err) {
+    toast(err.response?.data?.message ?? '처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
+  }
+}
+
+// claim: 이 상품주문의 철회할 수 있는 클레임 (판매자 승인 전 반품 · 교환) — 없으면 철회 버튼을 숨긴다
+function LineActions({ o, l, claim }) {
   const nav = useNavigate();
+  const confirm = useConfirmPurchaseMutation();
+  const withdraw = useWithdrawClaimMutation();
+  const busy = confirm.isPending || withdraw.isPending;
   const b = 'btn btn-line btn-xs';
-  // TODO(이경석): useConfirmPurchaseMutation · useWithdrawClaimMutation (아래 토스트 버튼들) · 배송준비 취소요청(CLM-02)
+  // TODO(이경석): 배송준비 취소요청(CLM-02)
   if (o.status !== 'PAID') return null; // 결제 대기 · 실패 주문은 할 일 없음 (대기는 서버가 정리)
+  const confirmPurchase = () => {
+    if (!window.confirm('구매확정하면 반품 · 교환을 신청할 수 없어요. 구매확정할까요?')) return;
+    void run(confirm, { orderNo: o.orderNo, orderItemId: l.orderItemId }, '구매확정 되었어요. 리뷰를 작성할 수 있어요');
+  };
+  const withdrawClaim = (label) => void run(withdraw, claim.claimId, `${label} 요청을 철회했어요`);
   switch (l.status) {
     case 'PAYMENT_DONE': return <button className={b} onClick={() => nav(claimPath(l, 'CANCEL'))}>주문취소</button>;
     case 'SHIPPING': return <Link className={b} to={`/mypage/orders/${o.orderNo}`}>배송조회</Link>;
     case 'DELIVERED': return (<>
-      <button className="btn btn-ink btn-xs" onClick={() => toast('구매확정 되었어요. 리뷰를 작성할 수 있어요')}>구매확정</button>
+      <button disabled={busy} className="btn btn-ink btn-xs" onClick={confirmPurchase}>구매확정</button>
       <button className={b} onClick={() => nav(claimPath(l, 'RETURN'))}>반품요청</button>
       <button className={b} onClick={() => nav(claimPath(l, 'EXCHANGE'))}>교환요청</button>
     </>);
     case 'CONFIRMED': return <Link className="btn btn-point btn-xs" to="/mypage/reviews">리뷰쓰기</Link>; // TODO(이경석): 리뷰 API — 작성 여부 · 작성 모달
-    case 'RETURN_REQUESTED': return <button className={b} onClick={() => toast('반품 요청을 철회했어요')}>반품철회</button>;
-    case 'EXCHANGE_REQUESTED': return <button className={b} onClick={() => toast('교환 요청을 철회했어요')}>교환철회</button>;
+    case 'RETURN_REQUESTED': return claim && <button disabled={busy} className={b} onClick={() => withdrawClaim('반품')}>반품철회</button>;
+    case 'EXCHANGE_REQUESTED': return claim && <button disabled={busy} className={b} onClick={() => withdrawClaim('교환')}>교환철회</button>;
     default: return null;
   }
 }
@@ -42,6 +64,8 @@ function OrderNotice({ status }) {
 export default function MyOrders() {
   const [period, setPeriod] = useState('3개월');
   const { data, isLoading, isError } = useMyOrdersQuery();
+  const { data: claims = [] } = useMyClaimsQuery();
+  const withdrawable = Object.fromEntries(claims.filter(canWithdraw).map((c) => [c.orderItemId, c]));
   const orders = data?.orders ?? [];
   const counts = flowCounts(data?.statusCounts);
   return (
@@ -80,7 +104,7 @@ export default function MyOrders() {
                   <div className="text-mute mt-0.5">{l.optionName || '단일상품'} · {l.quantity}개 · <b className="text-ink num">{won(l.itemAmt)}</b></div>
                   {l.status === 'DELIVERED' && <div className="text-[12px] text-moss mt-1">{ymd(toDate(l.deliveredAt))} 배송완료 · 7일 뒤 자동 구매확정</div>}
                 </div>
-                <div className="w-full sm:w-auto flex sm:flex-col gap-1.5 sm:items-stretch sm:min-w-[96px]"><LineActions o={o} l={l} /></div>
+                <div className="w-full sm:w-auto flex sm:flex-col gap-1.5 sm:items-stretch sm:min-w-[96px]"><LineActions o={o} l={l} claim={withdrawable[l.orderItemId]} /></div>
               </div>
             ))}
           </div>

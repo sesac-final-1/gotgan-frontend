@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
-import { fetchClaimPreview, requestClaim } from '@/features/order/api/orderApi';
+import { confirmPurchase, fetchClaimPreview, requestClaim, withdrawClaim } from '@/features/order/api/orderApi';
 
 // 클레임 환불 예정액 — 담당 이경석. 사유를 고르기 전에는 부르지 않는다. 신청 불가(409)는 isError + 서버 메시지
 export function useClaimPreviewQuery(orderNo, { orderItemId, type, reasonCode }) {
@@ -25,3 +25,15 @@ export function useRequestClaimMutation() {
     },
   });
 }
+
+// 구매확정 · 클레임 철회 — 담당 이경석. 내 주문 · 상세 · 클레임 내역(모두 order.my() 아래)을 다시 불러온다
+function useMyOrderMutation(mutationFn) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.order.my() }),
+  });
+}
+
+export const useConfirmPurchaseMutation = () => useMyOrderMutation(({ orderNo, orderItemId }) => confirmPurchase(orderNo, orderItemId));
+export const useWithdrawClaimMutation = () => useMyOrderMutation((claimId) => withdrawClaim(claimId));
