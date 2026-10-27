@@ -18,6 +18,9 @@ export function nextAction({ type, status }) {
   return null;
 }
 
+// 구매자가 철회할 수 있는지 — 반품 · 교환이 판매자 승인 전일 때만 (취소는 즉시 처리)
+export const canWithdraw = ({ type, status }) => type !== 'CANCEL' && status === 'REQUESTED';
+
 // 처리 안내 (구매자 · 판매자 상세)
 export function claimProgress({ type, status, rejectReason }) {
   switch (status) {
@@ -26,6 +29,7 @@ export function claimProgress({ type, status, rejectReason }) {
     case 'COLLECTED': return type === 'RETURN' ? '회수 완료 — 환불을 처리하고 있어요.' : '회수 완료 — 곧 같은 옵션으로 다시 보내 드려요.';
     case 'RESHIPPED': return '교환 상품을 다시 보냈어요. 배송완료되면 교환이 끝나요.';
     case 'REJECTED': return `판매자가 거부했어요 — ${rejectReason ?? ''}`.trim();
+    case 'WITHDRAWN': return '요청을 철회했어요.';
     default: return `${CLAIM_TYPE_LABEL[type] ?? type} 처리가 끝났어요.`;
   }
 }
