@@ -21,7 +21,7 @@ const NAV = [
 ];
 
 // 쇼핑몰 레이아웃 — 데이터(카테고리 · 장바구니 수 · 로그인 사용자)는 props 로 받는다 (shared 는 features 에 의존하지 않음, 연결은 pages/shop/ShopRoot.jsx)
-export default function ShopLayout({ categories = [], cartCount = 0, user = null, onLogout }) {
+export default function ShopLayout({ categories = [], cartCount = 0, user = null, bell = null, onLogout }) {
   const [q, setQ] = useState('');
   const [menu, setMenu] = useState(false);
   const nav = useNavigate();
@@ -99,6 +99,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
           </form>
           <div className="ml-auto sm:ml-0 flex items-center gap-3">
             <Link to="/products?q=" className="sm:hidden" aria-label="검색"><Search size={22} strokeWidth={1.6} /></Link>
+            {user && bell}
             <Link to="/mypage" aria-label="마이페이지"><User size={22} strokeWidth={1.6} /></Link>
             <Link to="/cart" className="relative" aria-label="장바구니">
               <ShoppingBag size={22} strokeWidth={1.6} />

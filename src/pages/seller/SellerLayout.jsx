@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { LayoutDashboard, Package, PlusSquare, ShoppingCart, RotateCcw, Star, MessageCircle, Wallet, Store } from 'lucide-react';
 import ConsoleLayout from '@/shared/layouts/ConsoleLayout';
+import NotificationBell from '@/features/notification/components/NotificationBell';
 import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { openClaimCount } from '@/features/order/utils/orderView';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
@@ -39,11 +40,6 @@ export default function SellerLayout() {
       { to: '/seller/store', label: '스토어 설정', icon: Store },
     ] },
   ];
-  const notices = [
-    { text: `신규 주문 ${cnt('PAYMENT_DONE')}건이 발주 확인을 기다리고 있어요`, time: '방금', to: '/seller/orders' },
-    { text: '반품 요청이 접수되었습니다 — 3영업일 내 처리 필요', time: '2시간 전', to: '/seller/claims' },
-    { text: '[공지] 10월 추석 연휴 정산 일정 안내', time: '어제', to: '/seller/settlements' },
-  ];
-  return <ConsoleLayout kind="seller" badge="판매자센터" groups={groups} notices={notices} onLogout={logout}
+  return <ConsoleLayout kind="seller" badge="판매자센터" groups={groups} bell={<NotificationBell dark />} onLogout={logout}
     account={{ name: store?.name ?? '', role: store ? `${store.owner} 대표 · ${store.grade}` : '', avatar: '/images/avatar/u-6.jpg' }} />;
 }
