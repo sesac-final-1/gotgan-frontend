@@ -18,6 +18,8 @@ export const ITEM_STATUS_LABEL = {
 // 결제 대기(결제창 진행 중 · 닫음 — 결제가 확인되지 않으면 서버가 잠시 뒤 자동 취소, ORD-07) · 결제 실패(만료 · 금액 불일치 · 보상 끝남)
 export const ORDER_STATUS_LABEL = { PENDING: '결제대기', FAILED: '결제실패' };
 export const CLAIM_TYPE_LABEL = { CANCEL: '취소', RETURN: '반품', EXCHANGE: '교환' };
+// 클레임 상태 (backend ClaimStatus) — 화면은 유형 + 단계로 표시 (반품요청 · 반품완료 …)
+export const CLAIM_STEP_LABEL = { REQUESTED: '요청', APPROVED: '승인', COLLECTED: '수거완료', RESHIPPED: '재배송중', REJECTED: '거부', COMPLETED: '완료' };
 // 클레임 사유 (backend ClaimReasonCode) — 취소는 판매자 귀책 사유 없음
 export const CLAIM_REASONS = [
   { code: 'CHANGE_OF_MIND', label: '단순 변심', types: ['CANCEL', 'RETURN', 'EXCHANGE'] },

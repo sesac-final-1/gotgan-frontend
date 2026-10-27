@@ -50,11 +50,13 @@ export const queryKeys = {
     my: () => ['order', 'my'],
     myOrder: (orderNo) => ['order', 'my', orderNo], // my() 아래라 목록을 무효화하면 상세 · 환불 예정액도 함께
     claimPreview: (orderNo, params) => ['order', 'my', orderNo, 'claim-preview', params],
-    myMock: () => ['order', 'my-mock'], // 임시 — 클레임 내역 · 리뷰 작성 가능 목록 (API 가 나오면 삭제)
+    myClaims: () => ['order', 'my', 'claims'], // my() 아래 — 클레임 신청 뒤 함께 무효화
+    myMock: () => ['order', 'my-mock'], // 임시 — 리뷰 작성 가능 목록 (리뷰 API 가 나오면 삭제)
     seller: () => ['order', 'seller'], // 판매자 처리(발주확인 · 송장 · 배송완료) 뒤 목록 · 상세를 함께 무효화
     sellerItems: (params) => ['order', 'seller', 'items', params ?? {}], // 서버 페이징 대상 (컨벤션 4-7)
     sellerItem: (orderItemId) => ['order', 'seller', 'item', String(orderItemId)],
-    sellerItemsMock: () => ['order', 'seller-mock'], // 임시 — 판매자 클레임 · 대시보드 최근 주문 (API 연동 때 삭제)
+    sellerClaims: (params) => ['order', 'seller', 'claims', params ?? {}], // seller() 아래 — 서버 페이징
+    sellerItemsMock: () => ['order', 'seller-mock'], // 임시 — 대시보드 최근 주문 (대시보드 연동 때 삭제)
     sellerBuyers: () => ['order', 'seller', 'buyers'], // 임시 — 응답에 작성자 · 구매자 요약이 들어오면 삭제
   },
 

@@ -25,7 +25,7 @@ export const fetchClaimPreview = async (orderNo, params) =>
 export const requestClaim = async (orderNo, request) =>
   (await axiosInstance.post(`/api/orders/${encodeURIComponent(orderNo)}/claims`, request)).data.data;
 
-// TODO(이경석): 임시 — 클레임 내역 · 리뷰 작성 가능 목록은 아직 목업 (클레임 목록 · 리뷰 API 가 나오면 삭제)
+// TODO(이경석): 임시 — 리뷰 작성 가능 목록은 아직 목업 (리뷰 API 가 나오면 삭제)
 export const fetchMyOrdersMock = () => mockResolve(myOrders);
 
 // GET /api/seller/order-items?status&q&page&size — 판매자 주문 목록 (서버 페이징, 최신 주문 먼저 · 결제 전 제외)
@@ -44,7 +44,21 @@ export const shipOrderItems = async (items) => (await axiosInstance.patch('/api/
 export const deliverOrderItems = async (orderItemIds) =>
   (await axiosInstance.patch('/api/seller/order-items/deliver', { orderItemIds })).data.data;
 
-// TODO(이경석): 임시 — 판매자 클레임 · 대시보드 최근 주문은 아직 목업 (판매자 클레임 API · 대시보드 연동 때 삭제)
+// GET /api/claims — 내 클레임 전체(최신 먼저) → [{ claimId, type, status, reasonCode, reasonDetail, rejectReason, refundAmt, restorePoint,
+//   requestedAt, processedAt, orderItemId, itemNo, orderNo, productName, optionName, thumbnailUrl, quantity, itemAmt, itemStatus, courier, trackingNo }]
+export const fetchMyClaims = async () => (await axiosInstance.get('/api/claims')).data.data;
+
+// GET /api/seller/claims?stage(OPEN|DONE)&type&page&size — 판매자 클레임 (서버 페이징) → { stageCounts, typeCounts, items(페이지) }
+export const fetchSellerClaims = async (params) => (await axiosInstance.get('/api/seller/claims', { params })).data.data;
+
+// PATCH /api/seller/claims/{id}/… — 승인(반품 · 교환 → 수거 요청) · 거부(사유) · 수거 완료(반품은 이어서 환불) · 교환 재배송 송장 → 처리 뒤 클레임
+export const approveClaim = async (claimId) => (await axiosInstance.patch(`/api/seller/claims/${claimId}/approve`)).data.data;
+export const rejectClaim = async (claimId, reason) => (await axiosInstance.patch(`/api/seller/claims/${claimId}/reject`, { reason })).data.data;
+export const collectClaim = async (claimId) => (await axiosInstance.patch(`/api/seller/claims/${claimId}/collect`)).data.data;
+// { courier, trackingNo } — trackingNo 를 비우면(null) 서버가 mock 송장번호. 재배송의 배송완료는 주문 관리의 배송완료(또는 자동)
+export const reshipClaim = async (claimId, request) => (await axiosInstance.patch(`/api/seller/claims/${claimId}/reship`, request)).data.data;
+
+// TODO(이경석): 임시 — 판매자 대시보드 최근 주문은 아직 목업 (대시보드 연동 때 삭제)
 export const fetchSellerOrderItemsMock = () => mockResolve(sellerOrders);
 
 // TODO(이경석): 임시 — 판매자 화면의 구매자 · 작성자 표시용. 실제로는 /api/seller/reviews · 문의 · 주문상세 응답에 작성자명(마스킹) · 구매자 요약을 담고, 이 함수와 useSellerBuyersQuery 는 삭제

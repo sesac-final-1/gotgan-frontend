@@ -10,7 +10,7 @@ export function useMyOrdersQuery() {
   });
 }
 
-// TODO(이경석): 임시 — 클레임 내역(MyClaims) · 리뷰 작성 가능 목록(MyReviews · 마이페이지 배지)은 claim · reviewed 필드가 있는 목업. 클레임 목록 · 리뷰 API 가 나오면 삭제
+// TODO(이경석): 임시 — 리뷰 작성 가능 목록(MyReviews · 마이페이지 배지)은 reviewed 필드가 있는 목업. 리뷰 API 가 나오면 삭제
 export function useMyOrdersMockQuery() {
   return useQuery({
     queryKey: queryKeys.order.myMock(),
