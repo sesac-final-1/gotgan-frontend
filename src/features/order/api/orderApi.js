@@ -4,6 +4,26 @@ import { mockResolve } from '@/mocks/mockApi';
 import { myOrders, sellerOrders } from '@/mocks/fixtures/orders';
 import { users } from '@/mocks/fixtures/people';
 
+// GET /api/carts — 장바구니 (스토어별 묶음 · 배송비 · 무료배송까지 남은 금액, 가격 · 품절은 product 재확인)
+// → { stores[{ storeId, storeName, productAmt, shippingFee, freeThreshold, amountToFree, items[] }], unavailable[], cartCount, checkedCount,
+//     totalProductAmt, totalShippingFee, totalAmt } — 금액은 선택된 구매 가능 줄만
+export const fetchCart = async () => (await axiosInstance.get('/api/carts')).data.data;
+
+// POST /api/carts/items — [{ productOptionId, quantity }] 담기 (담긴 옵션은 수량 합산)
+export const addCartItems = async (items) => (await axiosInstance.post('/api/carts/items', { items })).data.data;
+
+// DELETE /api/carts/items?productOptionIds=11,12 — 단건 · 선택 삭제
+export const removeCartItems = async (productOptionIds) =>
+  (await axiosInstance.delete('/api/carts/items', { params: { productOptionIds: productOptionIds.join(',') } })).data.data;
+
+// PATCH /api/carts/items/{productOptionId} — { quantity?, checked? } 보낸 것만
+export const updateCartItem = async (productOptionId, change) =>
+  (await axiosInstance.patch(`/api/carts/items/${productOptionId}`, change)).data.data;
+
+// PATCH /api/carts/items/checked — 선택 한꺼번에 (productOptionIds 없으면 전체)
+export const checkCartItems = async (checked, productOptionIds) =>
+  (await axiosInstance.patch('/api/carts/items/checked', { checked, productOptionIds })).data.data;
+
 // POST /api/orders — 주문서 제출 (ORD-03 · 04, 요청은 utils/orderRequest). 포인트 차감 · 재고 예약 · 결제 준비까지 서버 Saga
 // → 201 { orderNo, status: PENDING(결제창 필요) | PAID(전액 포인트 0원), payAmt, portonePaymentId, orderName } — 그대로 payOrder 에 넘긴다
 export const createOrder = async (request) => (await axiosInstance.post('/api/orders', request)).data.data;

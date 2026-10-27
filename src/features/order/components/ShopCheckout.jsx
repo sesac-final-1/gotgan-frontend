@@ -1,5 +1,6 @@
-// 주문서 · 결제 — 담당 이경석 (목업 레이아웃 유지 · 표 아님)
+// 주문서 · 결제 — 담당 이경석 (목업 레이아웃 유지 · 표 아님). 주문 상품 · 금액은 장바구니 응답의 선택된 구매 가능 줄 (서버 계산)
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router';
 import { ChevronRight } from 'lucide-react';
 import { useCart } from '@/features/order/hooks/useCart';
@@ -7,14 +8,15 @@ import { useCreateOrderMutation } from '@/features/order/hooks/useCreateOrderMut
 import { toOrderRequest } from '@/features/order/utils/orderRequest';
 import { usePayOrderMutation } from '@/features/payment/hooks/usePayOrderMutation';
 import { PAY_METHODS } from '@/features/payment/constants';
-import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useMyAddressesQuery } from '@/features/user/hooks/useMyAddressesQuery';
 import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 import { POINT_RATE } from '@/features/user/constants';
-import ShopOrderSummary, { groupByStore, totalsOf } from '@/features/order/components/ShopOrderSummary';
+import ShopOrderSummary from '@/features/order/components/ShopOrderSummary';
+import { checkoutGroups } from '@/features/order/utils/cartView';
+import { queryKeys } from '@/shared/api/queryKeys';
+import { earnOf } from '@/features/user/constants';
 import { Checkbox, Empty, Modal } from '@/shared/components/ui';
 import { toast } from '@/shared/stores/toastStore';
-import { toMap } from '@/shared/utils/collection';
 import { cx, won, comma } from '@/shared/utils/format';
 
 const MEMO_OPTIONS = ['문 앞에 놓아주세요', '경비실에 맡겨주세요', '배송 전 연락 바랍니다'];
@@ -30,25 +32,25 @@ function Section({ n, title, children, right }) {
 }
 
 export default function ShopCheckout() {
-  const { cart, clearChecked } = useCart();
-  const { data: stores = [] } = useStoresQuery();
+  const { cart, isLoading } = useCart();
+  const queryClient = useQueryClient();
   const { data: myAddresses = [] } = useMyAddressesQuery();
   const { data: points } = useMyPointsQuery();
   const myPointBalance = points?.balance ?? 0;
   const nav = useNavigate();
-  const storeById = useMemo(() => toMap(stores), [stores]);
-  const lines = useMemo(() => cart.filter((l) => l.checked), [cart]);
-  const groups = useMemo(() => groupByStore(lines, storeById), [lines, storeById]);
+  const groups = useMemo(() => checkoutGroups(cart), [cart]);
+  const lines = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   const [addrId, setAddrId] = useState(null);
   const addr = myAddresses.find((a) => a.id === addrId) ?? myAddresses[0];
   const [addrModal, setAddrModal] = useState(false);
   const [point, setPoint] = useState(0);
   const [method, setMethod] = useState(PAY_METHODS[0].label);
   const [agree, setAgree] = useState(false);
-  const base = totalsOf(groups);
-  const maxUse = Math.min(myPointBalance, base.sale + base.ship);
+  const productAmt = cart?.totalProductAmt ?? 0;
+  const shippingFee = cart?.totalShippingFee ?? 0;
+  const maxUse = Math.min(myPointBalance, productAmt + shippingFee);
   const applyPoint = (v) => setPoint(Math.max(0, Math.min(maxUse, v)));
-  const t = totalsOf(groups, point);
+  const payAmt = Math.max(0, productAmt + shippingFee - point);
 
   const [memoChoice, setMemoChoice] = useState('');
   const [memoText, setMemoText] = useState('');
@@ -71,10 +73,11 @@ export default function ShopCheckout() {
     const r = await payOrder.mutateAsync({ ...created, payMethod: PAY_METHODS.find((m) => m.label === method) });
     if (r.status === 'REDIRECTED') return; // 결제사 페이지로 이동 — 돌아오면 주문 완료 화면이 결제 확인
     if (r.status !== 'PAID') { toast(r.message); return; }
-    clearChecked(); // TODO(이경석, 장바구니 API 연동 시): 서버가 결제 확정 때 비우므로 장바구니 쿼리 무효화로 교체
+    void queryClient.invalidateQueries({ queryKey: queryKeys.order.cart() }); // 서버가 결제 확정 때 주문한 옵션을 장바구니에서 지웠다
     void nav('/order/complete', { state: { orderNo: r.orderNo, pay: r.payAmt, method, point, earn, address: `${addr.addr} ${addr.detail ?? ''}`.trim() } });
   };
 
+  if (isLoading) return <p className="text-mute py-20 text-center">불러오는 중…</p>;
   if (!lines.length) return <Empty title="주문할 상품이 없어요" action={<Link to="/cart" className="btn btn-ink">장바구니로</Link>} />;
 
   return (
@@ -102,13 +105,13 @@ export default function ShopCheckout() {
 
           <Section n="02" title={`주문상품 ${lines.length}개`}>
             {groups.map((g) => (
-              <div key={g.store.id} className="mb-4 border border-line">
-                <div className="px-4 h-10 flex items-center justify-between bg-cream text-[13px]"><b>{g.store.name}</b><span className="text-ink-2">배송비 {g.ship ? won(g.ship) : '무료'}</span></div>
-                {g.lines.map((l) => (
-                  <div key={l.key} className="flex gap-3 p-3 border-t border-line text-[13px]">
-                    <img src={l.product.images[0]} alt="" className="w-14 h-16 object-cover" />
-                    <div className="flex-1"><div className="font-medium">{l.product.name}</div><div className="text-mute">{l.option || '단일상품'} · {l.qty}개</div></div>
-                    <div className="font-bold num">{won(l.unit * l.qty)}</div>
+              <div key={g.storeId} className="mb-4 border border-line">
+                <div className="px-4 h-10 flex items-center justify-between bg-cream text-[13px]"><b>{g.storeName ?? '스토어'}</b><span className="text-ink-2">배송비 {g.shippingFee ? won(g.shippingFee) : '무료'}</span></div>
+                {g.items.map((l) => (
+                  <div key={l.productOptionId} className="flex gap-3 p-3 border-t border-line text-[13px]">
+                    <img src={l.imageUrl} alt="" className="w-14 h-16 object-cover bg-cream" />
+                    <div className="flex-1"><div className="font-medium">{l.productName}</div><div className="text-mute">{l.optionName || '단일상품'} · {l.quantity}개</div></div>
+                    <div className="font-bold num">{won(l.lineAmt)}</div>
                   </div>
                 ))}
               </div>
@@ -132,10 +135,10 @@ export default function ShopCheckout() {
               <span className="text-[12px] text-mute -mt-1">1P = 1원 · 사용 후 잔여 {comma(myPointBalance - point)}P</span>
             </div>
             <div className="mt-4 bg-cream p-4 text-[13px] space-y-1.5">
-              <div className="flex justify-between"><span className="text-ink-2">상품금액 + 배송비</span><span className="num">{won(base.sale + base.ship)}</span></div>
+              <div className="flex justify-between"><span className="text-ink-2">상품금액 + 배송비</span><span className="num">{won(productAmt + shippingFee)}</span></div>
               <div className="flex justify-between"><span className="text-ink-2">사용 포인트</span><span className="num">−{comma(point)}P</span></div>
-              <div className="flex justify-between font-bold border-t border-line-2 pt-1.5"><span>실결제금액</span><span className="num">{won(t.pay)}</span></div>
-              <div className="text-[12px] text-moss">결제 시 실결제금액의 {POINT_RATE * 100}% <b className="num">{comma(t.earn)}P</b> 적립 예정</div>
+              <div className="flex justify-between font-bold border-t border-line-2 pt-1.5"><span>실결제금액</span><span className="num">{won(payAmt)}</span></div>
+              <div className="text-[12px] text-moss">결제 시 실결제금액의 {POINT_RATE * 100}% <b className="num">{comma(earnOf(payAmt))}P</b> 적립 예정</div>
             </div>
           </Section>
 
@@ -164,7 +167,7 @@ export default function ShopCheckout() {
         </div>
 
         <div className="lg:sticky lg:top-24 self-start">
-          <ShopOrderSummary groups={groups} point={point} label="실결제금액" cta={(amount, earn) => (
+          <ShopOrderSummary productAmt={productAmt} shippingFee={shippingFee} point={point} label="실결제금액" cta={(amount, earn) => (
             <button disabled={!agree || paying} onClick={() => void pay(earn)} className="btn btn-point btn-lg w-full">{paying ? '결제 진행 중…' : `${won(amount)} 결제하기`}</button>
           )} />
           {!agree && <p className="text-[12px] text-mute mt-2 text-center">약관에 동의해야 결제할 수 있어요</p>}
