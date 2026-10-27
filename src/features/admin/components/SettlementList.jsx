@@ -1,7 +1,7 @@
 // 정산 관리 — 담당 구지훈
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Download } from 'lucide-react';
+import { Download, MessagesSquare } from 'lucide-react';
 import { PageHead, StatusPill, Modal, Kpi, Checkbox } from '@/shared/components/ui';
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
@@ -11,6 +11,7 @@ import { recentWeeks } from '@/features/admin/constants';
 import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation, useAggregateSettlementsMutation } from '@/features/admin/hooks/useSettlementMutations';
 import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettlementQuery';
 import SettlementDetailBody from '@/features/settlement/components/SettlementDetailBody';
+import OpenChatButton from '@/features/chat/components/OpenChatButton';
 import { toast } from '@/shared/stores/toastStore';
 import { won, comma, ymd, pct, shortWon } from '@/shared/utils/format';
 
@@ -142,7 +143,12 @@ export default function SettlementList() {
       <div className="mt-3">
         <DataTable table={table} loading={isLoading} error={isError} />
       </div>
-      <Modal open={detailId != null} onClose={() => setDetailId(null)} title={`정산 상세 · ${detail ? `${detail.storeName ?? ''} ${detail.week}` : ''}`} width={600}>
+      <Modal open={detailId != null} onClose={() => setDetailId(null)} title={`정산 상세 · ${detail ? `${detail.storeName ?? ''} ${detail.week}` : ''}`} width={600}
+        footer={detail && (
+          <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: detail.storeId, context: { type: 'SETTLEMENT', id: detail.id } }}>
+            <MessagesSquare size={14} /> 판매자와 상담
+          </OpenChatButton>
+        )}>
         {detail ? <SettlementDetailBody d={detail} /> : <p className="text-mute py-6 text-center">불러오는 중…</p>}
       </Modal>
       <Modal open={!!hold} onClose={() => setHold(null)} title="지급 보류 사유" width={440}

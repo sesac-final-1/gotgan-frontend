@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router';
 import { StatusPill } from '@/shared/components/ui';
 import { MyPageHead } from '@/shared/layouts/MyPageLayout';
 import { useMyOrderQuery } from '@/features/order/hooks/useMyOrderQuery';
+import OpenChatButton from '@/features/chat/components/OpenChatButton';
 import { lineStatusLabel, payMethodLabel, toDate, trackingOf } from '@/features/order/utils/orderView';
 import { cx, won, comma, ymdhm } from '@/shared/utils/format';
 
@@ -23,7 +24,13 @@ export default function MyOrderDetail() {
             <div key={l.orderItemId} className="flex gap-4 p-4 border-b border-line last:border-0 text-[13px]">
               <img src={l.thumbnailUrl} alt="" className="w-16 h-20 object-cover bg-cream" />
               <div className="flex-1"><StatusPill s={lineStatusLabel(o, l)} /><div className="font-medium text-[14px] mt-1.5">{l.productName}</div><div className="text-mute">{l.storeName} · {l.optionName || '단일상품'} · {l.quantity}개</div></div>
-              <div className="font-bold num">{won(l.itemAmt)}</div>
+              <div className="flex flex-col items-end justify-between">
+                <div className="font-bold num">{won(l.itemAmt)}</div>
+                <OpenChatButton className="btn btn-line btn-xs" basePath="/mypage/chats"
+                  request={{ type: 'STORE_INQUIRY', storeId: l.storeId, context: { type: 'ORDER_ITEM', id: l.orderItemId } }}>
+                  판매자 문의
+                </OpenChatButton>
+              </div>
             </div>
           ))}
         </div>
@@ -57,7 +64,13 @@ export default function MyOrderDetail() {
             {o.payment?.cancelledAmount > 0 && <div className="flex justify-between py-2.5 border-b border-line text-rust"><span>환불 금액</span><span className="num">−{won(o.payment.cancelledAmount)}</span></div>}
             <div className="flex justify-between py-2.5 text-[13px]"><span className="text-mute">적립 포인트</span><span className="num font-semibold text-moss">+{comma(o.earnedPoint)}P</span></div>
           </div>
-          <button className="btn btn-line btn-sm mt-2">영수증 / 거래명세서</button>
+          <div className="flex gap-2 mt-2">
+            <button className="btn btn-line btn-sm">영수증 / 거래명세서</button>
+            {/* 주문 카드 id = 주문번호의 숫자 (20261027-000001 → 20261027000001, chat.md 문맥 카드) */}
+            <OpenChatButton basePath="/mypage/chats" request={{ type: 'BUYER_SUPPORT', context: { type: 'ORDER', id: Number(o.orderNo.replace('-', '')) } }}>
+              결제 · 환불 문의
+            </OpenChatButton>
+          </div>
         </div>
       </div>
     </div>

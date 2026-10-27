@@ -2,7 +2,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import {
   changeChatStatus, chatSocketUrl, fetchChatMessages, fetchChatRooms, fetchChatUnreadCount, openChatRoom, readChatRoom,
 } from '@/features/chat/api/chatApi';
-import { flattenMessages, frameToMessage, mySide, prependMessage, roomNotice, validateContent } from '@/features/chat/utils/chatView';
+import { contextLabel, flattenMessages, frameToMessage, mySide, prependMessage, roomNotice, validateContent } from '@/features/chat/utils/chatView';
 
 // chat-service 응답 흉내 (chat.md 1 · 3절)
 const ROOM = {
@@ -69,6 +69,13 @@ describe('chatView', () => {
     expect(prependMessage({ pages: [], pageParams: [] }, live).pages).toEqual([[live]]);
     expect(flattenMessages(added).map((m) => m.messageId)).toEqual([1, 3, 4]);
     expect(flattenMessages(undefined)).toEqual([]);
+  });
+
+  it('문맥 카드 머리 — 종류별 문구, 모르는 종류는 기본', () => {
+    expect(contextLabel('ORDER_ITEM')).toBe('주문 상품 문의');
+    expect(contextLabel('SETTLEMENT')).toBe('정산 문의');
+    expect(contextLabel('REPORT')).toBe('신고 처리 문의');
+    expect(contextLabel(undefined)).toBe('문의 대상');
   });
 
   it('보내기 전 확인 · 종료 안내', () => {

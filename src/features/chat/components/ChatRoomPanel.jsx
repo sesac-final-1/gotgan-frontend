@@ -5,7 +5,7 @@ import { cx } from '@/shared/utils/format';
 import { toast } from '@/shared/stores/toastStore';
 import { useChangeChatStatusMutation, useChatMessagesQuery, useOpenChatMutation, useReadChatMutation } from '@/features/chat/hooks/useChatQueries';
 import { useChatRoomSocket } from '@/features/chat/hooks/useChatRoomSocket';
-import { flattenMessages, MAX_LENGTH, mySide, ROOM_TYPE_LABEL, roomNotice, validateContent } from '@/features/chat/utils/chatView';
+import { contextLabel, flattenMessages, MAX_LENGTH, mySide, ROOM_TYPE_LABEL, roomNotice, validateContent } from '@/features/chat/utils/chatView';
 
 const CONNECTION_TEXT = { connecting: '연결 중…', disconnected: '연결이 끊겼어요. 다시 연결하는 중…', stopped: '실시간 연결이 멈췄어요. 새로고침해 주세요.' };
 const time = (d) => d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -116,7 +116,7 @@ function MessageItem({ m, read, basePath }) {
     return (
       <div className={cx('flex', m.mine ? 'justify-end' : 'justify-start')}>
         <div className="max-w-[80%] border border-line-2 bg-white px-3 py-2">
-          <div className="text-[11px] text-mute">문의 대상</div>
+          <div className="text-[11px] text-mute">{contextLabel(m.context?.type)}</div>
           <div className="text-[13.5px] font-semibold">{m.context?.title ?? m.content}</div>
           {m.context?.type === 'CHAT_ROOM' && basePath === '/admin/chats' && (
             <Link to={`${basePath}/${m.context.id}`} className="text-[12px] text-point underline">대화 보기 (읽기 전용)</Link>
