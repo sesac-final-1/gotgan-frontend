@@ -6,7 +6,7 @@ import { Kpi, BarChart, PageHead, Stars, StatusPill } from '@/shared/components/
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useSellerDailySalesQuery } from '@/features/store/hooks/useSellerDailySalesQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
-import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
+import { useSellerOrderItemsMockQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSellerSettlementsQuery';
@@ -21,10 +21,12 @@ export default function SellerDashboard() {
   const { data: store } = useMyStoreQuery();
   const { data: daily = [] } = useSellerDailySalesQuery();
   const { data: products = [] } = useProductsQuery();
-  const { data: orders = [] } = useSellerOrderItemsQuery();
+  const { data: orders = [] } = useSellerOrderItemsMockQuery();
   const { data: reviews = [] } = useReviewsQuery();
   const { data: qnas = [] } = useQnasQuery();
-  const { data: mySet = [] } = useSellerSettlementsQuery();
+  // { summary, rows } — 다음 지급은 정산 내역 화면과 같은 summary.nextPayout (없으면 null)
+  const { data: settlement } = useSellerSettlementsQuery();
+  const next = settlement?.summary.nextPayout;
   const { data: pending } = useSellerPendingQuery();
   // TODO(이경석): 리뷰 응답에 작성자명(마스킹) 포함되면 useSellerBuyersQuery 제거
   const { data: users = [] } = useSellerBuyersQuery();
@@ -33,7 +35,8 @@ export default function SellerDashboard() {
   const prods = useMemo(() => products.filter((p) => p.storeId === store?.id), [products, store]);
   const revs = useMemo(() => reviews.filter((r) => r.storeId === store?.id), [reviews, store]);
 
-  if (!store || daily.length < 2 || !mySet.length) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
+  // 정산은 기다리지 않는다 — 정산서가 없는 신규 판매자도 대시보드를 보여 주고, 정산 칸만 '-'
+  if (!store || daily.length < 2) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
 
   const cnt = (s) => orders.filter((o) => o.status === s).length;
   const myStoreQna = qnas.filter((q) => productById[q.productId]?.storeId === store.id);
@@ -70,7 +73,7 @@ export default function SellerDashboard() {
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
         <Kpi label="오늘 결제금액" value={comma(today.amount)} unit="원" delta={((today.amount - yday.amount) / yday.amount) * 100} sub="전일 대비" />
         <Kpi label="최근 30일 매출" value={comma(month / 10000)} unit="만원" delta={12.4} sub="직전 30일 대비" />
-        <Kpi label="이번 주 정산 예정" value={comma(mySet[0].payout)} unit="원" sub={`${ymd(mySet[0].pay)} 지급`} />
+        <Kpi label="다음 지급 예정" value={next ? comma(next.payout) : '-'} unit="원" sub={next ? `${ymd(next.pay)} 지급` : '지급 예정 없음'} />
         <Kpi label="스토어 평점" value={sum.avg.toFixed(2)} unit="/ 5" sub={`리뷰 ${comma(sum.total)}개 (최근 90일)`} />
       </div>
 

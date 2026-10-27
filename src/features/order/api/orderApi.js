@@ -28,8 +28,24 @@ export const requestClaim = async (orderNo, request) =>
 // TODO(이경석): 임시 — 클레임 내역 · 리뷰 작성 가능 목록은 아직 목업 (클레임 목록 · 리뷰 API 가 나오면 삭제)
 export const fetchMyOrdersMock = () => mockResolve(myOrders);
 
-// TODO(이경석): GET /api/seller/order-items?page&size&sort&status&q — 서버 페이징 대상(컨벤션 4-7). 목업은 전체를 돌려줌
-export const fetchSellerOrderItems = () => mockResolve(sellerOrders);
+// GET /api/seller/order-items?status&q&page&size — 판매자 주문 목록 (서버 페이징, 최신 주문 먼저 · 결제 전 제외)
+// → { statusCounts: { PAYMENT_DONE: n, ... }, items: { content[], page, size, totalElements, totalPages, hasNext } }
+export const fetchSellerOrderItems = async (params) => (await axiosInstance.get('/api/seller/order-items', { params })).data.data;
+
+// GET /api/seller/order-items/{orderItemId} — 상세. 남의 스토어 · 결제 전은 404
+export const fetchSellerOrderItem = async (orderItemId) => (await axiosInstance.get(`/api/seller/order-items/${orderItemId}`)).data.data;
+
+// PATCH /api/seller/order-items/confirm · ship · deliver — 일괄 처리, 상품주문마다 따로라 일부만 실패할 수 있다
+// → { succeeded[], failed[{ orderItemId, code, message }] } (failed 가 있어도 200)
+export const confirmOrderItems = async (orderItemIds) =>
+  (await axiosInstance.patch('/api/seller/order-items/confirm', { orderItemIds })).data.data;
+// items: [{ orderItemId, courier, trackingNo }] — trackingNo 를 비우면(null) 서버가 mock 송장번호
+export const shipOrderItems = async (items) => (await axiosInstance.patch('/api/seller/order-items/ship', { items })).data.data;
+export const deliverOrderItems = async (orderItemIds) =>
+  (await axiosInstance.patch('/api/seller/order-items/deliver', { orderItemIds })).data.data;
+
+// TODO(이경석): 임시 — 판매자 클레임 · 대시보드 최근 주문은 아직 목업 (판매자 클레임 API · 대시보드 연동 때 삭제)
+export const fetchSellerOrderItemsMock = () => mockResolve(sellerOrders);
 
 // TODO(이경석): 임시 — 판매자 화면의 구매자 · 작성자 표시용. 실제로는 /api/seller/reviews · 문의 · 주문상세 응답에 작성자명(마스킹) · 구매자 요약을 담고, 이 함수와 useSellerBuyersQuery 는 삭제
 export const fetchSellerBuyers = () => mockResolve(users);

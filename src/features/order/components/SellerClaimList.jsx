@@ -5,7 +5,7 @@ import { PageHead, Segments, StatusPill, Modal, KV } from '@/shared/components/u
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
-import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
+import { useSellerOrderItemsMockQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { POINT_RATE } from '@/features/user/constants';
@@ -66,7 +66,7 @@ function buildColumns({ productById, approve, setDetail, setReject }) {
 }
 
 export default function SellerClaimList() {
-  const { data: orders = [], isLoading, isError } = useSellerOrderItemsQuery();
+  const { data: orders = [], isLoading, isError } = useSellerOrderItemsMockQuery();
   const { data: products = [] } = useProductsQuery();
   const { data: store } = useMyStoreQuery();
   const [patch, setPatch] = useState({}); // 목업 흉내: lineId → 처리 후 상태
