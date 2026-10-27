@@ -1,4 +1,4 @@
-import { createChatSocket, HIDDEN_DISCONNECT_MS, reconnectDelay, RELEASE_GRACE_MS } from '@/features/chat/realtime/chatSocket';
+import { createChatSocket, reconnectDelay, RELEASE_GRACE_MS } from '@/features/chat/realtime/chatSocket';
 
 // STOMP 클라이언트는 가짜 — 연결 · 끊김 · 서버 프레임을 직접 흉내 내 연결 수명 규칙(chat.md 6-1절)을 확인한다
 function fakeStomp() {
@@ -126,28 +126,53 @@ describe('chatSocket — 안 쓰면 바로 끊기 (좀비 연결 방지)', () =>
     expect(socket.status).toBe('idle');
   });
 
-  it('탭이 오래 가려지면 끊고, 다시 보이면 새로 연결한다 (짧게 가렸다 보이면 그대로)', async () => {
+  it('탭이 가려지면 연결은 두고 방 구독만 해제, 다시 보이면 재구독 + connected 를 다시 알림 (재연결 없음)', async () => {
+    const statuses = [];
+    socket.onStatus((x) => statuses.push(x));
     socket.subscribeRoom(7, vi.fn());
-    const first = stomp.last();
-    await connect(first);
+    const c = stomp.last();
+    await connect(c);
+    const roomSub = c.subs.find((x) => x.destination === '/sub/rooms/7');
 
     doc.visibilityState = 'hidden';
     doc.dispatchEvent(new Event('visibilitychange'));
-    vi.advanceTimersByTime(HIDDEN_DISCONNECT_MS - 1);
+    expect(roomSub.unsubscribe).toHaveBeenCalledOnce();
+    expect(c.deactivate).not.toHaveBeenCalled();
+    socket.subscribeRoom(8, vi.fn()); // 가려진 동안 새 구독은 보이면 한꺼번에
+    socket.typing(7);
+    expect(c.publish).not.toHaveBeenCalled();
+
     doc.visibilityState = 'visible';
     doc.dispatchEvent(new Event('visibilitychange'));
-    vi.advanceTimersByTime(HIDDEN_DISCONNECT_MS);
-    expect(first.deactivate).not.toHaveBeenCalled();
+    expect(c.subs.filter((x) => x.destination.startsWith('/sub/rooms/')).map((x) => x.destination))
+      .toEqual(['/sub/rooms/7', '/sub/rooms/7', '/sub/rooms/8']);
     expect(stomp.clients).toHaveLength(1);
+    expect(statuses.at(-1)).toBe('connected');
+    expect(statuses.filter((x) => x === 'connected')).toHaveLength(2);
+  });
 
+  it('가려진 채로 연결되면 방은 구독하지 않고, 끊긴 상태에서 보이면 다시 연결한다', async () => {
     doc.visibilityState = 'hidden';
     doc.dispatchEvent(new Event('visibilitychange'));
-    vi.advanceTimersByTime(HIDDEN_DISCONNECT_MS);
-    expect(first.deactivate).toHaveBeenCalledOnce();
+    socket.subscribeRoom(7, vi.fn());
+    const c = stomp.last();
+    await connect(c);
+    expect(c.subs.map((x) => x.destination)).toEqual(['/user/queue/errors']);
 
+    win.dispatchEvent(new Event('pagehide'));
     doc.visibilityState = 'visible';
     doc.dispatchEvent(new Event('visibilitychange'));
     expect(stomp.clients).toHaveLength(2);
+  });
+
+  it('입력 중 신호 — 연결돼 있고 보일 때만 보낸다', async () => {
+    socket.subscribeRoom(7, vi.fn());
+    socket.typing(7);
+    const c = stomp.last();
+    expect(c.publish).not.toHaveBeenCalled();
+    await connect(c);
+    socket.typing(7);
+    expect(c.publish).toHaveBeenCalledWith({ destination: '/pub/rooms/7/typing', body: '{}', headers: { 'content-type': 'application/json' } });
   });
 
   it('페이지를 떠나면(pagehide) 바로 끊고, 뒤로 가기 캐시로 돌아오면(pageshow persisted) 다시 연결', async () => {
@@ -212,7 +237,7 @@ describe('chatSocket — 끊김 · 재연결', () => {
     expect(c.deactivate).toHaveBeenCalledOnce();
     expect(socket.status).toBe('stopped');
 
-    doc.dispatchEvent(new Event('visibilitychange'));
+    doc.dispatchEvent(new Event('visibilitychange')); // 멈춘 상태에선 보여도 재연결 안 함
     expect(stomp.clients).toHaveLength(1);
     socket.subscribeRoom(8, vi.fn());
     expect(stomp.clients).toHaveLength(2);

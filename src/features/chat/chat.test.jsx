@@ -9,7 +9,7 @@ import OpenChatButton from '@/features/chat/components/OpenChatButton';
 import { getChatSocket, resetChatSocket } from '@/features/chat/hooks/useChatRoomSocket';
 
 // 실시간 연결은 가짜 — 화면이 구독한 방 · 보낸 메시지를 기록하고, 테스트가 서버 프레임 · 연결 상태를 흉내 낸다
-const fake = vi.hoisted(() => ({ handlers: new Map(), status: [], errors: [], sent: [], connected: true }));
+const fake = vi.hoisted(() => ({ handlers: new Map(), status: [], errors: [], sent: [], typing: [], connected: true }));
 vi.mock('@/features/chat/realtime/chatSocket', () => ({
   createChatSocket: vi.fn(() => ({
     subscribeRoom: (roomId, handler) => {
@@ -21,6 +21,7 @@ vi.mock('@/features/chat/realtime/chatSocket', () => ({
       fake.sent.push({ roomId, content });
       return true;
     },
+    typing: (roomId) => fake.typing.push(roomId),
     onStatus: (l) => { fake.status.push(l); return () => {}; },
     onError: (l) => { fake.errors.push(l); return () => {}; },
     status: 'connected',
@@ -61,6 +62,7 @@ beforeEach(() => {
   fake.status.length = 0;
   fake.errors.length = 0;
   fake.sent.length = 0;
+  fake.typing.length = 0;
   fake.connected = true;
   useToastStore.setState({ current: null });
   useAuthStore.setState({ accessToken: 't', user: { userId: 10, name: '구매자', roles: ['BUYER'] }, isAuthReady: true });
@@ -121,6 +123,33 @@ describe('채팅함', () => {
     expect(useToastStore.getState().current.msg).toMatch('너무 빨리');
     act(() => fake.errors.forEach((l) => l({ code: 'INVALID_INPUT', message: '메시지는 1~1000자로 보내 주세요.' })));
     expect(useToastStore.getState().current.msg).toMatch('1~1000자');
+  });
+
+  it('입력 중 — 입력하면 3초에 한 번 신호, 상대 TYPING 을 받으면 5초 동안 표시 · 메시지가 오면 사라짐', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(100_000);
+    renderAt('/mypage/chats/7', <ChatInbox kind="buyer" basePath="/mypage/chats" />, '/mypage/chats/:roomId');
+    const input = await screen.findByPlaceholderText(/메시지 입력/);
+    fireEvent.change(input, { target: { value: '안' } });
+    fireEvent.change(input, { target: { value: '안녕' } });
+    fireEvent.change(input, { target: { value: '   ' } });
+    expect(fake.typing).toEqual([7]);
+    Date.now.mockReturnValue(103_000);
+    fireEvent.change(input, { target: { value: '안녕하' } });
+    expect(fake.typing).toEqual([7, 7]);
+
+    act(() => fake.handlers.get(7)({ type: 'TYPING', userRole: 'BUYER' })); // 내 신호는 무시
+    expect(screen.queryByText(/입력 중/)).not.toBeInTheDocument();
+    act(() => fake.handlers.get(7)({ type: 'TYPING', userRole: 'SELLER' }));
+    expect(screen.getByText('스토어 #5 님이 입력 중…')).toBeInTheDocument();
+    act(() => fake.handlers.get(7)({ type: 'MESSAGE', messageId: 5, roomId: 7, senderRole: 'SELLER', kind: 'TEXT', content: '답장', context: null, createdAt: '2026-10-27T10:02:00+09:00' }));
+    expect(screen.queryByText(/입력 중/)).not.toBeInTheDocument();
+
+    vi.useFakeTimers();
+    act(() => fake.handlers.get(7)({ type: 'TYPING', userRole: 'SELLER' }));
+    expect(screen.getByText(/입력 중/)).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(5_000));
+    expect(screen.queryByText(/입력 중/)).not.toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('스토어 톡에서 운영팀에 도움 요청 → 고객 상담방으로 이동', async () => {

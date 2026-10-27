@@ -5,13 +5,13 @@ import { Client } from '@stomp/stompjs';
  * 연결은 항상 열려 있어 서버 자원을 쓰므로 "필요할 때만 열고, 안 쓰면 바로 닫는다":
  * - 채팅 화면이 방을 구독할 때만 연결. 마지막 구독이 풀리면 RELEASE_GRACE_MS 뒤 끊음(채팅 화면끼리 이동할 때 다시 연결하지 않게)
  * - 페이지를 떠나면(pagehide) 바로 끊고, 뒤로 가기 캐시로 돌아오면(pageshow) 다시 연결
- * - 탭이 HIDDEN_DISCONNECT_MS 넘게 가려져 있으면 끊고, 다시 보이면 연결 — 화면은 'connected' 때 REST 로 빈 곳을 채운다
+ * - 탭이 가려지면 연결은 두고 방 구독만 해제 — 서버는 "보고 있지 않음"으로 알림을 보낸다. 다시 보이면 재구독하고 'connected' 를 다시 알려
+ *   화면이 REST 로 빈 곳을 채운다 (잦은 탭 전환마다 재연결 비용을 들이지 않게 — 10/27 결정)
  * - 끊기면 1초부터 두 배씩 최대 30초 + 무작위 지연으로 재연결 (서버 재시작 때 한꺼번에 몰리지 않게)
  * - 토큰 만료로 닫히면(4401 · UNAUTHORIZED) 토큰을 새로 받아 재연결, 연결 수 초과(4429) · 차단(USER_BLOCKED)이면 재연결하지 않음
  * - 하트비트 10초 — 서버도 같은 값으로 끊긴 연결을 정리한다
  */
 export const RELEASE_GRACE_MS = 3_000;
-export const HIDDEN_DISCONNECT_MS = 60_000;
 export const HEARTBEAT_MS = 10_000;
 const BASE_DELAY_MS = 1_000;
 const MAX_DELAY_MS = 30_000;
@@ -31,7 +31,7 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
   let attempt = 0;
   let needsRefresh = false;
   let releaseTimer = null;
-  let hiddenTimer = null;
+  let hidden = doc.visibilityState === 'hidden';
 
   const setStatus = (next) => {
     if (status === next) return;
@@ -89,7 +89,7 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
         client.reconnectDelay = reconnectDelay(0);
         client.subscribe(ERRORS_DESTINATION, (msg) => emitError(JSON.parse(msg.body)));
         stompSubs.clear();
-        rooms.forEach((_, roomId) => subscribeStomp(roomId));
+        if (!hidden) rooms.forEach((_, roomId) => subscribeStomp(roomId));
         setStatus('connected');
       },
       onStompError: (frame) => {
@@ -117,9 +117,13 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
   };
 
   const onVisibility = () => {
-    clearTimeout(hiddenTimer);
-    if (doc.visibilityState === 'hidden') {
-      hiddenTimer = setTimeout(() => stop(), HIDDEN_DISCONNECT_MS);
+    hidden = doc.visibilityState === 'hidden';
+    if (hidden) {
+      stompSubs.forEach((sub) => sub.unsubscribe());
+      stompSubs.clear();
+    } else if (client?.connected) {
+      rooms.forEach((_, roomId) => subscribeStomp(roomId));
+      statusListeners.forEach((l) => l('connected')); // 가려진 동안 놓친 메시지 — 화면이 다시 받는다
     } else if (status !== 'stopped') {
       start();
     }
@@ -139,7 +143,7 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
       handlers.add(handler);
       if (!rooms.has(roomId)) {
         rooms.set(roomId, handlers);
-        if (client?.connected) subscribeStomp(roomId);
+        if (client?.connected && !hidden) subscribeStomp(roomId);
       }
       if (status === 'stopped') setStatus('idle'); // 화면이 새로 구독하면 다시 시도
       start();
@@ -160,6 +164,11 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
       if (!client?.connected) return false;
       client.publish({ destination: `/pub/rooms/${roomId}`, body: JSON.stringify({ content }), headers: { 'content-type': 'application/json' } });
       return true;
+    },
+    /** 입력 중 신호 — 연결돼 있고 화면이 보일 때만 (서버가 1초에 1번만 전달) */
+    typing(roomId) {
+      if (!client?.connected || hidden) return;
+      client.publish({ destination: `/pub/rooms/${roomId}/typing`, body: '{}', headers: { 'content-type': 'application/json' } });
     },
     onStatus(listener) {
       statusListeners.add(listener);
