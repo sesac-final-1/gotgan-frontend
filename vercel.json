@@ -2,5 +2,18 @@
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://api.gotgan.click/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Content-Security-Policy-Report-Only", "value": "default-src 'self'; script-src 'self' https://cdn.portone.io https://t1.kakaocdn.net https://t1.daumcdn.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https://sesac-gojigi-images-4380.s3.ap-northeast-2.amazonaws.com https://sesac-gojigi-seller-docs-4380.s3.ap-northeast-2.amazonaws.com https://*.daumcdn.net https://*.kakaocdn.net; connect-src 'self' https://api.gotgan.click wss://api.gotgan.click https://*.portone.io https://sesac-gojigi-images-4380.s3.ap-northeast-2.amazonaws.com https://sesac-gojigi-seller-docs-4380.s3.ap-northeast-2.amazonaws.com; frame-src https://*.portone.io https://*.tosspayments.com https://*.kakaopay.com https://*.naver.com https://postcode.map.kakao.com https://*.daum.net; object-src 'none'; base-uri 'self'; form-action 'self'" },
+        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    }
   ]
 }
