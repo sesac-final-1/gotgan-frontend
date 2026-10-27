@@ -16,7 +16,7 @@
 ### 0-1. 판단 원칙
 
 - **"어떻게 쓰나"는 팀 기존 규칙 우선** — 코드 스타일 · 네이밍 · 응답 형식 · 예외 구조 · DB 규칙
-- **"무엇을 만드나"는 프로젝트 스펙 유지** — 서비스 9개 + Keycloak · 엔드포인트 · 이벤트 · 인프라 구성
+- **"무엇을 만드나"는 프로젝트 스펙 유지** — 서비스 10개(10/27 chat 추가) + Keycloak · 엔드포인트 · 이벤트 · 인프라 구성
 - **MSA 전용 규칙 추가** — 서비스 간 호출 · Resilience4j · 대시보드 조합 · 이벤트 · Saga · 멱등성 · 인프라 네이밍
 - 규칙끼리 충돌하면 이 문서가 우선, 다른 문서는 이 문서에 맞춰 수정
 
@@ -25,7 +25,7 @@
 | 항목 | 기존(따숨) | 곳간 | 이유 |
 |---|---|---|---|
 | 패키지 | 도메인형, 엔티티는 `domain/` | 도메인형, 엔티티는 **`entity/`**, 서비스 호출용 **`client/`** 추가 | 팀 합의(엔티티 패키지명) · 서비스 간 HTTP 호출 |
-| 보안 위치 | 각 앱 `common/security` | **게이트웨이에만** Spring Security, 업무 서비스는 `common/auth`(헤더 → 사용자) | 토큰 발급은 Keycloak, JWT 검증은 게이트웨이 한 곳 |
+| 보안 위치 | 각 앱 `common/security` | **게이트웨이에만** Spring Security, 업무 서비스는 공통 모듈 `libs/common-web`의 `auth`(헤더 → 사용자) | 토큰 발급은 Keycloak, JWT 검증은 게이트웨이 한 곳 |
 | 로그인 사용자 | `SecurityUtil.getMemberId()` | `@CurrentUser AuthUser` (게이트웨이가 넣은 `X-User-*` 헤더) | 업무 서비스에 SecurityContext 없음 |
 | FK 제약 | 참조 컬럼 FK 필수 | **같은 서비스 안에서만 FK 필수**, 다른 서비스 ID는 논리 참조 + 인덱스 | DB per Service |
 | 회원 테이블 · 패키지 | `member` · `member/` | **`users` · `user/`** | 서비스(user-service) · 스키마(userdb) 이름과 일치 |
@@ -50,14 +50,14 @@
 | 5 | 에러 코드 형식 | 의미형 `{도메인}_{상황}` — `ORDER_OUT_OF_STOCK` | 2-5 |
 | 6 | 프론트 언어 | JavaScript (`.js` / `.jsx`) — 목업 그대로 | 4-1 |
 | 7 | 프론트 페이지 위치 | `pages/{shop · mypage · seller · admin}/` — 로직은 `features/` | 4-2 |
-| 8 | Redis 키 이름 | `{용도}:{식별자}` — `cart:{userId}`(캐시, 원본은 `orderdb.cart_item`) · `blacklist:{jti}`(Could). 리프레시 토큰 키는 폐지(Keycloak이 관리) | 2-2 |
+| 8 | Redis 키 이름 | `{용도}:{식별자}` — `cart:{userId}`(캐시, 원본은 `orderdb.cart_item`) · `blacklist:{jti}`(Could) · `blocked:user:{userId}`(탈퇴 · 정지 회원 토큰 차단) · `chat:room:{roomId}` · `chat:presence:{roomId}` · `notify:{받는 쪽}`(10/27). 리프레시 토큰 키는 폐지(Keycloak이 관리) | 2-2 |
 
 ### 0-4. 10/12 추가 확정
 
 | 항목 | 확정 규칙 | 관련 절 |
 |---|---|---|
-| 서비스 구성 | Spring 9개(gateway · user · store · product · order · payment · review · settlement · admin) + Keycloak | 2-1 · 3-2 |
-| admin-service | DB 없는 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합만 | 2-1 · 2-4 · 2-7 |
+| 서비스 구성 | Spring 10개(gateway · user · store · product · order · payment · review · settlement · admin · chat — chat 은 10/27 추가) + Keycloak | 2-1 · 3-2 |
+| admin-service | 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합. 자기 DB는 신고 · 조치 이력(admindb, ADR-0001 예외 10/26)만 · 실시간 알림 센터(10/27) | 2-1 · 2-4 · 2-7 |
 | 카테고리 · 수수료 | 카테고리는 product-service, 카테고리별 수수료는 settlement-service | 2-1 · 3-2 |
 | 대시보드 | 판매자는 store, 관리자는 admin 안에서 조합 — 병렬 호출 + 실패 영역만 빼고 부분 응답 | 2-7 |
 | 서비스 간 호출 | Resilience4j 표준 (타임아웃 · 서킷 브레이커 · 멱등 GET만 재시도 · 폴백) | 2-7 |
@@ -66,7 +66,7 @@
 | 코드 품질 | SonarQube Cloud — main 대상 PR에 품질 게이트 | 1-3 |
 | (10/13) 저장소 3개 | `gotgan-backend`(services · serverless · docker-compose · docs/api) · `gotgan-frontend`(React 루트) · `gotgan-config`(deploy · infra/terraform · scripts · docs). 모노레포 폐지. 각 저장소 `docs/CONVENTION.md`는 이 문서의 발췌본(자동 생성) — 이 문서만 고친다 | 1-4 · 5-5 |
 | (10/13) 시크릿 | **GitHub Secrets 단일 소스**(클러스터 · CI) · Vercel 환경 변수(프론트). Secrets Manager · KMS · ESO 없음. `secrets-sync` 워크플로가 K8s Secret 생성 | 1-5 · 5-3 |
-| (10/13) 인프라 일일 스케줄 | `infra/terraform/cluster/`는 `infra-schedule` 워크플로가 매일 KST 07:00 apply(→ `bootstrap`) · 21:00 destroy. 나머지 폴더는 상시. apply/destroy는 워크플로 또는 구지훈 | 5-2 |
+| (10/13) 인프라 일일 스케줄 | `infra/terraform/cluster/`는 `infra-schedule` 워크플로가 매일 KST 08:00 apply(→ `bootstrap`) · 22:00 destroy (10/26 부터 EventBridge Scheduler → Lambda 가 실행). 나머지 폴더는 상시. apply/destroy는 워크플로 또는 구지훈 | 5-2 |
 | (10/13) Redis 폴백 | 장바구니 원본은 MySQL `orderdb.cart_item`, Redis `cart:{userId}`는 캐시. Redis 호출은 서킷 인스턴스 `redisCart` + 폴백(MySQL) | 2-2 · 2-7 · 3-2 |
 | (10/13 3차) 3티어(db 노드 분리 · NetworkPolicy) | 프론트(Vercel) → 백(EKS `app` 노드 그룹 t3.xlarge ×2 — 10/14 t3.large에서 조정) → DB(EKS `db` 노드 그룹 t3.medium ×1, 테인트 `tier=db:NoSchedule`, MySQL · Redis만). `02-networkpolicy.yaml`로 DB 3306 · 6379는 `tier=backend` 파드만. blackbox exporter 없음. 파일 업로드만 presigned URL로 브라우저 → S3 직접(예외) | 5-3 |
 
@@ -81,7 +81,7 @@
 - `main` — 보호 브랜치. 직접 push 금지, PR + 승인 1명 + CI 통과 후 Squash merge
 - 작업 브랜치: `feat/{도메인}-{작업}` (예: `feat/order-payment-verify`, `feat/infra-eks-cluster`)
 - 그 외: `fix/` · `refactor/` · `docs/` · `chore/`(빌드 · 설정)
-- 도메인 값: `auth` `user` `store` `product` `order` `payment` `review` `settlement` `admin` `gateway` `front`(프론트 공통) `infra`(Keycloak 설정 포함, 예: `feat/infra-keycloak-realm`) `cicd` `obs`(관측성) `sls`(서버리스)
+- 도메인 값: `auth` `user` `store` `product` `order` `payment` `review` `settlement` `admin` `chat`(10/27) `gateway` `front`(프론트 공통) `infra`(Keycloak 설정 포함, 예: `feat/infra-keycloak-realm`) `cicd` `obs`(관측성) `sls`(서버리스)
 
 ### 1-2. 커밋 메시지
 
@@ -140,18 +140,19 @@
 | 스타일 | Tailwind CSS v4 | 디자인 토큰은 `styles/index.css`의 `@theme` (목업 토큰) |
 | UI 컴포넌트 | 목업 공통 컴포넌트 | `shared/components/ui/` — shadcn 등 새 UI 키트 도입 안 함 |
 | 차트 · 토스트 | 목업 SVG 차트 · 목업 ToastHost | 새 라이브러리 도입 시 팀 합의 |
-| 결제 | `@portone/browser-sdk` | `features/order`에서만 |
+| 결제 | `@portone/browser-sdk` | `features/payment`에서만 (`portone.js`) |
 | 목킹 | MSW | `src/mocks/` |
 | 테스트 | Vitest + React Testing Library | 대상: 유틸 · zod 스키마 · 핵심 훅 |
 
 ### 4-2. 프로젝트 구조
 
-도메인(기능) 기반 구조. **백엔드 서비스와 `features/{도메인}`이 대칭** (payment는 화면이 없어 `features/order`의 결제 흐름에 포함).
+도메인(기능) 기반 구조. **백엔드 서비스와 `features/{도메인}`이 대칭** (payment 는 화면 없이 포트원 결제창 · 결제 확인 로직만 `features/payment` 에 두고 주문서 화면(`features/order`)이 부름 — 결제 확인 엔드포인트는 order).
 
 ```
 gotgan-frontend/src/
 ├── app/                          # 앱 전역
-│   ├── router.jsx                #   전체 라우트 (단일 파일, 도메인별 주석 구획)
+│   ├── router.jsx                #   전체 라우트 (단일 파일, 도메인별 주석 구획 · 경로 → 파일 표 + 지연 로딩)
+│   ├── RouteError.jsx            #   화면 받기 실패(배포 직후 옛 파일) → 새로고침 안내
 │   ├── providers.jsx             #   QueryClientProvider 등
 │   ├── bootstrap.js              #   부팅 시 refresh 1회 → 로그인 상태 복구
 │   └── App.jsx
@@ -169,6 +170,11 @@ gotgan-frontend/src/
 │   ├── review/                   #   리뷰 · 상품문의 · 판매자 답글
 │   ├── admin/                    #   관리자 화면 전부 (admin-service만 호출)
 │   ├── support/                  #   FAQ (프론트 정적 데이터)
+│   ├── chat/                     #   1:1 채팅 — 구매자 · 판매자 · 관리자 상담함 공용 (chat-service, STOMP, 10/27)
+│   ├── notification/             #   알림 벨 · 알림 목록 · SSE (admin-service 알림 센터, 10/27)
+│   ├── payment/                  #   포트원 결제창 · 결제 확인 로직 (화면 없음 — 주문서가 부름, 담당 구지훈)
+│   ├── report/                   #   신고 접수 모달 (admin-service /api/reports, 담당 구지훈)
+│   ├── qa/                       #   임시 점검 화면 /qa — 시연 전 삭제
 │   └── settlement/               #   판매자 정산
 │       ├── api/                  #     settlementApi.js
 │       ├── hooks/                #     useSettlementsQuery.js · usePaySettlementMutation.js
@@ -177,7 +183,7 @@ gotgan-frontend/src/
 ├── shared/                       # 도메인에 속하지 않는 공통
 │   ├── api/                      #   axiosInstance.js · queryKeys.js · refresh.js(single-flight)
 │   ├── components/ui/            #   목업 공통 컴포넌트 (Pill · Price · Modal · Kpi · BarChart …)
-│   ├── components/common/        #   RequireRole · ConfirmModal · EmptyState · SortableHeader
+│   ├── components/common/        #   PostcodeSearch(우편번호 검색) · ConfirmModal · EmptyState · SortableHeader
 │   ├── layouts/                  #   ShopLayout · MyPageLayout · ConsoleLayout
 │   ├── hooks/  stores/  utils/
 ├── mocks/                        # MSW handlers · fixtures
@@ -186,7 +192,7 @@ gotgan-frontend/src/
 
 **운영 규칙**
 
-1. **관리자 화면은 `features/admin`에 둔다** (입점 심사 · 스토어 · 카테고리 · 수수료 · 정산 · 회원 · 관리자 대시보드). `/api/admin/**`(admin-service)만 호출, 도메인 서비스 API를 직접 부르지 않음 — 담당 구지훈
+1. **관리자 화면은 `features/admin`에 둔다** (입점 심사 · 스토어 · 카테고리 · 수수료 · 정산 · 회원 · 관리자 대시보드). `/api/admin/**`(admin-service)만 호출, 도메인 서비스 API를 직접 부르지 않음 — 담당 구지훈. 예외: 관리자 상담함은 `features/chat` 공용 화면이 `/api/chats/**`(chat-service) 호출(10/27)
 2. 다른 사람의 `features/` 폴더는 PR 없이 수정 금지
 3. 두 도메인 이상에서 쓰이면 `shared/`로 승격, 승격 시 팀 공지
 4. `features` 간 직접 import 지양 — 필요하면 `shared` 경유
@@ -207,6 +213,7 @@ gotgan-frontend/src/
 - `isAuthReady` 이전에는 판단하지 않음 (새로고침 시 잘못된 리다이렉트 방지)
 - **프론트 가드는 UX 장치일 뿐, 실제 접근 제어는 게이트웨이 · 서비스**
 - `router.jsx`는 영역 · 도메인별 주석 구획에만 추가, catch-all(`*`)은 항상 맨 마지막
+- **라우트 코드 분할(10/27)**: 화면은 영역별 `{ '경로': '폴더/파일명' }` 표에 한 줄로 추가 — `import.meta.glob` + `route.lazy`로 그 경로에 처음 들어갈 때 받음. 받기에 실패하면(배포 직후 옛 파일) `RouteError`가 새로고침 안내
 
 ### 4-4. 인증
 
@@ -319,12 +326,14 @@ export function useShipOrderItemsMutation() {
 
 - 예외: 성공 후 화면을 떠나는 인증 액션(로그인 · 로그아웃 · 비밀번호 변경)과 **포트원 결제 흐름**(`requestPayment` → 결제 검증)은 API 함수 직접 호출 허용. 끝난 뒤 필요한 queryKey만 무효화
 - 에러 메시지는 `error.response.data.message`(ApiResponse) 사용, 코드별 분기는 `code`로
+- 목업 데이터를 API로 교체할 때 필드명은 API 이름으로 맞춤 (목업 이름 유지 안 함)
 
 ### 4-7. TanStack Table 규칙
 
 - **데모 규모(수백 건 이하) 목록은 전체 1회 로드 + 클라이언트에서 검색 · 정렬 · 페이징** (관리자 입점 심사 · 스토어 · 회원 · 정산, 판매자 상품)
 - 건수가 계속 늘어나는 목록(판매자 주문, 구매자 상품 목록)은 **서버 페이징**(`manualPagination` · `manualSorting`)
 - 정렬 헤더는 `shared/components/common/SortableHeader.jsx` 재사용
+- `useClientTable`은 빈 목록에 모듈 상수 `EMPTY`를 넘김 — 매번 새 `[]`를 만들지 않음 (아래 참조 안정성 규칙)
 - **`state`에 넘기는 배열 · 객체는 `useMemo`, 함수는 컴포넌트 바깥(모듈 스코프) 또는 `useCallback`** — 매 렌더링 새 참조를 넘기면 무한 루프로 브라우저가 멈춤
 
 ```jsx
@@ -359,7 +368,7 @@ function AdminStoreListPage() {
 
 - **새로고침하면 로그아웃됨** — ① `bootstrap.js`의 refresh 호출 완료 여부 ② 가드가 `isAuthReady` 전에 판단하는지 ③ `authStore`에 AT가 들어갔는지
 - **401 후 자동 재발급이 안 됨** — ① Network 탭에 refresh 요청이 찍히는지 ② `axiosInstance`를 거치지 않는 별도 axios 호출이 있는지
-- **CORS 에러** — 절대경로(`http://...`)로 호출하고 있지 않은지. 로컬은 Vite 프록시, 배포는 Vercel rewrite — 항상 상대경로 `/api/...`
+- **CORS 에러** — 절대경로(`http://...`)로 호출하고 있지 않은지. 로컬은 Vite 프록시, 배포는 Vercel rewrite — 항상 상대경로 `/api/...`. 예외: 알림 SSE `/api/notifications/stream` · 채팅 `wss://api.gotgan.click/ws/chat`은 `api.gotgan.click`에 직접 연결 — 게이트웨이 globalcors가 이 두 경로만 허용(10/27)
 - **`import.meta.env.VITE_...`가 undefined** — `VITE_` 접두사, `.env.local` 수정 후 dev 서버 재시작, Vercel은 환경 변수 추가 후 재배포
 - **포트원 결제창이 안 뜸** — storeId · channelKey 환경 변수, 테스트 채널 키인지, 브라우저 팝업 차단
 
@@ -372,7 +381,7 @@ function AdminStoreListPage() {
 **프론트엔드**
 
 - [ ] 컴포넌트는 `.jsx`, 그 외는 `.js`인가? (TypeScript 파일이 섞이지 않았는가)
-- [ ] 페이지는 `pages/`, 로직은 `features/{도메인}`에 있는가? 관리자 화면은 `features/admin`에서 `/api/admin/**`만 호출하는가?
+- [ ] 페이지는 `pages/`, 로직은 `features/{도메인}`에 있는가? 관리자 화면은 `features/admin`에서 `/api/admin/**`만 호출하는가?(예외: 상담함 `features/chat`)
 - [ ] queryKey를 팩토리에서만 만들었는가?
 - [ ] 변경 후 관련 queryKey를 무효화하는가?
 - [ ] 서버 데이터를 Zustand에 복사하지 않았는가?
