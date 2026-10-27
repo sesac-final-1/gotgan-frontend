@@ -6,7 +6,7 @@ import { Kpi, BarChart, PageHead, Stars, StatusPill } from '@/shared/components/
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useSellerDailySalesQuery } from '@/features/store/hooks/useSellerDailySalesQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
-import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
+import { useSellerOrderItemsMockQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSellerSettlementsQuery';
@@ -21,7 +21,7 @@ export default function SellerDashboard() {
   const { data: store } = useMyStoreQuery();
   const { data: daily = [] } = useSellerDailySalesQuery();
   const { data: products = [] } = useProductsQuery();
-  const { data: orders = [] } = useSellerOrderItemsQuery();
+  const { data: orders = [] } = useSellerOrderItemsMockQuery();
   const { data: reviews = [] } = useReviewsQuery();
   const { data: qnas = [] } = useQnasQuery();
   const { data: mySet = [] } = useSellerSettlementsQuery();

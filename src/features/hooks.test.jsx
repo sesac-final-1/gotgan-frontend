@@ -22,7 +22,7 @@ import { isoWeek, recentWeeks } from '@/features/admin/constants';
 import { useSaveCategoryMutation, useReserveCommissionMutation } from '@/features/admin/hooks/useCategoryMutations';
 import { useMyOrdersMockQuery, useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useSellerBuyersQuery } from '@/features/order/hooks/useSellerBuyersQuery';
-import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
+import { useSellerOrderItemsMockQuery, useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
@@ -42,7 +42,7 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 const LIST_HOOKS = {
   useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
   useMyOrdersMockQuery, useSellerBuyersQuery,
-  useSellerOrderItemsQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery,
+  useSellerOrderItemsMockQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery,
   useSellerDailySalesQuery, useStoresQuery,
 };
 const OBJECT_HOOKS = { useMyStoreQuery };
@@ -58,10 +58,12 @@ const API_HOOKS = {
   useMeQuery: [{ userId: 4, name: '구매자1', grade: 'NORMAL', point: 0, totalSpent: 0, joinedAt: '2026-10-01T09:30:00+09:00' }, { id: 4 }],
   useMyPointsQuery: [{ balance: 0, history: [] }, { balance: 0, history: [] }],
   useMyAddressesQuery: [[{ id: 10, label: '집', main: true }], [{ id: 10, label: '집', main: true }]],
+  useSellerOrderItemsQuery: [{ statusCounts: { PAYMENT_DONE: 2 }, items: { content: [{ orderItemId: 456 }], page: 0, totalPages: 1 } },
+    { statusCounts: { PAYMENT_DONE: 2 }, items: { content: [{ orderItemId: 456 }] } }],
   useMyOrdersQuery: [{ statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001', status: 'PAID', items: [] }] },
     { statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001' }] }],
 };
-const API_HOOK_FNS = { useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery };
+const API_HOOK_FNS = { useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();

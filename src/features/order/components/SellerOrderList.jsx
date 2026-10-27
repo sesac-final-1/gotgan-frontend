@@ -1,93 +1,135 @@
-// 판매자 주문 관리 — 담당 이경석
-// TODO(이경석): 서버 페이징 전환 — manualPagination · manualSorting, useSellerOrderItemsQuery(params)
-import { useCallback, useMemo, useState } from 'react';
+// 판매자 주문 관리 — 담당 이경석 (GET /api/seller/order-items — 서버 페이징 · 탭 · 검색, 컨벤션 4-7)
+// 발주확인 · 송장 등록 · 배송완료는 일괄 PATCH — 일부만 실패하면 그 행에 사유를 보여 준다
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
+import { getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import { PageHead, Segments, StatusPill, Checkbox, Modal } from '@/shared/components/ui';
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
-import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
-import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
+import { useConfirmOrderItemsMutation, useDeliverOrderItemsMutation, useShipOrderItemsMutation } from '@/features/order/hooks/useSellerDeliveryMutations';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
-import { FLOW } from '@/features/order/constants';
+import { FLOW, ITEM_STATUS_LABEL } from '@/features/order/constants';
+import { bulkSummary, failureMap, statusOfTab, tabCounts, toShipItems } from '@/features/order/utils/sellerBulk';
+import { toDate } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
-import { toMap } from '@/shared/utils/collection';
 import { won, ymdhm, cx } from '@/shared/utils/format';
 
 const COURIERS = ['CJ대한통운', '롯데택배', '한진택배', '우체국택배', '로젠택배'];
 const TABS = ['전체', ...FLOW];
+const PAGE_SIZE = 20;
 
-// 열 정의는 상품 Map · 선택 상태가 바뀔 때만 새로 만든다 (컨벤션 4-7)
-function buildColumns({ productById, sel, toggle }) {
+// 열 정의는 선택 상태 · 실패 사유가 바뀔 때만 새로 만든다 (컨벤션 4-7). 정렬은 서버 고정(최신 주문 먼저)
+function buildColumns({ sel, toggle, failures }) {
   return [
     {
-      id: 'select', header: '', enableSorting: false, meta: { thClass: 'w-10', search: false },
-      cell: ({ row }) => <Checkbox checked={sel.has(row.original.lineId)} onChange={() => toggle(row.original.lineId)} />,
+      id: 'select', header: '', meta: { thClass: 'w-10' },
+      cell: ({ row }) => <Checkbox checked={sel.has(row.original.orderItemId)} onChange={() => toggle(row.original.orderItemId)} />,
     },
     {
-      accessorKey: 'lineId', header: '상품주문번호',
-      cell: ({ getValue }) => <Link to={`/seller/orders/${getValue()}`} className="num text-sky hover:underline whitespace-nowrap">{getValue()}</Link>,
+      accessorKey: 'itemNo', header: '상품주문번호',
+      cell: ({ row: { original: o } }) => <Link to={`/seller/orders/${o.orderItemId}`} className="num text-sky hover:underline whitespace-nowrap">{o.itemNo}</Link>,
     },
-    { accessorKey: 'date', header: '주문일시', sortingFn: 'datetime', meta: { tdClass: 'num text-ink-2 whitespace-nowrap' }, cell: ({ getValue }) => ymdhm(getValue()) },
-    { accessorKey: 'status', header: '상태', filterFn: 'equals', cell: ({ getValue }) => <StatusPill s={getValue()} /> },
+    { accessorKey: 'orderedAt', header: '주문일시', meta: { tdClass: 'num text-ink-2 whitespace-nowrap' }, cell: ({ getValue }) => ymdhm(toDate(getValue())) },
+    { accessorKey: 'status', header: '상태', cell: ({ getValue }) => <StatusPill s={ITEM_STATUS_LABEL[getValue()] ?? getValue()} /> },
     {
-      id: 'product', accessorFn: (o) => `${productById[o.productId]?.name ?? ''} ${o.option}`, header: '상품 / 옵션',
-      cell: ({ row: { original: o } }) => {
-        const p = productById[o.productId];
-        return <div className="flex items-center gap-2.5 min-w-[240px]"><img src={p?.images[0]} alt="" className="w-9 h-9 object-cover" /><div><div className="truncate max-w-[240px]">{p?.name}</div><div className="text-[11.5px] text-mute">{o.option}</div></div></div>;
-      },
+      id: 'product', header: '상품 / 옵션',
+      cell: ({ row: { original: o } }) => (
+        <div className="flex items-center gap-2.5 min-w-[240px]">
+          <img src={o.thumbnailUrl} alt="" className="w-9 h-9 object-cover bg-cream" />
+          <div>
+            <div className="truncate max-w-[240px]">{o.productName}</div>
+            <div className="text-[11.5px] text-mute">{o.optionName || '단일상품'}</div>
+            {failures[o.orderItemId] && <div className="text-[11.5px] text-rust">처리 실패: {failures[o.orderItemId]}</div>}
+          </div>
+        </div>
+      ),
     },
-    { accessorKey: 'qty', header: '수량', meta: { thClass: 'text-right', tdClass: 'text-right num' } },
-    { id: 'amount', accessorFn: (o) => o.unitPrice * o.qty, header: '결제금액', meta: { thClass: 'text-right', tdClass: 'text-right num whitespace-nowrap' }, cell: ({ getValue }) => won(getValue()) },
-    { accessorKey: 'receiver', header: '구매자', meta: { tdClass: 'whitespace-nowrap' } },
+    { accessorKey: 'quantity', header: '수량', meta: { thClass: 'text-right', tdClass: 'text-right num' } },
+    { accessorKey: 'itemAmt', header: '결제금액', meta: { thClass: 'text-right', tdClass: 'text-right num whitespace-nowrap' }, cell: ({ getValue }) => won(getValue()) },
+    { accessorKey: 'buyerName', header: '구매자', meta: { tdClass: 'whitespace-nowrap' } },
     {
-      id: 'invoice', accessorFn: (o) => (o.invoice ? `${o.courier} ${o.invoice}` : ''), header: '택배사 / 송장', meta: { tdClass: 'whitespace-nowrap text-[12px]' },
-      cell: ({ row: { original: o } }) => (o.invoice ? <><div>{o.courier}</div><div className="num text-mute">{o.invoice}</div></> : <span className="text-mute">-</span>),
+      id: 'invoice', header: '택배사 / 송장', meta: { tdClass: 'whitespace-nowrap text-[12px]' },
+      cell: ({ row: { original: o } }) => (o.trackingNo ? <><div>{o.courier}</div><div className="num text-mute">{o.trackingNo}</div></> : <span className="text-mute">-</span>),
     },
-  ];
+  ].map((c) => ({ ...c, enableSorting: false }));
 }
 
-// 지금은 전체 1회 로드 + 화면에서 탭 · 검색 · 정렬 · 페이징. 처리 결과는 목업처럼 로컬 상태로만 반영
 export default function SellerOrderList() {
   const [sp] = useSearchParams();
-  const { data: orders = [], isLoading, isError } = useSellerOrderItemsQuery();
-  const { data: products = [] } = useProductsQuery();
-  const { data: store } = useMyStoreQuery();
-  const [patch, setPatch] = useState({}); // 목업 흉내: lineId → 바뀐 필드(status · invoice)
-  const [tab, setTab] = useState(sp.get('s') || '전체');
+  const [tab, setTab] = useState(TABS.includes(sp.get('s')) ? sp.get('s') : '전체');
+  const [search, setSearch] = useState('');
+  const [q, setQ] = useState('');
+  const [pageIndex, setPageIndex] = useState(0);
   const [sel, setSel] = useState(() => new Set());
+  const [failures, setFailures] = useState({}); // 직전 처리에서 실패한 행 → 사유
   const [invoiceModal, setInvoiceModal] = useState(false);
+  const [inputs, setInputs] = useState({}); // 송장 모달: orderItemId → { courier, trackingNo }
   const [range, setRange] = useState('1개월');
+  const { data: store } = useMyStoreQuery();
+  const defaultCourier = store?.courier || COURIERS[0];
 
-  const productById = useMemo(() => toMap(products), [products]);
-  const rows = useMemo(() => orders.map((o) => (patch[o.lineId] ? { ...o, ...patch[o.lineId] } : o)), [orders, patch]);
+  // 검색어는 입력이 멈추고 0.3초 뒤에 서버로 — 탭 · 검색이 바뀌면 1페이지로
+  useEffect(() => {
+    const t = setTimeout(() => { setQ(search.trim()); setPageIndex(0); }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+  const { data, isLoading, isError } = useSellerOrderItemsQuery({ status: statusOfTab(tab) ?? undefined, q: q || undefined, page: pageIndex, size: PAGE_SIZE });
+  const rows = useMemo(() => data?.items.content ?? [], [data]);
+
   const toggle = useCallback((id) => setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
-  const columns = useMemo(() => buildColumns({ productById, sel, toggle }), [productById, sel, toggle]);
-  const columnFilters = useMemo(() => (tab === '전체' ? [] : [{ id: 'status', value: tab }]), [tab]);
-  const { table, globalFilter, setGlobalFilter } = useClientTable({ data: rows, columns, columnFilters, initialSorting: [{ id: 'date', desc: true }] });
+  const columns = useMemo(() => buildColumns({ sel, toggle, failures }), [sel, toggle, failures]);
+  const table = useReactTable({
+    data: rows, columns, getCoreRowModel: getCoreRowModel(),
+    manualPagination: true, pageCount: data?.items.totalPages ?? 0,
+    state: { pagination: { pageIndex, pageSize: PAGE_SIZE } },
+    onPaginationChange: (u) => { setPageIndex((typeof u === 'function' ? u({ pageIndex, pageSize: PAGE_SIZE }) : u).pageIndex); setSel(new Set()); },
+  });
 
-  const counts = Object.fromEntries(TABS.map((t) => [t, t === '전체' ? rows.length : rows.filter((r) => r.status === t).length]));
-  const list = table.getFilteredRowModel().rows.map((r) => r.original);
-  const selRows = rows.filter((r) => sel.has(r.lineId));
-  const allOn = list.length > 0 && list.every((r) => sel.has(r.lineId));
+  const counts = tabCounts(data?.statusCounts);
+  const selRows = rows.filter((r) => sel.has(r.orderItemId));
+  const allOn = rows.length > 0 && rows.every((r) => sel.has(r.orderItemId));
 
-  // TODO(이경석): useConfirmOrderItemsMutation
+  const confirmMutation = useConfirmOrderItemsMutation();
+  const shipMutation = useShipOrderItemsMutation();
+  const deliverMutation = useDeliverOrderItemsMutation();
+  const busy = confirmMutation.isPending || shipMutation.isPending || deliverMutation.isPending;
+
+  // 처리 결과 — 실패 행은 사유 표시 · 선택 유지, 성공 행은 선택 해제
+  const run = async (mutation, payload, action) => {
+    try {
+      const r = await mutation.mutateAsync(payload);
+      setFailures(failureMap(r));
+      setSel(new Set(r.failed.map((f) => f.orderItemId)));
+      toast(bulkSummary(action, r));
+      return r;
+    } catch (err) {
+      toast(err.response?.data?.message ?? `${action}하지 못했어요. 잠시 후 다시 시도해 주세요.`);
+      return null;
+    }
+  };
+  const idsOf = (status) => selRows.filter((r) => r.status === status).map((r) => r.orderItemId);
   const confirm = () => {
-    const ok = selRows.filter((r) => r.status === '결제완료');
-    if (!ok.length) return toast('결제완료 상태의 주문만 발주확인할 수 있어요');
-    setPatch((prev) => ({ ...prev, ...Object.fromEntries(ok.map((r) => [r.lineId, { ...prev[r.lineId], status: '배송준비' }])) }));
-    toast(`${ok.length}건 발주확인 완료 → 배송준비`); setSel(new Set());
+    const ids = idsOf('PAYMENT_DONE');
+    if (!ids.length) return toast('결제완료 상태의 주문만 발주확인할 수 있어요');
+    void run(confirmMutation, ids, '발주확인');
   };
-  // TODO(이경석): useShipOrderItemsMutation
-  const ship = () => {
-    const ready = selRows.filter((r) => r.status === '배송준비');
-    setPatch((prev) => ({ ...prev, ...Object.fromEntries(ready.map((r) => [r.lineId, { ...prev[r.lineId], status: '배송중', invoice: r.invoice || `6512${String(Date.now()).slice(-8)}` }])) }));
-    toast(`송장 등록 · 발송처리 완료 (구매자에게 알림톡 발송)`); setSel(new Set()); setInvoiceModal(false);
+  const openInvoice = () => { setInputs({}); setInvoiceModal(true); };
+  const ship = async () => {
+    const ready = selRows.filter((r) => r.status === 'PREPARING');
+    if (!ready.length) return toast('배송준비 상태의 주문만 발송처리할 수 있어요');
+    if (await run(shipMutation, toShipItems(ready, inputs, defaultCourier), '발송처리')) setInvoiceModal(false);
   };
-  // TODO(이경석): useCancelOrderItemsMutation
+  const deliver = () => {
+    const ids = idsOf('SHIPPING');
+    if (!ids.length) return toast('배송중 상태의 주문만 배송완료 처리할 수 있어요');
+    void run(deliverMutation, ids, '배송완료 처리');
+  };
+  const setInput = (id, field, value) => setInputs((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  // TODO(이경석): useCancelOrderItemsMutation (판매자 취소 — 서버 API 없음)
   const cancel = () => toast('주문 취소 처리 (구매자 환불)');
-  // TODO(이경석): useNotifyShippingDelayMutation
+  // TODO(이경석): useNotifyShippingDelayMutation (서버 API 없음)
   const notifyDelay = () => toast('발송지연 안내가 구매자에게 발송되었어요');
 
   return (
@@ -103,18 +145,19 @@ export default function SellerOrderList() {
         </div>
         <div className="flex flex-wrap gap-3 items-center">
           <span className="text-[13px] font-semibold w-14">검색</span>
-          <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="상품주문번호 · 구매자 · 상품명 · 송장번호" className="sm:w-96" />
+          <SearchInput value={search} onChange={setSearch} placeholder="상품주문번호 · 구매자 · 수령인 · 상품명 · 송장번호" className="sm:w-96" />
         </div>
       </div>
 
-      <div className="mt-3 overflow-x-auto"><Segments items={TABS} value={tab} onChange={(t) => { setTab(t); setSel(new Set()); }} counts={counts} /></div>
+      <div className="mt-3 overflow-x-auto"><Segments items={TABS} value={tab} onChange={(t) => { setTab(t); setPageIndex(0); setSel(new Set()); }} counts={counts} /></div>
 
       <div className="panel mt-3 border-b-0">
         <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 text-[13px]">
-          <Checkbox checked={allOn} onChange={(on) => setSel(on ? new Set(list.map((r) => r.lineId)) : new Set())} />
+          <Checkbox checked={allOn} onChange={(on) => setSel(on ? new Set(rows.map((r) => r.orderItemId)) : new Set())} />
           <span className="text-ink-2 mr-2">선택 <b className="num text-ink">{sel.size}</b>건</span>
-          <button disabled={!sel.size} onClick={confirm} className="btn btn-ink btn-xs">발주확인</button>
-          <button disabled={!sel.size} onClick={() => setInvoiceModal(true)} className="btn btn-line btn-xs">송장 입력 · 발송처리</button>
+          <button disabled={!sel.size || busy} onClick={confirm} className="btn btn-ink btn-xs">발주확인</button>
+          <button disabled={!sel.size || busy} onClick={openInvoice} className="btn btn-line btn-xs">송장 입력 · 발송처리</button>
+          <button disabled={!sel.size || busy} onClick={deliver} className="btn btn-line btn-xs">배송완료 처리</button>
           <button disabled={!sel.size} onClick={cancel} className="btn btn-line btn-xs">판매취소</button>
           <button disabled={!sel.size} onClick={notifyDelay} className="btn btn-line btn-xs">발송지연 안내</button>
           <button disabled={!sel.size} className="btn btn-ghost btn-xs ml-auto"><Printer size={13} /> 송장 출력</button>
@@ -124,18 +167,21 @@ export default function SellerOrderList() {
 
       {/* 송장 입력 표 — 선택한 주문의 입력 폼이라 DataTable 대신 목업 <table> 그대로 */}
       <Modal open={invoiceModal} onClose={() => setInvoiceModal(false)} title={`송장 입력 · 발송처리 (${selRows.length}건)`} width={680}
-        footer={<><button className="btn btn-line btn-sm" onClick={() => setInvoiceModal(false)}>취소</button><button className="btn btn-ink btn-sm" onClick={ship}>발송처리</button></>}>
-        <p className="text-[12.5px] text-mute mb-3">배송준비 상태 주문만 발송처리됩니다. 송장번호는 택배사 시스템으로 자동 검증됩니다.</p>
+        footer={<><button className="btn btn-line btn-sm" onClick={() => setInvoiceModal(false)}>취소</button><button disabled={busy} className="btn btn-ink btn-sm" onClick={() => void ship()}>{shipMutation.isPending ? '처리 중…' : '발송처리'}</button></>}>
+        <p className="text-[12.5px] text-mute mb-3">배송준비 상태 주문만 발송처리됩니다. 송장번호를 비우면 데모용 송장번호가 자동으로 붙어요.</p>
         <table className="tbl">
           <thead><tr><th>상품주문번호</th><th>수령인</th><th>택배사</th><th>송장번호</th></tr></thead>
           <tbody>
-            {selRows.map((r) => (
-              <tr key={r.lineId} className={cx(r.status !== '배송준비' && 'opacity-40')}>
-                <td className="num text-[12px]">{r.lineId}</td><td>{r.receiver}</td>
-                <td><select defaultValue={store?.courier} className="field field-sm w-32">{COURIERS.map((c) => <option key={c}>{c}</option>)}</select></td>
-                <td><input className="field field-sm num w-40" defaultValue={r.invoice || ''} placeholder="숫자만 입력" disabled={r.status !== '배송준비'} /></td>
-              </tr>
-            ))}
+            {selRows.map((r) => {
+              const off = r.status !== 'PREPARING';
+              return (
+                <tr key={r.orderItemId} className={cx(off && 'opacity-40')}>
+                  <td className="num text-[12px]">{r.itemNo}{failures[r.orderItemId] && <div className="text-rust text-[11px]">{failures[r.orderItemId]}</div>}</td><td>{r.receiverName}</td>
+                  <td><select value={inputs[r.orderItemId]?.courier ?? defaultCourier} onChange={(e) => setInput(r.orderItemId, 'courier', e.target.value)} disabled={off} className="field field-sm w-32">{COURIERS.map((c) => <option key={c}>{c}</option>)}</select></td>
+                  <td><input value={inputs[r.orderItemId]?.trackingNo ?? ''} onChange={(e) => setInput(r.orderItemId, 'trackingNo', e.target.value)} className="field field-sm num w-40" placeholder="숫자만 입력 (비우면 자동)" disabled={off} /></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </Modal>
