@@ -27,7 +27,7 @@ const routes = (table, role) =>
 const SHOP = {
   '': 'shop/HomePage', products: 'shop/ProductListPage', 'products/:id': 'shop/ProductDetailPage', stores: 'shop/StoreListPage',
   'store/:id': 'shop/StoreHomePage', login: 'shop/LoginPage', signup: 'shop/SignupPage', 'auth/callback': 'shop/AuthCallbackPage',
-  help: 'shop/HelpPage',
+  help: 'shop/HelpPage', qa: 'qa/QaPage', // qa = 임시 점검 화면 (시연 전 삭제)
 };
 const SHOP_BUYER = {
   cart: 'shop/CartPage', checkout: 'shop/CheckoutPage', 'order/complete': 'shop/OrderCompletePage', 'seller/apply': 'shop/SellerApplyPage',

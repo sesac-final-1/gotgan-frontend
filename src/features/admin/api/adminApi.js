@@ -138,6 +138,15 @@ export const reserveCommissions = async (rows) => (await axiosInstance.put('/api
 // TODO(구지훈): GET /api/admin/products (스토어별 상품 · 상태 — 상품 수 · 상세 표 · 리뷰 상품명)
 export const fetchAdminProducts = () => mockResolve(products);
 
+// GET /api/admin/stores/{storeId}/products — product 판매자 상품 목록과 같은 응답 그대로 (backend #110 · #112, 삭제 제외 · 상태 무관)
+//   [{productId, name, categoryName, salePrice, imageUrl, totalStock, soldOut, status, statusReason, displayable, hiddenReason, createdAt}]
+// 스토어 상세(B안 — 스토어 목업)는 store API 교체 때 이 함수로 바꾼다. 지금은 임시 점검 화면(/qa)만 사용
+export const fetchAdminStoreProducts = async (storeId) => (await axiosInstance.get(`/api/admin/stores/${storeId}/products`)).data.data;
+
+// PATCH /api/admin/products/{productId}/block {blocked, reason} → {productId, status, statusReason} — 해제하면 STOPPED(판매자가 재개)
+export const blockProduct = async ({ productId, blocked, reason }) =>
+  (await axiosInstance.patch(`/api/admin/products/${productId}/block`, { blocked, reason })).data.data;
+
 // 입점 심사 — admin-service 가 store /internal/applications 응답 + categoryName 을 그대로 전달 (backend #98, store.md 3 ~ 7절)
 const appStatus = (v) => (v ? APPLICATION_STATUS_LABEL[v] ?? v : null);
 const DOC_LABEL = Object.fromEntries(DOC_TYPES.map((d) => [d.value, d.label]));
