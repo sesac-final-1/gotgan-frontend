@@ -11,6 +11,7 @@ import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { won, comma, pct, shortWon, ymd, cx } from '@/shared/utils/format';
 
+// 일별 거래액 = order 결제일별 통계 최근 30일 (backend #107 · #112), 상품 현황 = product 통계 (#110).
 // 카테고리별 거래액 · 스토어 순위 = 정산 통계의 최근 8주 구매확정분 (backend #103). 순위는 요약 표라 목업 <table> 그대로 (검색 · 정렬 없음)
 export default function AdminDashboard() {
   const { data: dash, isLoading } = useAdminDashboardQuery();
@@ -19,7 +20,6 @@ export default function AdminDashboard() {
   const { data: reports = [] } = useAdminReportsQuery();
   const { data: users = [] } = useAdminUsersQuery();
   const { data: categories = [] } = useAdminCategoriesQuery();
-  const platformDaily = useMemo(() => dash?.platformDaily ?? [], [dash]);
 
   // 매출이 있는 카테고리만 온다 — 이름 · 수수료율은 카테고리 목록에서 (사용 중지 등으로 못 찾으면 번호)
   const catRows = useMemo(() => {
@@ -32,9 +32,10 @@ export default function AdminDashboard() {
   }, [categories, dash]);
   const storeRank = dash?.settlement?.topStores ?? [];
 
-  if (isLoading || platformDaily.length < 2) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
+  if (isLoading || !dash) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
 
-  const { settlement, order } = dash; // 영역이 실패하면 null — 숫자 대신 '–'
+  const { settlement, order, product, platformDaily } = dash; // 영역이 실패하면 null — 숫자 대신 '–'
+  const hasDaily = platformDaily?.some((d) => d.amount > 0); // 모두 0 이면 차트 대신 안내 (막대 높이 기준이 없음)
   const count = (v) => v ?? '–';
   const todo = [
     ['입점 심사 대기', apps.filter((a) => a.status === '심사대기').length, '/admin/applications'],
@@ -59,12 +60,13 @@ export default function AdminDashboard() {
         <Kpi label="누적 거래액 (GMV)" value={order ? shortWon(order.totalTradeAmt) : '–'} unit="원" sub={order ? `결제 완료 주문 ${comma(order.orderCount)}건` : '주문 통계를 불러오지 못했어요'} />
         <Kpi label="이번 달 수수료 수익" value={settlement ? comma(settlement.commissionRevenueThisMonth / 10000) : '–'} unit="만원" sub="판매수수료 (결제수수료 제외)" />
         <Kpi label="지급 예정 · 보류" value={settlement ? shortWon(settlement.scheduledAmt) : '–'} unit="원" sub={settlement ? `보류 ${won(settlement.heldAmt)} · 이번 달 지급 ${shortWon(settlement.paidThisMonthAmt)}원` : '정산 통계를 불러오지 못했어요'} />
-        <Kpi label="운영 스토어 / 회원" value={`${stores.filter((s) => s.status === '운영중').length}`} unit={`곳 · ${comma(users.length)}명`} />
+        <Kpi label="운영 스토어 / 회원" value={`${stores.filter((s) => s.status === '운영중').length}`} unit={`곳 · ${comma(users.length)}명`}
+          sub={product ? `판매중 상품 ${comma(product.onSaleCount)} · 품절 ${comma(product.soldOutCount)} · 강제중지 ${comma(product.blockedCount)}` : '상품 통계를 불러오지 못했어요'} />
       </div>
       <div className="grid xl:grid-cols-[1fr_360px] gap-4 mt-4">
         <div className="panel">
           <div className="panel-head"><span className="panel-title">일별 거래액 · 최근 30일</span></div>
-          <div className="p-5"><BarChart data={platformDaily} /></div>
+          <div className="p-5">{hasDaily ? <BarChart data={platformDaily} /> : <p className="text-mute text-[13px] text-center py-6">{platformDaily ? '최근 30일 결제가 없어요' : '주문 통계를 불러오지 못했어요'}</p>}</div>
         </div>
         <div className="panel">
           <div className="panel-head"><span className="panel-title">카테고리별 거래액 (8주 · 구매확정)</span><span className="text-[11.5px] text-mute">수수료율</span></div>
