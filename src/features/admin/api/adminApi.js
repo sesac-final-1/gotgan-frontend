@@ -5,13 +5,18 @@ import { DEFAULT_AVATAR } from '@/features/user/constants';
 import { toPointRow } from '@/features/user/api/userApi';
 import { toSettlementDetail } from '@/features/settlement/api/settlementApi';
 import { stores, products } from '@/mocks/fixtures/catalog';
-import { settlements, platformDaily } from '@/mocks/fixtures/orders';
+import { settlements } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
 import { APPLICATION_STATUS_LABEL, BIZ_TYPE_LABEL, EXPECTED_SALES_LABEL, ACTOR_LABEL, DOC_TYPES } from '@/features/admin/constants';
 
-// GET /api/admin/dashboard — settlement · order 통계 조합, 한 곳이 실패하면 그 영역 null + unavailable[] (backend #95)
-// 일별 거래액(platformDaily)은 내부 통계 API 가 없어 목업 그대로 — order 일별 통계가 생기면 교체
-export const fetchAdminDashboard = async () => ({ ...(await axiosInstance.get('/api/admin/dashboard')).data.data, platformDaily });
+// GET /api/admin/dashboard — settlement · order · product 통계 조합, 한 곳이 실패하면 그 영역 null + unavailable[] (backend #95 · #112)
+// 일별 거래액: orderDaily [{date: 'YYYY-MM-DD', tradeAmt, orderCount}](최근 30일 · 빈 날 0) → 차트 모양 {date, amount, orders}
+export const toDailyBars = (rows) =>
+  rows?.map((r) => ({ date: new Date(`${r.date}T00:00:00+09:00`), amount: r.tradeAmt, orders: r.orderCount })) ?? null;
+export const fetchAdminDashboard = async () => {
+  const data = (await axiosInstance.get('/api/admin/dashboard')).data.data;
+  return { ...data, platformDaily: toDailyBars(data.orderDaily) };
+};
 
 // TODO(구지훈): GET /api/admin/stores
 export const fetchAdminStores = () => mockResolve(stores);
