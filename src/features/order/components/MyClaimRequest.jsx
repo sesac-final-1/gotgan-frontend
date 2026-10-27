@@ -40,7 +40,7 @@ function PreviewBox({ type, reasonCode, preview }) {
             ? row('배송비 환불', p.shippingFee ? `+${won(p.shippingFee)}` : '없음 (같은 스토어 상품이 남아 있어요)')
             : row('반품 배송비 차감', p.shippingFee ? `−${won(Math.abs(p.shippingFee))}` : '판매자 부담')}
           {row('사용 포인트 환원', p.restorePoint ? `+${comma(p.restorePoint)}P` : '0P', 'text-moss')}
-          {row('적립 포인트 회수', p.reclaimPoint ? `−${comma(p.reclaimPoint)}P` : '0P', 'text-rust')}
+          {p.reclaimPoint > 0 && row('적립 포인트 회수', `−${comma(p.reclaimPoint)}P`, 'text-rust')}
           <div className="flex justify-between font-bold border-t border-line-2 pt-2"><span>결제수단 환불 예정 금액</span><span className="num">{won(p.refundAmt)}</span></div>
         </>}
     </div>

@@ -134,7 +134,7 @@ function DetailBody({ p, store, cat, products, stores }) {
           <div className="mt-5 pb-5 border-b border-line"><Price p={p} size="lg" /></div>
 
           <dl className="py-4 border-b border-line text-[13px] grid grid-cols-[72px_1fr] gap-y-2.5">
-            <dt className="text-mute">적립</dt><dd>결제 시 실결제금액의 5% · 약 <b className="num">{comma(earnOf(unit))}P</b></dd>
+            <dt className="text-mute">적립</dt><dd>구매확정 시 실결제금액의 5% · 약 <b className="num">{comma(earnOf(unit))}P</b></dd>
             <dt className="text-mute">배송</dt>
             <dd>
               <div className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {store.courier} · {store.shipFee ? `${comma(store.shipFee)}원` : '무료배송'}</div>
@@ -237,7 +237,7 @@ function DetailBody({ p, store, cat, products, stores }) {
                   ['반품 배송비', `단순 변심: 왕복 ${won((store.shipFee || 3000) * 2)} / 상품 하자·오배송: 판매자 부담`],
                   ['교환/반품 불가', '착용 흔적·세탁·택 제거 시, 신선식품 단순 변심, 주문 제작 상품'],
                   ['구매 확정', '배송 완료 7일 후 자동 구매확정 (확정 이후에는 교환/반품 불가)'],
-                  ['포인트', '취소 · 반품 완료 시 그 상품분 사용 포인트는 환원, 적립 포인트는 회수'],
+                  ['포인트', '적립은 구매확정 때 · 취소 · 반품 완료 시 그 상품분 사용 포인트는 환원'],
                 ].map(([k, v]) => (
                   <tr key={k} className="border-b border-line"><th className="w-40 bg-cream text-left font-medium px-3 py-3 text-ink-2 align-top">{k}</th><td className="px-3 py-3 leading-relaxed">{v}</td></tr>
                 ))}

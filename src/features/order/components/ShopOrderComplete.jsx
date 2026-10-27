@@ -33,7 +33,7 @@ export default function ShopOrderComplete() {
           // 리다이렉트로 돌아오면 사용 포인트 · 배송지를 모름 — 주문 상세에서 확인
           st.point != null && ['사용 포인트', <span className="num">{comma(st.point)}P</span>],
           ['실결제금액', <b className="num">{won(pay)}</b>],
-          ['적립 포인트', <span className="num text-moss font-semibold">+{comma(st.earn ?? earnOf(pay))}P <span className="text-mute font-normal text-[12px]">실결제금액의 {POINT_RATE * 100}%</span></span>],
+          ['적립 예정 포인트', <span className="num text-moss font-semibold">+{comma(st.earn ?? earnOf(pay))}P <span className="text-mute font-normal text-[12px]">실결제금액의 {POINT_RATE * 100}% · 구매확정 시 적립</span></span>],
           st.address && ['배송지', st.address],
         ].filter(Boolean).map(([k, v]) => (
           <div key={k} className="flex py-3.5 border-b border-line"><span className="w-28 text-mute">{k}</span><span className="flex-1">{v}</span></div>

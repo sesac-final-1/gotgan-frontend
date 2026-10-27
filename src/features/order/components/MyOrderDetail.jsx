@@ -62,7 +62,7 @@ export default function MyOrderDetail() {
             {[['상품금액', won(o.totalProductAmt)], ['배송비', o.totalShippingFee ? `+${won(o.totalShippingFee)}` : '무료'], ['포인트 사용', o.usedPoint ? `−${comma(o.usedPoint)}P` : '0P'], ['결제수단', payMethodLabel(o.payment)]].map(([k, v]) => <div key={k} className="flex justify-between py-2.5 border-b border-line"><span className="text-mute">{k}</span><span className="num">{v}</span></div>)}
             <div className="flex justify-between py-3 font-bold border-b border-line"><span>실결제금액</span><span className="num text-[16px]">{won(o.payAmt)}</span></div>
             {o.payment?.cancelledAmount > 0 && <div className="flex justify-between py-2.5 border-b border-line text-rust"><span>환불 금액</span><span className="num">−{won(o.payment.cancelledAmount)}</span></div>}
-            <div className="flex justify-between py-2.5 text-[13px]"><span className="text-mute">적립 포인트</span><span className="num font-semibold text-moss">+{comma(o.earnedPoint)}P</span></div>
+            <div className="flex justify-between py-2.5 text-[13px]"><span className="text-mute">{o.items.every((l) => l.status === 'CONFIRMED') ? '적립 포인트' : '적립 예정 포인트 (구매확정 시 적립)'}</span><span className="num font-semibold text-moss">+{comma(o.earnedPoint)}P</span></div>
           </div>
           <div className="flex gap-2 mt-2">
             <button className="btn btn-line btn-sm">영수증 / 거래명세서</button>

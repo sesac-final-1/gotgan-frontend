@@ -72,9 +72,9 @@ export default function MyPoints() {
       <DataTable table={table} loading={isLoading} error={isError} empty="포인트 내역이 없어요" />
       <div className="mt-6 bg-cream p-5 text-[13px] text-ink-2 leading-relaxed">
         <b className="text-ink">포인트 안내</b><br />
-        · 결제 시 실결제금액(포인트 사용분 제외)의 {POINT_RATE * 100}%가 적립되며, 다음 결제부터 사용할 수 있어요.<br />
+        · 구매확정 시 실결제금액(포인트 사용분 제외)의 {POINT_RATE * 100}%가 적립되며, 다음 결제부터 사용할 수 있어요.<br />
         · 사용 · 적립 포인트는 상품주문 단위로 금액 비율에 따라 나뉘어 기록돼요.<br />
-        · 취소 · 반품이 완료되면 그 상품주문분 사용 포인트는 환원, 적립 포인트는 회수됩니다.
+        · 취소 · 반품이 완료되면 그 상품주문분 사용 포인트는 환원됩니다.
       </div>
     </div>
   );

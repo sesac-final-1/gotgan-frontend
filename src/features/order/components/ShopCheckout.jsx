@@ -138,7 +138,7 @@ export default function ShopCheckout() {
               <div className="flex justify-between"><span className="text-ink-2">상품금액 + 배송비</span><span className="num">{won(productAmt + shippingFee)}</span></div>
               <div className="flex justify-between"><span className="text-ink-2">사용 포인트</span><span className="num">−{comma(point)}P</span></div>
               <div className="flex justify-between font-bold border-t border-line-2 pt-1.5"><span>실결제금액</span><span className="num">{won(payAmt)}</span></div>
-              <div className="text-[12px] text-moss">결제 시 실결제금액의 {POINT_RATE * 100}% <b className="num">{comma(earnOf(payAmt))}P</b> 적립 예정</div>
+              <div className="text-[12px] text-moss">구매확정 시 실결제금액의 {POINT_RATE * 100}% <b className="num">{comma(earnOf(payAmt))}P</b> 적립 예정</div>
             </div>
           </Section>
 
