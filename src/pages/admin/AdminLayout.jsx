@@ -1,5 +1,6 @@
 import { LayoutDashboard, FileCheck, Store, Wallet, Users, Flag, Tags } from 'lucide-react';
 import ConsoleLayout from '@/shared/layouts/ConsoleLayout';
+import NotificationBell from '@/features/notification/components/NotificationBell';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
 import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
 import { useAdminReportsQuery } from '@/features/admin/hooks/useAdminReportsQuery';
@@ -30,13 +31,8 @@ export default function AdminLayout() {
     },
     { title: '설정', items: [{ to: '/admin/categories', label: '카테고리 · 수수료', icon: Tags }] },
   ];
-  const notices = [
-    { text: '신규 입점 신청 2건 (숲속제과, 실과바늘)', time: '3시간 전', to: '/admin/applications' },
-    { text: '9/21~9/27 주차 정산 지급 승인 대기 (9개 스토어)', time: '오늘 09:00', to: '/admin/settlements' },
-    { text: '처리 대기 신고 확인', time: '어제', to: '/admin/reports' },
-  ];
   return (
-    <ConsoleLayout kind="admin" badge="운영관리" groups={groups} notices={notices} onLogout={logout}
+    <ConsoleLayout kind="admin" badge="운영관리" groups={groups} bell={<NotificationBell dark />} onLogout={logout}
       account={{ name: '곳간 운영팀', role: '파트너운영 · 최고관리자', avatar: '/images/avatar/u-2.jpg' }} />
   );
 }

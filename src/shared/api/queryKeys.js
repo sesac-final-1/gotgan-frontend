@@ -76,6 +76,13 @@ export const queryKeys = {
     sellerPending: () => ['settlement', 'seller', 'pending'],
   },
 
+  // ── notification (구지훈) — 알림 센터 /api/notifications/** (admin-service)
+  notification: {
+    all: ['notification'],
+    list: () => ['notification', 'list'],
+    unread: () => ['notification', 'unread'],
+  },
+
   // ── payment (구지훈) — 포트원 결제창 · 결제 확인
   payment: {
     all: ['payment'],
