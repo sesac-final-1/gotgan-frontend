@@ -36,21 +36,22 @@ const SHOP_BUYER = {
 const MYPAGE = {
   orders: 'mypage/MyOrdersPage', 'orders/:id': 'mypage/MyOrderDetailPage', 'claim/:lineId': 'mypage/MyClaimRequestPage',
   claims: 'mypage/MyClaimsPage', reviews: 'mypage/MyReviewsPage', qna: 'mypage/MyQnaPage', points: 'mypage/MyPointsPage',
-  profile: 'mypage/MyProfilePage', addresses: 'mypage/MyAddressesPage',
+  profile: 'mypage/MyProfilePage', addresses: 'mypage/MyAddressesPage', chats: 'mypage/MyChatsPage', 'chats/:roomId': 'mypage/MyChatsPage',
 };
 // ── seller (판매자센터 — SELLER)
 const SELLER = {
   '': 'seller/SellerDashboardPage', products: 'seller/SellerProductListPage', 'products/new': 'seller/SellerProductFormPage',
   'products/:id/edit': 'seller/SellerProductFormPage', orders: 'seller/SellerOrderListPage', 'orders/:lineId': 'seller/SellerOrderDetailPage',
   claims: 'seller/SellerClaimsPage', reviews: 'seller/SellerReviewsPage', qna: 'seller/SellerQnaPage',
-  settlements: 'seller/SellerSettlementsPage', store: 'seller/SellerStorePage',
+  settlements: 'seller/SellerSettlementsPage', store: 'seller/SellerStorePage', chats: 'seller/SellerChatsPage',
+  'chats/:roomId': 'seller/SellerChatsPage',
 };
 // ── admin (스토어 관리자 — ADMIN)
 const ADMIN = {
   '': 'admin/AdminDashboardPage', applications: 'admin/AdminApplicationsPage', 'applications/:id': 'admin/AdminApplicationDetailPage',
   stores: 'admin/AdminStoresPage', 'stores/:id': 'admin/AdminStoreDetailPage', settlements: 'admin/AdminSettlementsPage',
   users: 'admin/AdminUsersPage', 'users/:id': 'admin/AdminUserDetailPage', reports: 'admin/AdminReportsPage',
-  categories: 'admin/AdminCategoriesPage',
+  categories: 'admin/AdminCategoriesPage', chats: 'admin/AdminChatsPage', 'chats/:roomId': 'admin/AdminChatsPage',
 };
 
 export const router = createBrowserRouter([

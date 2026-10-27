@@ -1,10 +1,11 @@
-import { LayoutDashboard, FileCheck, Store, Wallet, Users, Flag, Tags } from 'lucide-react';
+import { LayoutDashboard, FileCheck, Store, Wallet, Users, Flag, Tags, MessagesSquare } from 'lucide-react';
 import ConsoleLayout from '@/shared/layouts/ConsoleLayout';
 import NotificationBell from '@/features/notification/components/NotificationBell';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
 import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
 import { useAdminReportsQuery } from '@/features/admin/hooks/useAdminReportsQuery';
 import { useLogout } from '@/features/auth/hooks/useLogout';
+import { useChatUnreadCountQuery } from '@/features/chat/hooks/useChatQueries';
 
 // 관리자 콘솔 레이아웃 — 메뉴 배지 숫자는 각 목록 훅에서 (목업은 모듈 변수에서 직접 계산)
 export default function AdminLayout() {
@@ -12,6 +13,7 @@ export default function AdminLayout() {
   const { data: apps = [] } = useApplicationsQuery();
   const { data: settlements = [] } = useAdminSettlementsQuery();
   const { data: reports = [] } = useAdminReportsQuery();
+  const { data: chatUnread = 0 } = useChatUnreadCountQuery();
   const groups = [
     { title: '홈', items: [{ to: '/admin', end: true, label: '대시보드', icon: LayoutDashboard }] },
     {
@@ -27,6 +29,7 @@ export default function AdminLayout() {
       items: [
         { to: '/admin/users', label: '회원 관리', icon: Users },
         { to: '/admin/reports', label: '신고 관리', icon: Flag, count: reports.reduce((a, t) => a + t.openCount, 0) }, // 처리 대기 신고 수
+        { to: '/admin/chats', label: '상담함', icon: MessagesSquare, count: chatUnread },
       ],
     },
     { title: '설정', items: [{ to: '/admin/categories', label: '카테고리 · 수수료', icon: Tags }] },

@@ -11,7 +11,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: { '/api': 'http://localhost:8080' }, // 로컬 게이트웨이(docker-compose) 또는 kubectl port-forward
+    proxy: {
+      '/api': 'http://localhost:8080', // 로컬 게이트웨이(docker-compose) 또는 kubectl port-forward
+      '/ws': { target: 'ws://localhost:8080', ws: true }, // 채팅 STOMP (chat-service 직접이면 8089)
+    },
   },
   test: {
     environment: 'jsdom',

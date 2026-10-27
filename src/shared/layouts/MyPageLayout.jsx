@@ -4,7 +4,7 @@ import { cx, won, comma } from '@/shared/utils/format';
 
 const MENU = [
   ['쇼핑', [['/mypage/orders', '주문 · 배송'], ['/mypage/claims', '취소 · 반품 · 교환'], ['/cart', '장바구니']]],
-  ['활동', [['/mypage/reviews', '리뷰 관리'], ['/mypage/qna', '상품 문의']]],
+  ['활동', [['/mypage/reviews', '리뷰 관리'], ['/mypage/qna', '상품 문의'], ['/mypage/chats', '1:1 채팅']]],
   ['혜택', [['/mypage/points', '포인트']]],
   ['내 정보', [['/mypage/profile', '회원정보 수정'], ['/mypage/addresses', '배송지 관리']]],
 ];

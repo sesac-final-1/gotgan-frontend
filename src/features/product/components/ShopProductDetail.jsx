@@ -15,6 +15,7 @@ import { Stars, Price, Modal } from '@/shared/components/ui';
 import { toast } from '@/shared/stores/toastStore';
 import { toMap } from '@/shared/utils/collection';
 import { cx, comma, won, salePrice } from '@/shared/utils/format';
+import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
 function Qty({ value, onChange }) {
   return (
@@ -120,6 +121,12 @@ function DetailBody({ p, store, cat, products, stores }) {
             <span className="w-5 h-5 text-[10px] text-white flex items-center justify-center" style={{ background: store.color }}>{store.name[0]}</span>
             {store.name} <ChevronRight size={14} />
           </Link>
+          {Number.isInteger(Number(p.id)) && (
+            <OpenChatButton className="btn btn-line btn-xs ml-2" basePath="/mypage/chats"
+              request={{ type: 'STORE_INQUIRY', storeId: Number(store.id), context: { type: 'PRODUCT', id: Number(p.id) } }}>
+              판매자에게 문의
+            </OpenChatButton>
+          )}
           <h1 className="mt-2 text-[22px] font-bold leading-snug tracking-tight">{p.name}</h1>
           <button onClick={() => go('reviews')} className="mt-2 flex items-center gap-2 text-[13px]">
             <Stars value={p.rating} size={13} /> <b>{p.rating.toFixed(1)}</b> <span className="text-mute underline">리뷰 {comma(p.reviews)}개</span>
