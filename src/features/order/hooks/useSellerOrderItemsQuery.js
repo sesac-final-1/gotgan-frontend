@@ -21,7 +21,7 @@ export function useSellerOrderItemQuery(orderItemId) {
   });
 }
 
-// TODO(이경석): 임시 — 판매자 클레임(SellerClaimList) · 대시보드 최근 주문은 목업 모양. 판매자 클레임 API · 대시보드 연동 때 삭제
+// TODO(이경석): 임시 — 판매자 대시보드 최근 주문은 목업 모양. 대시보드 연동 때 삭제
 export function useSellerOrderItemsMockQuery() {
   return useQuery({
     queryKey: queryKeys.order.sellerItemsMock(),
