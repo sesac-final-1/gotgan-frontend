@@ -3,7 +3,7 @@
 import { earnOf, POINT_RATE } from '@/features/user/constants';
 import { won, comma } from '@/shared/utils/format';
 
-/* 실결제금액 = 상품금액 + 배송비 − 사용 포인트 / 적립 = 실결제금액의 5% (안내용 — 확정 금액은 주문 생성 응답) */
+/* 실결제금액 = 상품금액 + 배송비 − 사용 포인트 / 적립 = 실결제금액의 5%, 구매확정 때 (안내용 — 확정 금액은 주문 생성 응답) */
 export default function ShopOrderSummary({ productAmt, shippingFee, point = 0, cta, label = '결제 예정금액' }) {
   const pay = Math.max(0, productAmt + shippingFee - point);
   const earn = earnOf(pay);
@@ -19,7 +19,7 @@ export default function ShopOrderSummary({ productAmt, shippingFee, point = 0, c
         <span className="text-[24px] font-bold num">{won(pay)}</span>
       </div>
       <div className="px-5 pb-5">{cta(pay, earn)}</div>
-      <p className="px-5 pb-4 -mt-2 text-[11.5px] text-mute">결제 시 실결제금액의 {POINT_RATE * 100}% <b className="num text-ink">{comma(earn)}P</b> 적립 예정</p>
+      <p className="px-5 pb-4 -mt-2 text-[11.5px] text-mute">구매확정 시 실결제금액의 {POINT_RATE * 100}% <b className="num text-ink">{comma(earn)}P</b> 적립 예정</p>
     </div>
   );
 }

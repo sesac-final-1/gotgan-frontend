@@ -78,7 +78,7 @@ export default function MyClaims() {
         <b className="text-ink">처리 안내</b><br />
         · 결제완료 상태: 즉시 취소<br />
         · 반품/교환: 배송완료 후 7일 이내 신청 가능 · 구매확정 후에는 신청 불가 · 판매자 승인 → 회수 → 환불(반품) · 재배송(교환)<br />
-        · 취소 · 반품 완료 시 그 상품주문분 사용 포인트는 환원, 적립 포인트는 회수됩니다.
+        · 취소 · 반품 완료 시 그 상품주문분 사용 포인트는 환원됩니다. (적립은 구매확정 때라 회수할 적립 포인트가 없어요)
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)} title={open ? `${CLAIM_TYPE_LABEL[open.type]} 상세` : ''} width={560}
