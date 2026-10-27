@@ -17,7 +17,7 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
   const navigate = useNavigate();
   const messagesQuery = useChatMessagesQuery(room.roomId);
   const messages = useMemo(() => flattenMessages(messagesQuery.data), [messagesQuery.data]);
-  const { status, send, counterpartReadId } = useChatRoomSocket(room.roomId, side);
+  const { status, send, notifyTyping, counterpartReadId, counterpartTyping } = useChatRoomSocket(room.roomId, side);
   const read = useReadChatMutation();
   const changeStatus = useChangeChatStatusMutation();
   const openHelp = useOpenChatMutation();
@@ -82,6 +82,7 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
         {messages.map((m) => <MessageItem key={m.messageId} m={m} basePath={basePath} read={m.messageId === lastMineId && counterpartReadId >= m.messageId} />)}
       </div>
 
+      {counterpartTyping && <div className="px-4 py-1 text-[12px] text-mute shrink-0">{room.counterpart.name} 님이 입력 중…</div>}
       {roomNotice(room, side) && <div className="px-4 py-1.5 text-[12px] text-mute border-t border-line shrink-0">{roomNotice(room, side)}</div>}
       {readOnly ? (
         <div className="px-4 py-3 text-[13px] text-mute border-t border-line">구매자가 도움을 요청한 스토어 톡이에요. 관리자는 읽기만 할 수 있어요.</div>
@@ -89,7 +90,10 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
         <div className="flex gap-2 p-3 border-t border-line shrink-0">
           <textarea value={text} maxLength={MAX_LENGTH} rows={2} placeholder="메시지 입력 (Enter 보내기 · Shift+Enter 줄바꿈)"
             className="flex-1 resize-none border border-line-2 px-3 py-2 text-[14px] outline-none focus:border-ink"
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              if (e.target.value.trim()) notifyTyping();
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
