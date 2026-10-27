@@ -49,6 +49,7 @@ export const queryKeys = {
   order: {
     all: ['order'],
     my: () => ['order', 'my'],
+    cart: () => ['order', 'cart'], // 장바구니 — 담기 · 수량 · 선택 · 삭제 · 결제 완료 뒤 무효화
     myOrder: (orderNo) => ['order', 'my', orderNo], // my() 아래라 목록을 무효화하면 상세 · 환불 예정액도 함께
     claimPreview: (orderNo, params) => ['order', 'my', orderNo, 'claim-preview', params],
     myClaims: () => ['order', 'my', 'claims'], // my() 아래 — 클레임 신청 뒤 함께 무효화

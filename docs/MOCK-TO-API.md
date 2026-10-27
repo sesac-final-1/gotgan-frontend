@@ -75,15 +75,14 @@ export function useConfirmOrderItemsMutation() {
 
 ## 5. 특수 케이스
 
-### 계산 필드 — `features/order/utils/orderCalc.js`
+### 계산 필드 — ✅ 끝 (`orderCalc.js` 삭제)
 
-주문 금액 · 배송비 · 포인트 · 배송 추적을 **지금은 목업에서 계산**한다. 실제로는 주문 응답 DTO 의 필드(`goods · ship · used · paid · earned · tracking[]`)로 받는다.
-→ 화면이 응답 필드를 쓰도록 바꾸고 `orderCalc.js` 삭제. (프론트에서 금액을 계산하지 않는다 — 결제 금액은 서버가 기준)
+주문 금액 · 배송비 · 포인트 · 배송 추적은 주문 · 장바구니 응답 필드(`totalProductAmt · totalShippingFee · usedPoint · payAmt · earnedPoint`, 상품주문 시각)를 쓴다. 프론트에서 금액을 계산하지 않는다 — 결제 금액은 서버가 기준.
 
-### 장바구니 — `features/order/hooks/useCart.js`
+### 장바구니 — ✅ 끝 (`features/order/hooks/useCart.js`, `cartMockStore` 삭제)
 
-지금은 Zustand 목업 스토어(`cartMockStore`). 실제: `useCartQuery(GET /api/carts)` + 담기 · 수량 · 삭제 mutation.
-**반환 모양 `{ cart, cartCount, addToCart, setQty, toggleLine, toggleAll, removeLines, clearChecked }` 은 유지**하고 내부만 교체 → 장바구니 · 주문서 · 헤더 배지 화면 수정 없음. 교체 후 `stores/cartMockStore.js` 삭제.
+`GET /api/carts` + 담기 · 수량 · 선택 · 삭제(`POST · PATCH · DELETE /api/carts/items`). 반환 `{ cart, lines, cartCount, addToCart(items), setQty, toggleLine, toggleAll, removeLines }` — 필드는 API 이름(`productOptionId · quantity · checked · lineAmt`, 스토어 묶음 `stores[]`).
+상품 상세의 담기는 구매자 상품 API(옵션 ID)가 나오면 연결 (`ShopProductDetail` TODO).
 
 ### 임시 훅 — 응답에 필드가 들어오면 삭제
 

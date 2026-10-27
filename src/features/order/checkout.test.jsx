@@ -10,7 +10,7 @@ afterEach(() => vi.restoreAllMocks());
 
 // 배송지 응답 (user Address) · 장바구니 줄 · 주문 생성 응답 (backend OrderCreateResponse)
 const HOME = { id: 10, label: '집', name: '김곳간', phone: '010-1234-5678', zip: '06236', addr: '서울 강남구 테헤란로 152', detail: '21층', main: true };
-const LINES = [{ key: 'p402|S', productOptionId: 11, qty: 2, unit: 9000 }, { key: 'p702|하루', productOptionId: 12, qty: 1, unit: 5000 }];
+const LINES = [{ productOptionId: 11, quantity: 2, unitPrice: 9000 }, { productOptionId: 12, quantity: 1, unitPrice: 5000 }];
 const CREATED = { orderNo: '20261026-000001', status: 'PENDING', payAmt: 21000, portonePaymentId: 'pay-20261026-000001', orderName: '상품 11 외 1건' };
 
 describe('toOrderRequest — 주문서 → OrderCreateRequest', () => {

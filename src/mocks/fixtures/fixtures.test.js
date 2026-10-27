@@ -4,7 +4,7 @@ import { myOrders, sellerOrders, settlements } from '@/mocks/fixtures/orders';
 import { users, applications } from '@/mocks/fixtures/people';
 import { myPointHistory, myPointBalance } from '@/mocks/fixtures/points';
 import { reviews, qnas } from '@/mocks/fixtures/reviews';
-import { orderPay } from '@/features/order/utils/orderCalc';
+import { orderPay } from '@/mocks/fixtures/orders';
 
 describe('목업 데이터', () => {
   it('컬렉션이 비어 있지 않다', () => {

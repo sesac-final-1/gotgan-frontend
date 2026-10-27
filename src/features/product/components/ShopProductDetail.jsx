@@ -78,9 +78,14 @@ function DetailBody({ p, store, cat, products, stores }) {
     if (!lines.length) { toast('옵션을 선택해주세요'); return null; }
     return lines;
   };
-  // TODO(이경석): useAddCartItemMutation — 지금은 useCart 목업 스토어에 담기
-  const onCart = () => { const ls = ensureLines(); if (!ls) return; ls.forEach((l) => addToCart(p.id, l.label, l.qty)); setCartModal(true); };
-  const onBuy = () => { const ls = ensureLines(); if (!ls) return; ls.forEach((l) => addToCart(p.id, l.label, l.qty)); void nav('/checkout'); };
+  // TODO(박지연 · 이경석): 구매자 상품 상세 API(옵션 ID 포함)가 나오면 l 에 productOptionId 를 붙여 담는다 — 목업 상품에는 옵션 ID 가 없어 지금은 안내만
+  const toItems = (ls) => ls.map((l) => ({ productOptionId: l.productOptionId, quantity: l.qty }));
+  const add = async (ls) => {
+    if (ls.some((l) => !l.productOptionId)) { toast('상품 정보 연동 후 장바구니에 담을 수 있어요'); return false; }
+    return addToCart(toItems(ls));
+  };
+  const onCart = async () => { const ls = ensureLines(); if (ls && await add(ls)) setCartModal(true); };
+  const onBuy = async () => { const ls = ensureLines(); if (ls && await add(ls)) void nav('/checkout'); };
 
   const TABS = [['info', '상품정보'], ['reviews', `리뷰 ${comma(p.reviews)}`], ['qna', `Q&A ${myQna.length}`], ['ship', '배송/교환/반품']];
   const go = (k) => { setTab(k); document.getElementById(k)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
