@@ -79,6 +79,7 @@ function PaymentCheck() {
   return (
     <section className="panel p-5 space-y-3">
       <div className="panel-title">① 결제 (구매자) — 테스트 채널이라 실제 출금 없음</div>
+      <p className="text-[12px] text-rust">주문 생성이 product 가격 조회 · 재고 예약 내부 API(product.md 1 · 4절, 박지연 구현 예정)를 불러서, 그 API 가 배포되기 전에는 "주문하지 못했어요"(502)가 정상이에요</p>
       <select value={optionId} onChange={(e) => setOptionId(Number(e.target.value))} className="field">
         {SEED_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </select>
