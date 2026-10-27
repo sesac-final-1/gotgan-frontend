@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { LayoutDashboard, Package, PlusSquare, ShoppingCart, RotateCcw, Star, MessageCircle, Wallet, Store } from 'lucide-react';
+import { LayoutDashboard, Package, PlusSquare, ShoppingCart, RotateCcw, Star, MessageCircle, MessagesSquare, Wallet, Store } from 'lucide-react';
 import ConsoleLayout from '@/shared/layouts/ConsoleLayout';
 import NotificationBell from '@/features/notification/components/NotificationBell';
 import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
@@ -9,6 +9,7 @@ import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { toMap } from '@/shared/utils/collection';
 import { useLogout } from '@/features/auth/hooks/useLogout';
+import { useChatUnreadCountQuery } from '@/features/chat/hooks/useChatQueries';
 
 // 판매자센터 레이아웃 — 메뉴 배지 · 알림 숫자 · 계정은 각 훅에서 (목업은 모듈 변수에서 직접 계산)
 export default function SellerLayout() {
@@ -17,6 +18,7 @@ export default function SellerLayout() {
   const { data: qnas = [] } = useQnasQuery();
   const { data: products = [] } = useProductsQuery();
   const { data: store } = useMyStoreQuery();
+  const { data: chatUnread = 0 } = useChatUnreadCountQuery();
   const productById = useMemo(() => toMap(products), [products]);
   const unanswered = qnas.filter((q) => productById[q.productId]?.storeId === store?.id && !q.a).length;
   const cnt = (s) => sellerOrders?.statusCounts?.[s] ?? 0;
@@ -34,6 +36,7 @@ export default function SellerLayout() {
     { title: '고객', items: [
       { to: '/seller/reviews', label: '리뷰 관리', icon: Star },
       { to: '/seller/qna', label: '상품 문의', icon: MessageCircle, count: unanswered },
+      { to: '/seller/chats', label: '채팅', icon: MessagesSquare, count: chatUnread },
     ] },
     { title: '정산 · 스토어', items: [
       { to: '/seller/settlements', label: '정산 내역', icon: Wallet },

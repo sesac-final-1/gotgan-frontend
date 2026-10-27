@@ -27,6 +27,7 @@ export function useNotificationStream() {
         const n = JSON.parse(ev.data);
         toast(n.title);
         void queryClient.invalidateQueries({ queryKey: queryKeys.notification.all });
+        if (n.type === 'CHAT_MESSAGE') void queryClient.invalidateQueries({ queryKey: queryKeys.chat.all }); // 보고 있지 않은 방의 새 메시지 — 목록 · 배지 숫자
       },
       onerror: (err) => {
         if (/알림 연결 실패 4\d\d/.test(err?.message)) throw err; // 인증 · 권한 오류는 재시도하지 않음

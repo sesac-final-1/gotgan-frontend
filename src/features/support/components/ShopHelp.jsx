@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { ChevronDown, Search } from 'lucide-react';
 import { faqs, FAQ_CATS } from '@/features/support/data/faq';
 import { cx } from '@/shared/utils/format';
+import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
 export default function ShopHelp() {
   const [cat, setCat] = useState('전체');
@@ -39,7 +40,15 @@ export default function ShopHelp() {
         ))}
       </ul>
 
-      <div className="mt-12 grid sm:grid-cols-2 gap-px bg-line border border-line">
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border border-ink p-6">
+        <div>
+          <div className="font-bold text-[16px]">1:1 상담</div>
+          <p className="mt-1 text-[13px] text-ink-2">주문 · 결제 · 계정 문제는 곳간 운영팀과 실시간으로 이야기해요.</p>
+        </div>
+        <OpenChatButton className="btn btn-ink btn-sm" basePath="/mypage/chats" request={{ type: 'BUYER_SUPPORT' }}>운영팀과 채팅</OpenChatButton>
+      </div>
+
+      <div className="mt-4 grid sm:grid-cols-2 gap-px bg-line border border-line">
         <div className="bg-white p-6">
           <div className="eyebrow">Q&amp;A</div>
           <div className="mt-1.5 font-bold text-[16px]">상품문의는 판매자에게</div>

@@ -84,6 +84,14 @@ export const queryKeys = {
     unread: () => ['notification', 'unread'],
   },
 
+  // ── chat (구지훈) — 1:1 채팅 /api/chats/** (chat-service)
+  chat: {
+    all: ['chat'],
+    rooms: (filter) => ['chat', 'rooms', filter ?? {}],
+    messages: (roomId) => ['chat', 'messages', roomId],
+    unread: () => ['chat', 'unread'],
+  },
+
   // ── payment (구지훈) — 포트원 결제창 · 결제 확인
   payment: {
     all: ['payment'],

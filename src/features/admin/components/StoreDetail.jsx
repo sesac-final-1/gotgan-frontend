@@ -14,6 +14,7 @@ import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQu
 import { ratingSummary } from '@/features/review/utils/ratingSummary';
 import { toast } from '@/shared/stores/toastStore';
 import { won, comma, ymd, pct, shortWon } from '@/shared/utils/format';
+import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
 const NUM = { thClass: 'text-right', tdClass: 'text-right num', search: false };
 
@@ -83,7 +84,8 @@ function DetailBody({ s }) {
   return (
     <div>
       <PageHead crumbs="판매자 > 스토어 관리" title={s.name} desc={`${c.name} · ${s.owner} · 입점 ${ymd(s.since)}`}
-        right={<><Link to={`/store/${s.id}`} className="btn btn-line btn-sm">쇼핑몰에서 보기 <ExternalLink size={13} /></Link><button onClick={() => setModal(true)} className="btn btn-ink btn-sm">상태 변경</button></>} />
+        right={<><Link to={`/store/${s.id}`} className="btn btn-line btn-sm">쇼핑몰에서 보기 <ExternalLink size={13} /></Link>
+          <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.id), context: { type: 'STORE', id: Number(s.id) } }}>판매자와 상담</OpenChatButton><button onClick={() => setModal(true)} className="btn btn-ink btn-sm">상태 변경</button></>} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <Kpi label="8주 거래액" value={shortWon(ss.reduce((a, x) => a + x.gross, 0))} unit="원" />
         <Kpi label="8주 수수료 수익" value={comma(ss.reduce((a, x) => a + x.commission, 0) / 10000)} unit="만원" sub={`판매수수료 ${pct(c.commission)}`} />
