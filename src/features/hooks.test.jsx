@@ -20,13 +20,14 @@ import { useDecideApplicationMutation } from '@/features/admin/hooks/useDecideAp
 import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettlementHoldMutation, useAggregateSettlementsMutation } from '@/features/admin/hooks/useSettlementMutations';
 import { isoWeek, recentWeeks } from '@/features/admin/constants';
 import { useSaveCategoryMutation, useReserveCommissionMutation } from '@/features/admin/hooks/useCategoryMutations';
-import { useMyOrdersMockQuery, useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
+import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useSellerBuyersQuery } from '@/features/order/hooks/useSellerBuyersQuery';
 import { useSellerOrderItemsMockQuery, useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
+import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
 import { useSellerPendingQuery } from '@/features/settlement/hooks/useSellerPendingQuery';
 import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSellerSettlementsQuery';
 import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
@@ -41,7 +42,7 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
   useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
-  useMyOrdersMockQuery, useSellerBuyersQuery,
+  useSellerBuyersQuery,
   useSellerOrderItemsMockQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery,
   useSellerDailySalesQuery, useStoresQuery,
 };
@@ -62,10 +63,14 @@ const API_HOOKS = {
   useMyAddressesQuery: [[{ id: 10, label: '집', main: true }], [{ id: 10, label: '집', main: true }]],
   useSellerOrderItemsQuery: [{ statusCounts: { PAYMENT_DONE: 2 }, items: { content: [{ orderItemId: 456 }], page: 0, totalPages: 1 } },
     { statusCounts: { PAYMENT_DONE: 2 }, items: { content: [{ orderItemId: 456 }] } }],
+  useMyReviewsQuery: [{ content: [{ reviewId: 31, orderItemId: 12, productName: '와이드 팬츠', rating: 4, content: '좋아요', blinded: false,
+    createdAt: '2026-10-20T14:00:00+09:00', images: [] }] }, [{ id: 31, lineId: 12, body: '좋아요', images: [] }]],
+  useWritableReviewsQuery: [[{ orderItemId: 11, productName: '린넨 셔츠', confirmedAt: '2026-10-20T14:00:00+09:00',
+    expiresAt: '2026-11-19T14:00:00+09:00' }], [{ lineId: 11, productName: '린넨 셔츠' }]],
   useMyOrdersQuery: [{ statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001', status: 'PAID', items: [] }] },
     { statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001' }] }],
 };
-const API_HOOK_FNS = { useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery };
+const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
