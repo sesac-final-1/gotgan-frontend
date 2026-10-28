@@ -53,7 +53,6 @@ export const queryKeys = {
     myOrder: (orderNo) => ['order', 'my', orderNo], // my() 아래라 목록을 무효화하면 상세 · 환불 예정액도 함께
     claimPreview: (orderNo, params) => ['order', 'my', orderNo, 'claim-preview', params],
     myClaims: () => ['order', 'my', 'claims'], // my() 아래 — 클레임 신청 뒤 함께 무효화
-    myMock: () => ['order', 'my-mock'], // 임시 — 리뷰 작성 가능 목록 (리뷰 API 가 나오면 삭제)
     seller: () => ['order', 'seller'], // 판매자 처리(발주확인 · 송장 · 배송완료) 뒤 목록 · 상세를 함께 무효화
     sellerItems: (params) => ['order', 'seller', 'items', params ?? {}], // 서버 페이징 대상 (컨벤션 4-7)
     sellerItem: (orderItemId) => ['order', 'seller', 'item', String(orderItemId)],
@@ -67,6 +66,9 @@ export const queryKeys = {
     all: ['review'],
     list: () => ['review', 'list'],
     qnas: () => ['review', 'qnas'],
+    my: () => ['review', 'my'], // 마이페이지 — 작성 · 수정 · 삭제 뒤 내가 쓴 리뷰 · 작성 가능 목록을 함께 무효화
+    myList: () => ['review', 'my', 'list'],
+    writable: () => ['review', 'my', 'writable'],
   },
 
   // ── settlement (구지훈)

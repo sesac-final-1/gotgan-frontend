@@ -1,7 +1,7 @@
 // order 도메인 API — 담당 이경석
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { mockResolve } from '@/mocks/mockApi';
-import { myOrders, sellerOrders } from '@/mocks/fixtures/orders';
+import { sellerOrders } from '@/mocks/fixtures/orders';
 import { users } from '@/mocks/fixtures/people';
 
 // GET /api/carts — 장바구니 (스토어별 묶음 · 배송비 · 무료배송까지 남은 금액, 가격 · 품절은 product 재확인)
@@ -44,9 +44,6 @@ export const fetchClaimPreview = async (orderNo, params) =>
 // 취소(CLM-01): 201 status COMPLETED(환불 끝) | APPROVED(환불 처리 중 — 서버가 마저 진행). 반품 · 교환: REQUESTED(판매자 확인 대기)
 export const requestClaim = async (orderNo, request) =>
   (await axiosInstance.post(`/api/orders/${encodeURIComponent(orderNo)}/claims`, request)).data.data;
-
-// TODO(이경석): 임시 — 리뷰 작성 가능 목록은 아직 목업 (리뷰 API 가 나오면 삭제)
-export const fetchMyOrdersMock = () => mockResolve(myOrders);
 
 // GET /api/seller/order-items?status&q&page&size — 판매자 주문 목록 (서버 페이징, 최신 주문 먼저 · 결제 전 제외)
 // → { statusCounts: { PAYMENT_DONE: n, ... }, items: { content[], page, size, totalElements, totalPages, hasNext } }
