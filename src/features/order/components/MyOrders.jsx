@@ -7,6 +7,8 @@ import { MyPageHead } from '@/shared/layouts/MyPageLayout';
 import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useMyClaimsQuery } from '@/features/order/hooks/useClaimsQuery';
 import { useConfirmPurchaseMutation, useWithdrawClaimMutation } from '@/features/order/hooks/useClaimMutations';
+import { useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
+import MyReviewModal from '@/features/review/components/MyReviewModal';
 import { canWithdraw } from '@/features/order/utils/claimView';
 import { flowCounts, lineStatusLabel, toDate } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
@@ -26,7 +28,8 @@ async function run(mutation, payload, message) {
 }
 
 // claim: 이 상품주문의 철회할 수 있는 클레임 (판매자 승인 전 반품 · 교환) — 없으면 철회 버튼을 숨긴다
-function LineActions({ o, l, claim }) {
+// writable: 리뷰 작성 가능 목록의 이 상품주문 (구매확정 후 30일 안 · 아직 안 씀) — 없으면 리뷰쓰기 버튼을 숨긴다
+function LineActions({ o, l, claim, writable, onWrite }) {
   const nav = useNavigate();
   const confirm = useConfirmPurchaseMutation();
   const withdraw = useWithdrawClaimMutation();
@@ -47,7 +50,7 @@ function LineActions({ o, l, claim }) {
       <button className={b} onClick={() => nav(claimPath(l, 'RETURN'))}>반품요청</button>
       <button className={b} onClick={() => nav(claimPath(l, 'EXCHANGE'))}>교환요청</button>
     </>);
-    case 'CONFIRMED': return <Link className="btn btn-point btn-xs" to="/mypage/reviews">리뷰쓰기</Link>; // TODO(이경석): 리뷰 API — 작성 여부 · 작성 모달
+    case 'CONFIRMED': return writable && <button className="btn btn-point btn-xs" onClick={() => onWrite(writable)}>리뷰쓰기</button>;
     case 'RETURN_REQUESTED': return claim && <button disabled={busy} className={b} onClick={() => withdrawClaim('반품')}>반품철회</button>;
     case 'EXCHANGE_REQUESTED': return claim && <button disabled={busy} className={b} onClick={() => withdrawClaim('교환')}>교환철회</button>;
     default: return null;
@@ -66,6 +69,9 @@ export default function MyOrders() {
   const { data, isLoading, isError } = useMyOrdersQuery();
   const { data: claims = [] } = useMyClaimsQuery();
   const withdrawable = Object.fromEntries(claims.filter(canWithdraw).map((c) => [c.orderItemId, c]));
+  const { data: writableList = [] } = useWritableReviewsQuery();
+  const writable = Object.fromEntries(writableList.map((w) => [w.lineId, w]));
+  const [reviewTarget, setReviewTarget] = useState(null); // { line } — 작성 모달 (작성하면 작성 가능 목록에서 빠져 버튼이 사라진다)
   const orders = data?.orders ?? [];
   const counts = flowCounts(data?.statusCounts);
   return (
@@ -104,12 +110,13 @@ export default function MyOrders() {
                   <div className="text-mute mt-0.5">{l.optionName || '단일상품'} · {l.quantity}개 · <b className="text-ink num">{won(l.itemAmt)}</b></div>
                   {l.status === 'DELIVERED' && <div className="text-[12px] text-moss mt-1">{ymd(toDate(l.deliveredAt))} 배송완료 · 7일 뒤 자동 구매확정</div>}
                 </div>
-                <div className="w-full sm:w-auto flex sm:flex-col gap-1.5 sm:items-stretch sm:min-w-[96px]"><LineActions o={o} l={l} claim={withdrawable[l.orderItemId]} /></div>
+                <div className="w-full sm:w-auto flex sm:flex-col gap-1.5 sm:items-stretch sm:min-w-[96px]"><LineActions o={o} l={l} claim={withdrawable[l.orderItemId]} writable={writable[l.orderItemId]} onWrite={(line) => setReviewTarget({ line })} /></div>
               </div>
             ))}
           </div>
         ))}
       </div>
+      <MyReviewModal target={reviewTarget} onClose={() => setReviewTarget(null)} />
     </div>
   );
 }
