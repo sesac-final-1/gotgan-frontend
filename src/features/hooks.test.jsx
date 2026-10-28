@@ -28,6 +28,7 @@ import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
+import { useSellerReviewSummaryQuery, useSellerReviewsQuery } from '@/features/review/hooks/useSellerReviews';
 import { useSellerPendingQuery } from '@/features/settlement/hooks/useSellerPendingQuery';
 import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSellerSettlementsQuery';
 import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
@@ -67,10 +68,14 @@ const API_HOOKS = {
     createdAt: '2026-10-20T14:00:00+09:00', images: [] }] }, [{ id: 31, lineId: 12, body: '좋아요', images: [] }]],
   useWritableReviewsQuery: [[{ orderItemId: 11, productName: '린넨 셔츠', confirmedAt: '2026-10-20T14:00:00+09:00',
     expiresAt: '2026-11-19T14:00:00+09:00' }], [{ lineId: 11, productName: '린넨 셔츠' }]],
+  useSellerReviewsQuery: [{ content: [{ reviewId: 31, productName: '와이드 팬츠', writerDisplayName: '곳간러버', rating: 2, content: '길어요', blinded: false,
+    replyContent: null, createdAt: '2026-10-20T14:00:00+09:00', imageUrls: [] }], totalPages: 1 },
+    { content: [{ id: 31, writer: '곳간러버', body: '길어요', reply: null, photos: [] }], totalPages: 1 }],
+  useSellerReviewSummaryQuery: [{ averageRating: 4.5, ratedCount: 2, distribution: [], products: [], tabCounts: { all: 2 } }, { averageRating: 4.5 }],
   useMyOrdersQuery: [{ statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001', status: 'PAID', items: [] }] },
     { statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001' }] }],
 };
-const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery };
+const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useSellerReviewsQuery, useSellerReviewSummaryQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();

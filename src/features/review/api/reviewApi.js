@@ -4,8 +4,38 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import { mockResolve } from '@/mocks/mockApi';
 import { reviews, qnas } from '@/mocks/fixtures/reviews';
 
-// TODO(이경석): 상품 상세 · 판매자 리뷰 관리 연동 때 GET /api/reviews?productId= · /api/seller/reviews 로 — 지금은 목업
+// TODO(이경석): 상품 상세 연동 때 GET /api/reviews?productId= 로 — 지금은 목업 (판매자 대시보드 · 스토어 홈도 이 목업을 씀)
 export const fetchReviews = () => mockResolve(reviews);
+
+// ── 판매자 리뷰 관리 (review.md 6 · 7절) — 스토어는 게이트웨이가 넣는 X-Store-Id
+
+// GET /api/seller/reviews?tab&productId&page&size — 내 스토어 리뷰(삭제 제외 · 블라인드 포함) 최신순, 서버 페이징
+export const toSellerReview = (r) => ({
+  id: r.reviewId,
+  productId: r.productId,
+  productName: r.productName,
+  option: r.optionName ?? '',
+  writer: r.writerDisplayName, // 닉네임, 없으면 마스킹 실명 — 그대로 표시
+  rating: r.rating,
+  title: r.title ?? '',
+  body: r.content,
+  fit: r.fit,
+  blinded: r.blinded,
+  reply: r.replyContent,
+  date: new Date(r.createdAt),
+  photos: r.imageUrls,
+});
+
+export const fetchSellerReviews = async (params) => {
+  const page = (await axiosInstance.get('/api/seller/reviews', { params })).data.data;
+  return { ...page, content: page.content.map(toSellerReview) };
+};
+
+// GET /api/seller/reviews/summary — 평균 · 분포(5→1) · 상품별(평균 높은순)은 블라인드 · 삭제 제외, tabCounts 는 목록 탭과 같은 조건
+export const fetchSellerReviewSummary = async () => (await axiosInstance.get('/api/seller/reviews/summary')).data.data;
+
+// PUT /api/seller/reviews/{id}/reply — 리뷰당 1개, 없으면 작성 · 있으면 덮어씀. 블라인드면 409 REVIEW_BLINDED
+export const replyToReview = async (id, content) => (await axiosInstance.put(`/api/seller/reviews/${id}/reply`, { content })).data.data;
 
 // TODO(이경석): GET /api/products/{id}/inquiries · /api/inquiries/me · /api/seller/inquiries
 export const fetchQnas = () => mockResolve(qnas);
