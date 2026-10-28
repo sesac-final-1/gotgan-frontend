@@ -69,6 +69,9 @@ export const queryKeys = {
     my: () => ['review', 'my'], // 마이페이지 — 작성 · 수정 · 삭제 뒤 내가 쓴 리뷰 · 작성 가능 목록을 함께 무효화
     myList: () => ['review', 'my', 'list'],
     writable: () => ['review', 'my', 'writable'],
+    seller: () => ['review', 'seller'], // 판매자 리뷰 관리 — 답글 뒤 목록 · 요약을 함께 무효화
+    sellerList: (params) => ['review', 'seller', 'list', params ?? {}], // 서버 페이징
+    sellerSummary: () => ['review', 'seller', 'summary'],
   },
 
   // ── settlement (구지훈)
