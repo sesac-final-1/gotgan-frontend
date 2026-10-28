@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { createWrapper } from '@/test/queryWrapper';
@@ -107,5 +107,28 @@ describe('MyClaims — 상세에서 철회', () => {
     await waitFor(() => expect(lastToast()).toBe('반품 요청을 철회했어요'));
     expect(patch).toHaveBeenLastCalledWith('/api/claims/9/withdraw');
     await waitFor(() => expect(screen.queryByRole('button', { name: '요청 철회' })).toBeNull());
+  });
+});
+
+describe('MyOrders — 리뷰쓰기', () => {
+  it('구매확정 상품주문 중 작성 가능한 것만 버튼, 누르면 작성 모달 → POST, 작성 뒤 버튼이 사라진다', async () => {
+    const confirmedOrders = { statusCounts: { CONFIRMED: 2 }, orders: [{ ...ORDERS.orders[0], items: [item(459, 'CONFIRMED'), item(460, 'CONFIRMED')] }] };
+    const state = { writable: [{ orderItemId: 459, productId: 11, productName: '상품 459', optionName: '특', thumbnailUrl: null,
+      confirmedAt: '2026-10-27T10:00:00+09:00', expiresAt: '2026-11-26T10:00:00+09:00' }] };
+    vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data:
+      url === '/api/claims' ? [] : url === '/api/reviews/me/writable' ? state.writable : confirmedOrders } }));
+    const post = vi.spyOn(axiosInstance, 'post').mockImplementation(async () => { state.writable = []; return { data: { data: { reviewId: 40 } } }; });
+    renderWith(<MyOrders />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '리뷰쓰기' }));
+    expect(screen.getAllByRole('button', { name: '리뷰쓰기' })).toHaveLength(1);   // 460 은 이미 썼거나 기한이 지남
+    const modal = screen.getByRole('heading', { name: '리뷰 쓰기' }).closest('div.w-full');
+    fireEvent.click(within(modal).getByRole('button', { name: '별점 5점' }));
+    fireEvent.change(within(modal).getByLabelText('리뷰 내용'), { target: { value: '포장이 꼼꼼하고 맛도 좋아서 또 주문할 생각이에요.' } });
+    fireEvent.click(within(modal).getByRole('button', { name: '등록하기' }));
+
+    await waitFor(() => expect(post).toHaveBeenCalledWith('/api/reviews', expect.objectContaining({ orderItemId: 459, rating: 5 })));
+    await waitFor(() => expect(screen.queryByRole('button', { name: '리뷰쓰기' })).toBeNull());
+    expect(lastToast()).toBe('리뷰가 등록되었어요');
   });
 });
