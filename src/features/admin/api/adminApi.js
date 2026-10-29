@@ -44,6 +44,11 @@ export const fetchAdminStoreList = async () => {
   }));
 };
 
+// PATCH /api/admin/stores/{id}/status {status: ACTIVE/SUSPENDED, reason(필수)} — store 9절 그대로 (backend #177).
+// 같은 상태는 200(멱등) · 폐점 스토어 409 · StoreStatusChanged 로 product 상품 숨김 · settlement 지급 보류
+export const changeStoreStatus = async ({ storeId, request }) =>
+  (await axiosInstance.patch(`/api/admin/stores/${storeId}/status`, request)).data.data;
+
 // 회원 — admin-service 가 user /internal/users 응답을 그대로 전달 (backend #94). 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (MOCK-TO-API 2절)
 const USER_STATUS_LABEL = { ACTIVE: '정상', SUSPENDED: '이용정지' };
 const toDate = (v) => (v ? new Date(v) : null);
