@@ -10,7 +10,8 @@ import ShopRoot from '@/pages/shop/ShopRoot';
 //   새 화면은 아래 표에 '경로': '폴더/파일명' 한 줄로 추가 — 파일은 src/pages 아래에서 찾는다 ('' = 영역의 첫 화면)
 
 // src/pages 의 화면 파일 (지연 로딩 — 파일마다 따로 받음). ShopRoot 는 쇼핑몰 틀이라 바로 넣는다
-const PAGE_FILES = import.meta.glob(['/src/pages/**/*.jsx', '!/src/pages/shop/ShopRoot.jsx']);
+// qa(임시 점검 화면)는 빼고 개발 서버에서만 아래 QA 로 붙인다 — 배포 번들에 API 지도 · 시드 ID 가 들어가지 않게
+const PAGE_FILES = import.meta.glob(['/src/pages/**/*.jsx', '!/src/pages/shop/ShopRoot.jsx', '!/src/pages/qa/**']);
 
 /** 화면 지연 로딩 — 받는 동안은 이전 화면을 그대로 두고, 받기에 실패하면(배포 직후 옛 파일 등) RouteError 가 새로고침을 안내 */
 const page = (name, role) => ({
@@ -27,8 +28,12 @@ const routes = (table, role) =>
 const SHOP = {
   '': 'shop/HomePage', products: 'shop/ProductListPage', 'products/:id': 'shop/ProductDetailPage', stores: 'shop/StoreListPage',
   'store/:id': 'shop/StoreHomePage', login: 'shop/LoginPage', signup: 'shop/SignupPage', 'auth/callback': 'shop/AuthCallbackPage',
-  help: 'shop/HelpPage', qa: 'qa/QaPage', // qa = 임시 점검 화면 (시연 전 삭제)
+  help: 'shop/HelpPage',
 };
+// ── qa (임시 점검 화면 — 개발 서버에서만, MockNav 와 같은 방식). 배포 빌드에서는 import.meta.env.DEV 가 false 라 코드째 빠진다
+const QA = import.meta.env.DEV
+  ? [{ path: 'qa', lazy: async () => { const { default: Page } = await import('@/pages/qa/QaPage'); return { element: <Page /> }; } }]
+  : [];
 const SHOP_BUYER = {
   cart: 'shop/CartPage', checkout: 'shop/CheckoutPage', 'order/complete': 'shop/OrderCompletePage', 'seller/apply': 'shop/SellerApplyPage',
 };
@@ -64,6 +69,7 @@ export const router = createBrowserRouter([
         element: <ShopRoot />,
         children: [
           ...routes(SHOP),
+          ...QA,
           ...routes(SHOP_BUYER, 'BUYER'),
           {
             path: 'mypage',

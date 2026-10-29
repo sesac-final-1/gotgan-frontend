@@ -101,6 +101,7 @@ export const queryKeys = {
   // ── chat (구지훈) — 1:1 채팅 /api/chats/** (chat-service)
   chat: {
     all: ['chat'],
+    roomsAll: () => ['chat', 'rooms'], // 필터와 상관없이 방 목록 전부 무효화
     rooms: (filter) => ['chat', 'rooms', filter ?? {}],
     messages: (roomId) => ['chat', 'messages', roomId],
     unread: () => ['chat', 'unread'],

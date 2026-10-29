@@ -42,7 +42,7 @@ export function useReadChatMutation() {
   return useMutation({
     mutationFn: ({ roomId, lastMessageId }) => readChatRoom(roomId, lastMessageId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['chat', 'rooms'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.chat.roomsAll() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.chat.unread() });
     },
   });
@@ -52,6 +52,6 @@ export function useChangeChatStatusMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ roomId, status }) => changeChatStatus(roomId, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chat', 'rooms'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.chat.roomsAll() }),
   });
 }
