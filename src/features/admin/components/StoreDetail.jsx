@@ -6,16 +6,15 @@ import { PageHead, Segments, StatusPill, Modal, KV, Kpi } from '@/shared/compone
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
-import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
+import { useAdminStoreQuery } from '@/features/admin/hooks/useAdminStoreQuery';
 import { useAdminStoreListQuery } from '@/features/admin/hooks/useAdminStoreListQuery';
 import { useChangeStoreStatusMutation } from '@/features/admin/hooks/useChangeStoreStatusMutation';
-import { STORE_STATUS_REQUEST, productStatusLabel } from '@/features/admin/constants';
+import { STORE_STATUS_REQUEST, ACTOR_LABEL, productStatusLabel } from '@/features/admin/constants';
 import { useAdminStoreSettlementsQuery } from '@/features/admin/hooks/useAdminStoreSettlementsQuery';
-import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { useAdminStoreProductsQuery } from '@/features/admin/hooks/useAdminStoreProductsQuery';
 import { useBlockProductMutation } from '@/features/admin/hooks/useBlockProductMutation';
 import { toast } from '@/shared/stores/toastStore';
-import { won, comma, ymd, pct, shortWon } from '@/shared/utils/format';
+import { won, comma, ymd, ymdhm, shortWon } from '@/shared/utils/format';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
 const NUM = { thClass: 'text-right', tdClass: 'text-right num', search: false };
@@ -57,15 +56,12 @@ const SETTLEMENT_COLUMNS = [
 
 export default function StoreDetail() {
   const { id } = useParams();
-  const { data: list = [], isLoading } = useAdminStoreListQuery();
-  const { data: mocks = [], isLoading: mockLoading } = useAdminStoresQuery();
-  // 이름 · 대표자 · 등급 · 상태는 실제 목록(backend #172), 나머지 칸은 같은 slug 의 목업 — store 1절 확장이 나오면 상세 API 로 교체 (구지훈)
-  const real = list.find((x) => x.id === id);
-  const mock = real && mocks.find((x) => x.slug === real.slug);
-  const s = mock && { ...mock, storeId: real.id, name: real.name, owner: real.owner, bizNo: real.bizNo, grade: real.grade, status: real.status,
-    avg: real.avg, reviewCount: real.reviewCount }; // 평점 = review 스토어 평점(#160, 목록과 같은 값)
-  if (isLoading || mockLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
-  if (!s) return <p className="text-mute py-10 text-center">스토어를 찾을 수 없어요</p>;
+  const { data: detail, isLoading } = useAdminStoreQuery(id); // 기본 정보 · 상태 이력 (backend #182)
+  const { data: list = [] } = useAdminStoreListQuery(); // 평점 = review 스토어 평점(#160) — 목록과 같은 값
+  const rating = list.find((x) => x.id === id);
+  if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
+  if (!detail) return <p className="text-mute py-10 text-center">스토어를 찾을 수 없어요</p>;
+  const s = { ...detail, avg: rating?.avg ?? null, reviewCount: rating?.reviewCount ?? 0 };
   return <DetailBody key={s.id} s={s} />; // key: 다른 스토어로 이동하면 상태 변경 모달 상태 초기화
 }
 
@@ -76,7 +72,6 @@ function DetailBody({ s }) {
   const changeStatus = useChangeStoreStatusMutation();
   const canSubmit = status !== s.status && reason.trim() !== '' && !changeStatus.isPending; // 정지 · 해제 모두 사유 필수(store 9절)
   const { data: recent, isLoading: settleLoading, isError: settleError } = useAdminStoreSettlementsQuery(s.storeId); // 최근 8주 (backend #184)
-  const { data: categories = [] } = useAdminCategoriesQuery();
   const { data: prods = [], isLoading: prodsLoading, isError: prodsError } = useAdminStoreProductsQuery(s.storeId);
   const [blockTarget, setBlockTarget] = useState(null); // { product, blocked } — 강제중지 · 해제 확인 모달
   const [blockReason, setBlockReason] = useState('');
@@ -84,7 +79,6 @@ function DetailBody({ s }) {
   const productColumns = useMemo(() => buildProductColumns(setBlockTarget), []);
   const onSale = prods.filter((p) => productStatusLabel(p) === '판매중').length;
   const ss = recent?.rows ?? EMPTY;
-  const c = categories.find((x) => x.id === s.cat) ?? { name: s.cat, commission: 0 };
 
   const prodTable = useClientTable({ data: prods, columns: productColumns });
   const settleTable = useClientTable({ data: ss, columns: SETTLEMENT_COLUMNS, initialSorting: [{ id: 'start', desc: true }] });
@@ -114,12 +108,12 @@ function DetailBody({ s }) {
 
   return (
     <div>
-      <PageHead crumbs="판매자 > 스토어 관리" title={s.name} desc={`${c.name} · ${s.owner} · 입점 ${ymd(s.since)}`}
+      <PageHead crumbs="판매자 > 스토어 관리" title={s.name} desc={`${s.owner} · ${s.company} · 입점 ${ymd(s.since)}`}
         right={<><Link to={`/store/${s.id}`} className="btn btn-line btn-sm">쇼핑몰에서 보기 <ExternalLink size={13} /></Link>
           <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.storeId), context: { type: 'STORE', id: Number(s.storeId) } }}>판매자와 상담</OpenChatButton>{s.status !== '폐점' && <button onClick={() => { setStatus(s.status); setModal(true); }} className="btn btn-ink btn-sm">상태 변경</button>}</>} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <Kpi label="8주 거래액" value={shortWon(recent?.totals.salesAmt ?? 0)} unit="원" sub={`정산서 ${comma(recent?.totals.count ?? 0)}건 · 이번 주 포함`} />
-        <Kpi label="8주 수수료 수익" value={comma(Math.floor((recent?.totals.commissionAmt ?? 0) / 10000))} unit="만원" sub={`판매수수료 ${pct(c.commission)}`} />
+        <Kpi label="8주 수수료 수익" value={comma(Math.floor((recent?.totals.commissionAmt ?? 0) / 10000))} unit="만원" sub="정산서 기준 · 상위 카테고리별 판매수수료" />
         <Kpi label="평균 평점" value={s.reviewCount ? s.avg.toFixed(2) : '-'} sub={`리뷰 ${comma(s.reviewCount)}건`} />
         <Kpi label="판매중 상품" value={comma(onSale)} unit="개" sub={`등록 ${comma(prods.length)}개 · 삭제 제외`} />
       </div>
@@ -142,17 +136,26 @@ function DetailBody({ s }) {
           </div>
         </div>
         <div className="space-y-4">
-          <div className="panel">
-            <img src={s.cover} alt="" className="w-full h-28 object-cover" />
-            <div className="p-5"><KV rows={[['상태', <StatusPill s={s.status} />], ['등급', s.grade], ['사업자번호', s.bizNo], ['연락처', s.phone], ['이메일', s.email], ['배송', `${s.courier} · ${won(s.shipFee)}`], ['관심고객', comma(s.followers)]]} /></div>
+          <div className="panel p-5">
+            <div className="panel-title mb-3">기본 정보</div>
+            <KV rows={[
+              ['상태', <span><StatusPill s={s.status} />{s.statusReason && <span className="block text-[11.5px] text-mute mt-1">{s.statusReason}</span>}</span>],
+              ['등급', s.grade], ['상호', s.company], ['사업자번호', s.bizNo], ['고객 문의', s.csPhone || '-'],
+              ['배송', `${s.courier || '택배사 미지정'} · ${won(s.shippingFee)} · ${s.freeShippingThreshold ? `${won(s.freeShippingThreshold)} 이상 무료` : '무료배송 없음'}`],
+              ['출고 안내', s.dispatchNote || '-'],
+              ['입점 신청', s.applicationId ? <Link to={`/admin/applications/${s.applicationId}`} className="hover:underline">신청서 #{s.applicationId}</Link> : '-'],
+            ]} />
           </div>
           <div className="panel p-5">
-            <div className="panel-title mb-2">관리 메모</div>
-            <ul className="text-[12.5px] text-ink-2 space-y-1.5">
-              <li><span className="num text-mute">2026.09.12</span> 추석 기획전 참여 확정</li>
-              {s.id === 's5' && <li><span className="num text-mute">2026.09.25</span> 반품 미처리 3건 → 정산 보류 / 운영 정지</li>}
-              <li><span className="num text-mute">{ymd(s.since)}</span> 입점 승인</li>
-            </ul>
+            <div className="panel-title mb-2">상태 이력</div>
+            <ol className="text-[12.5px] space-y-2">
+              {[...s.history].reverse().map((h) => (
+                <li key={h.at.getTime()} className="text-ink-2">
+                  <div><span className="num text-mute">{ymdhm(h.at)}</span> · <b className="text-ink">{h.from ? `${h.from} → ${h.to}` : `개설 (${h.to})`}</b> · {ACTOR_LABEL[h.actor] ?? h.actor}</div>
+                  {h.reason && <div className="text-mute mt-0.5">{h.reason}</div>}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </div>

@@ -10,7 +10,6 @@ import { useResolveReportMutation } from '@/features/admin/hooks/useResolveRepor
 import { useCreateReportMutation } from '@/features/report/hooks/useCreateReportMutation';
 import { useAdminSettlementWeekQuery } from '@/features/admin/hooks/useAdminSettlementWeekQuery';
 import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
-import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
 import { useAdminUserPointsQuery } from '@/features/admin/hooks/useAdminUserPointsQuery';
 import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useApplicationQuery } from '@/features/admin/hooks/useApplicationQuery';
@@ -41,7 +40,7 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
-  useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
+  useAdminReviewsQuery, useAdminSettlementsQuery,
   useSellerBuyersQuery,
   useSellerOrderItemsMockQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery,
   useSellerDailySalesQuery, useStoresQuery,

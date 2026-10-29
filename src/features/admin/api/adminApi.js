@@ -4,7 +4,6 @@ import { mockResolve } from '@/mocks/mockApi';
 import { DEFAULT_AVATAR } from '@/features/user/constants';
 import { toPointRow } from '@/features/user/api/userApi';
 import { toSettlementDetail } from '@/features/settlement/api/settlementApi';
-import { stores } from '@/mocks/fixtures/catalog';
 import { settlements } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
 import { APPLICATION_STATUS_LABEL, STORE_STATUS_LABEL, STORE_GRADE_LABEL, BIZ_TYPE_LABEL, EXPECTED_SALES_LABEL, ACTOR_LABEL, DOC_TYPES } from '@/features/admin/constants';
@@ -18,8 +17,36 @@ export const fetchAdminDashboard = async () => {
   return { ...data, platformDaily: toDailyBars(data.orderDaily) };
 };
 
-// 스토어 상세 · 카테고리 수수료(스토어 수)용 목업 — store 1절 확장(관리자 필드 · 상태 이력)이 나오면 상세와 함께 교체
-export const fetchAdminStores = () => mockResolve(stores);
+// GET /api/admin/stores/{id} — store 1절 + 관리자 필드 · 상태 이력(backend #182) 그대로. 대표자 · 상호 · 사업자번호는 원래 신청서 값
+export const fetchAdminStore = async (storeId) => {
+  const d = (await axiosInstance.get(`/api/admin/stores/${storeId}`)).data.data;
+  return {
+    id: String(d.storeId),
+    storeId: String(d.storeId),
+    name: d.storeName,
+    slug: d.slug,
+    owner: d.ownerName,
+    company: d.companyName,
+    bizNo: d.bizRegNo,
+    csPhone: d.csPhone ?? '',
+    grade: STORE_GRADE_LABEL[d.grade] ?? d.grade,
+    status: STORE_STATUS_LABEL[d.status] ?? d.status,
+    statusReason: d.statusReason ?? '',
+    dispatchNote: d.dispatchNote ?? '',
+    shippingFee: d.shippingFee,
+    freeShippingThreshold: d.freeShippingThreshold, // null = 무료배송 없음
+    courier: d.courier ?? '',
+    applicationId: d.applicationId,
+    since: new Date(d.createdAt),
+    history: (d.statusHistory ?? []).map((h) => ({ // 오래된 순 그대로 — 첫 항목은 개설(null → 운영중)
+      from: h.fromStatus ? STORE_STATUS_LABEL[h.fromStatus] ?? h.fromStatus : null,
+      to: STORE_STATUS_LABEL[h.toStatus] ?? h.toStatus,
+      actor: h.actor,
+      reason: h.reason ?? '',
+      at: new Date(h.changedAt),
+    })),
+  };
+};
 
 // GET /api/admin/stores — store /internal/stores 그대로(backend #172, 개설 최신순 · 페이징 없음) + 스토어 평점(review #160, 1~100개)
 // 평점은 화면 보조 정보라 review 가 실패해도 목록은 보여 준다(평점 없음)
