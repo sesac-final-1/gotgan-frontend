@@ -3,7 +3,6 @@ import { createWrapper } from '@/test/queryWrapper';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { useAdminDashboardQuery } from '@/features/admin/hooks/useAdminDashboardQuery';
-import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
 import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
 import { useAdminReportsQuery } from '@/features/admin/hooks/useAdminReportsQuery';
 import { useAdminReportQuery } from '@/features/admin/hooks/useAdminReportQuery';
@@ -42,7 +41,7 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
-  useAdminProductsQuery, useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
+  useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
   useSellerBuyersQuery,
   useSellerOrderItemsMockQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery,
   useSellerDailySalesQuery, useStoresQuery,

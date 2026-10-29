@@ -21,7 +21,6 @@ export const queryKeys = {
     reports: () => ['admin', 'reports'],
     report: (type, id) => ['admin', 'reports', type, id], // reports() 아래라 처리 후 목록을 무효화하면 상세도 함께
     categories: () => ['admin', 'categories'],
-    products: () => ['admin', 'products'],
     storeProducts: (storeId) => ['admin', 'stores', storeId, 'products'], // 실제 API — 판매중지 후 이 키만 무효화
   },
 
