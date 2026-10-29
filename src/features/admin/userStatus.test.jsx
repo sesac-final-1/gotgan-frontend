@@ -17,7 +17,7 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
-// admin-service 응답 흉내 (backend #94 — user 내부 API 그대로 전달). 상세 · 목록 · 포인트를 URL 로 나눠 돌려준다
+// admin-service 응답 흉내 (backend #94 — user 내부 API 그대로 전달). 상세 · 목록 · 포인트 · 작성 리뷰(backend #173)를 URL 로 나눠 돌려준다
 const USER = { userId: 4, email: 'buyer1@gotgan.com', name: '구매자1', nick: null, grade: 'NORMAL', status: 'ACTIVE', signupProvider: 'LOCAL',
   point: 1500, totalSpent: 320000, joinedAt: '2026-10-01T09:30:00+09:00', lastLoginAt: '2026-10-25T10:00:00+09:00', phone: '010-0000-0001' };
 const SUSPENDED = { ...USER, userId: 11, name: '정지회원', status: 'SUSPENDED', statusReason: '허위 리뷰', suspendedAt: '2026-10-25T10:00:00+09:00', suspendedUntil: '2026-11-01T10:00:00+09:00' };
@@ -25,6 +25,8 @@ function stubAdminApi() {
   vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => {
     if (url === '/api/admin/users') return { data: { data: { content: [USER, SUSPENDED], hasNext: false } } };
     if (url.endsWith('/points')) return { data: { data: { balance: 1500, history: { content: [] } } } };
+    if (url.endsWith('/reviews')) return { data: { data: { content: [
+      { reviewId: 31, productId: 101, productName: '린넨 셔츠', rating: 1, content: '사진과 달라요', blinded: true, createdAt: '2026-10-20T14:00:00+09:00' }] } } };
     return { data: { data: url.endsWith('/11') ? SUSPENDED : USER } };
   });
   vi.spyOn(axiosInstance, 'patch').mockImplementation(async (url, body) => ({ data: { data: { ...SUSPENDED, status: body.status } } }));
@@ -90,6 +92,9 @@ describe('관리자 회원 화면 (admin API)', () => {
 
   it('정상 회원 상세 — 기간 · 사유를 골라 정지', async () => {
     renderAdmin('/admin/users/4');
+    expect(await screen.findByText('2026.10.20 · 린넨 셔츠')).toBeInTheDocument(); // 작성 리뷰 — review 회원별 목록
+    expect(screen.getByText('사진과 달라요')).toBeInTheDocument();
+    expect(axiosInstance.get).toHaveBeenCalledWith('/api/admin/users/4/reviews', { params: { size: 5 } });
     fireEvent.click(await screen.findByRole('button', { name: '이용 정지' }));
     fireEvent.change(screen.getByLabelText('정지 기간'), { target: { value: 'permanent' } });
     fireEvent.click(screen.getByRole('button', { name: '확인' }));
