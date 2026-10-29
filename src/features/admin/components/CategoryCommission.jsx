@@ -6,8 +6,6 @@ import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
-import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
-import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
 import { useReserveCommissionMutation, useSaveCategoryMutation } from '@/features/admin/hooks/useCategoryMutations';
 import { PAYMENT_FEE } from '@/features/settlement/constants';
 import { toast } from '@/shared/stores/toastStore';
@@ -40,13 +38,10 @@ function buildColumns({ open, toggle, setEdit, rates, setRate, toggleActive }) {
     },
     { id: 'code', accessorFn: (r) => (r.sub ? `${r.parent.id}/${r.sub}` : r.parent.id), header: '코드', sortingFn: byParent('id'), meta: { tdClass: 'font-mono text-[11.5px] text-mute' } },
     {
+      // 스토어 수 칸은 뺌(10/29) — 스토어는 여러 카테고리를 팔고 수수료는 상품의 상위 카테고리 기준이라 스토어 수가 영향 범위와 맞지 않음
       id: 'prodCount', accessorFn: (r) => r.prodCount, header: '상품', sortingFn: byParent('prodCount'),
       meta: { thClass: 'text-right', tdClass: 'text-right num', search: false },
-    },
-    {
-      id: 'storeCount', accessorFn: (r) => r.parent.storeCount, header: '스토어', sortingFn: byParent('storeCount'),
-      meta: { thClass: 'text-right', tdClass: 'text-right num', search: false },
-      cell: ({ row }) => (row.original.sub ? <span className="text-mute">-</span> : row.original.parent.storeCount),
+      cell: ({ getValue }) => (getValue() == null ? <span className="text-mute">-</span> : getValue()),
     },
     {
       id: 'commission', accessorFn: (r) => r.parent.commission, header: '판매수수료', sortingFn: byParent('commission'),
@@ -91,22 +86,16 @@ function buildColumns({ open, toggle, setEdit, rates, setRate, toggleActive }) {
 
 export default function CategoryCommission() {
   const { data: categories = [], isLoading, isError } = useAdminCategoriesQuery();
-  const { data: stores = [] } = useAdminStoresQuery();
-  const { data: products = [] } = useAdminProductsQuery();
   const [openSel, setOpenSel] = useState(null); // null = 처음 상태(첫 상위 카테고리만 펼침)
   const open = useMemo(() => openSel ?? new Set(categories.slice(0, 1).map((c) => c.id)), [openSel, categories]);
   const [edit, setEdit] = useState(null);
 
   const rows = useMemo(() => categories.flatMap((c) => {
-    const parent = {
-      ...c,
-      prodCount: products.filter((p) => p.cat === c.id).length,
-      storeCount: stores.filter((s) => s.cat === c.id).length,
-    };
+    const parent = { ...c, prodCount: c.productCount };
     const head = { id: c.id, parent, sub: null, prodCount: parent.prodCount };
     if (!open.has(c.id)) return [head];
-    return [head, ...c.subs.map((s) => ({ id: `${c.id}-${s}`, parent, sub: s, prodCount: products.filter((p) => p.cat === c.id && p.sub === s).length }))];
-  }), [categories, products, stores, open]);
+    return [head, ...c.children.map((s) => ({ id: `${c.id}-${s.name}`, parent, sub: s.name, prodCount: s.productCount ?? null }))];
+  }), [categories, open]);
 
   const [rates, setRates] = useState({}); // categoryId → 입력한 율(%) 문자열 — 바뀐 것만 예약
   const saveCategory = useSaveCategoryMutation();

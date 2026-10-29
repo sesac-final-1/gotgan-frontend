@@ -4,7 +4,7 @@ import { mockResolve } from '@/mocks/mockApi';
 import { DEFAULT_AVATAR } from '@/features/user/constants';
 import { toPointRow } from '@/features/user/api/userApi';
 import { toSettlementDetail } from '@/features/settlement/api/settlementApi';
-import { stores, products } from '@/mocks/fixtures/catalog';
+import { stores } from '@/mocks/fixtures/catalog';
 import { settlements } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
 import { APPLICATION_STATUS_LABEL, STORE_STATUS_LABEL, STORE_GRADE_LABEL, BIZ_TYPE_LABEL, EXPECTED_SALES_LABEL, ACTOR_LABEL, DOC_TYPES } from '@/features/admin/constants';
@@ -160,6 +160,7 @@ export const toAdminCategory = (c, commission) => ({
   reserved: commission?.reserved ?? [],
   subs: c.children.map((s) => s.name),
   children: c.children,
+  productCount: c.productCount ?? null, // product 카테고리 트리의 상품 수(삭제 제외) — product 가 응답에 넣기 전에는 null(화면 '-', 10/29 박지연님께 요청)
 });
 
 export const fetchAdminCategories = async () => {
@@ -176,9 +177,6 @@ export const saveCategory = async ({ categoryId, request }) =>
 
 // PUT /api/admin/commissions — [{categoryId, rate(%)}], effectiveFrom 생략 = 다음 주 월요일부터
 export const reserveCommissions = async (rows) => (await axiosInstance.put('/api/admin/commissions', rows)).data.data;
-
-// TODO(구지훈): GET /api/admin/products (스토어별 상품 · 상태 — 상품 수 · 상세 표 · 리뷰 상품명)
-export const fetchAdminProducts = () => mockResolve(products);
 
 // GET /api/admin/stores/{storeId}/products — product 판매자 상품 목록과 같은 응답 그대로 (backend #110 · #112, 삭제 제외 · 상태 무관)
 //   [{productId, name, categoryName, salePrice, imageUrl, totalStock, soldOut, status, statusReason, displayable, hiddenReason, createdAt}]
