@@ -7,6 +7,7 @@ import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
+import { useAdminStoreListQuery } from '@/features/admin/hooks/useAdminStoreListQuery';
 import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
 import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
@@ -49,9 +50,13 @@ const SETTLEMENT_COLUMNS = [
 
 export default function StoreDetail() {
   const { id } = useParams();
-  const { data: stores = [], isLoading } = useAdminStoresQuery();
-  const s = stores.find((x) => x.id === id);
-  if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
+  const { data: list = [], isLoading } = useAdminStoreListQuery();
+  const { data: mocks = [], isLoading: mockLoading } = useAdminStoresQuery();
+  // 이름 · 대표자 · 등급 · 상태는 실제 목록(backend #172), 나머지 칸은 같은 slug 의 목업 — store 1절 확장이 나오면 상세 API 로 교체 (구지훈)
+  const real = list.find((x) => x.id === id);
+  const mock = real && mocks.find((x) => x.slug === real.slug);
+  const s = mock && { ...mock, storeId: real.id, name: real.name, owner: real.owner, bizNo: real.bizNo, grade: real.grade, status: real.status };
+  if (isLoading || mockLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
   if (!s) return <p className="text-mute py-10 text-center">스토어를 찾을 수 없어요</p>;
   return <DetailBody key={s.id} s={s} />; // key: 다른 스토어로 이동하면 상태 변경 모달 상태 초기화
 }
@@ -76,16 +81,12 @@ function DetailBody({ s }) {
     setModal(false);
     toast(`스토어 상태: ${status}`);
   };
-  const handleCommissionApply = () => {
-    // TODO(구지훈): useUpdateStoreCommissionMutation
-    toast('개별 수수료율이 다음 정산부터 적용됩니다');
-  };
 
   return (
     <div>
       <PageHead crumbs="판매자 > 스토어 관리" title={s.name} desc={`${c.name} · ${s.owner} · 입점 ${ymd(s.since)}`}
         right={<><Link to={`/store/${s.id}`} className="btn btn-line btn-sm">쇼핑몰에서 보기 <ExternalLink size={13} /></Link>
-          <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.id), context: { type: 'STORE', id: Number(s.id) } }}>판매자와 상담</OpenChatButton><button onClick={() => setModal(true)} className="btn btn-ink btn-sm">상태 변경</button></>} />
+          <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.storeId), context: { type: 'STORE', id: Number(s.storeId) } }}>판매자와 상담</OpenChatButton><button onClick={() => setModal(true)} className="btn btn-ink btn-sm">상태 변경</button></>} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <Kpi label="8주 거래액" value={shortWon(ss.reduce((a, x) => a + x.gross, 0))} unit="원" />
         <Kpi label="8주 수수료 수익" value={comma(ss.reduce((a, x) => a + x.commission, 0) / 10000)} unit="만원" sub={`판매수수료 ${pct(c.commission)}`} />
@@ -114,11 +115,6 @@ function DetailBody({ s }) {
           <div className="panel">
             <img src={s.cover} alt="" className="w-full h-28 object-cover" />
             <div className="p-5"><KV rows={[['상태', <StatusPill s={status} />], ['등급', s.grade], ['사업자번호', s.bizNo], ['연락처', s.phone], ['이메일', s.email], ['배송', `${s.courier} · ${won(s.shipFee)}`], ['관심고객', comma(s.followers)]]} /></div>
-          </div>
-          <div className="panel p-5 space-y-3">
-            <div className="panel-title">수수료 개별 설정</div>
-            <div className="flex items-center gap-2"><input className="field num w-24" defaultValue={(c.commission * 100).toFixed(1)} /><span>%</span><button onClick={handleCommissionApply} className="btn btn-line btn-sm">적용</button></div>
-            <p className="text-[12px] text-mute">카테고리 기본값 {pct(c.commission)} · 프로모션/협의 시 개별 조정</p>
           </div>
           <div className="panel p-5">
             <div className="panel-title mb-2">관리 메모</div>

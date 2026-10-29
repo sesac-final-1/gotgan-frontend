@@ -40,6 +40,8 @@ export const recentWeeks = (today = new Date()) =>
 
 // 입점 심사 — store 내부 API 값 → 화면 라벨 (store.md 2 · 3절)
 export const APPLICATION_STATUS_LABEL = { PENDING: '심사대기', SUPPLEMENT: '보완요청', APPROVED: '승인', REJECTED: '반려' };
+export const STORE_STATUS_LABEL = { ACTIVE: '운영중', SUSPENDED: '정지', CLOSED: '폐점' };
+export const STORE_GRADE_LABEL = { SPROUT: '새싹', POWER: '파워', BIG_POWER: '빅파워' };
 export const BIZ_TYPE_LABEL = { INDIVIDUAL: '개인', CORPORATE: '법인' };
 export const EXPECTED_SALES_LABEL = { UNDER_5M: '월 500만원 미만', FROM_5M_TO_20M: '월 500만 ~ 2,000만원', FROM_20M_TO_100M: '월 2,000만 ~ 1억원', OVER_100M: '월 1억원 이상' };
 // 처리자는 종류만 내려온다 — 관리자 개인 이름은 저장하지 않음 (store.md 관리자 공통)
