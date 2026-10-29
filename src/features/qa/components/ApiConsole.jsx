@@ -23,6 +23,8 @@ const PRESETS = [
   { owner: '박지연', label: '카테고리 트리', role: '누구나', method: 'GET', path: '/api/categories' },
   { owner: '박지연', label: '상품 목록 (식품 · 신상품 8개)', role: '누구나', method: 'GET', path: '/api/products?categoryId=1&sort=NEW&size=8' },
   { owner: '박지연', label: '상품 상세 (시드 101)', role: '누구나', method: 'GET', path: '/api/products/101' },
+  { owner: '박지연', label: '스토어 목록 (운영 중)', role: '누구나', method: 'GET', path: '/api/stores' },
+  { owner: '박지연', label: '스토어 홈 (시드 1 · 정지는 15)', role: '누구나', method: 'GET', path: '/api/stores/1' },
   { owner: '이경석', label: '장바구니 담기 (시드 옵션 10101)', role: '구매자', method: 'POST', path: '/api/carts/items', body: { productOptionId: 10101, quantity: 1 } },
   { owner: '이경석', label: '내 주문', role: '구매자', method: 'GET', path: '/api/orders' },
   { owner: '이경석', label: '내 클레임', role: '구매자', method: 'GET', path: '/api/claims' },
