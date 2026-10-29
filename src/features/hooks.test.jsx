@@ -34,6 +34,8 @@ import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettleme
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useSellerDailySalesQuery } from '@/features/store/hooks/useSellerDailySalesQuery';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
+import { useMyApplicationQuery } from '@/features/store/hooks/useMyApplicationQuery';
+import { useApplySellerMutation } from '@/features/store/hooks/useApplySellerMutation';
 import { useMeQuery } from '@/features/user/hooks/useMeQuery';
 import { useMyAddressesQuery } from '@/features/user/hooks/useMyAddressesQuery';
 import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
@@ -151,6 +153,25 @@ describe('조회 훅', () => {
       expect(idle.result.current.fetchStatus).toBe('idle');
     } finally {
       get.mockRestore();
+    }
+  });
+
+  it('내 입점 신청 — 신청한 적 없으면 null(폼), 제출하면 상태를 다시 불러온다', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: null } });
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { applicationId: 27, status: 'PENDING' } } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      expect(await load(useMyApplicationQuery)).toBeNull();
+      expect(get).toHaveBeenCalledWith('/api/seller/apply/me');
+
+      const { result } = renderHook(() => useApplySellerMutation(), { wrapper: Wrapper });
+      await act(() => result.current.mutateAsync({ storeName: '곳간상회', docs: [] }));
+      expect(post).toHaveBeenCalledWith('/api/seller/apply', { storeName: '곳간상회', documents: [] });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['store', 'my-application'] });
+    } finally {
+      get.mockRestore();
+      post.mockRestore();
     }
   });
 

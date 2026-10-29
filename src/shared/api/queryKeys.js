@@ -37,6 +37,7 @@ export const queryKeys = {
     all: ['store'],
     list: () => ['store', 'list'],
     mine: () => ['store', 'mine'],
+    myApplication: () => ['store', 'my-application'], // 내 입점 신청 상태 — 제출 · 재제출 뒤 무효화
     sellerDailySales: () => ['store', 'seller', 'daily-sales'],
   },
 
