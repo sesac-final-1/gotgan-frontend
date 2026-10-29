@@ -21,6 +21,8 @@ import { useSellerBuyersQuery } from '@/features/order/hooks/useSellerBuyersQuer
 import { useSellerOrderItemsMockQuery, useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
+import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
+import { useProductQuery } from '@/features/product/hooks/useProductQuery';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
@@ -39,7 +41,7 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
   useSellerBuyersQuery,
-  useSellerOrderItemsMockQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery,
+  useSellerOrderItemsMockQuery, useQnasQuery, useReviewsQuery,
   useSellerDailySalesQuery, useStoresQuery,
 };
 const OBJECT_HOOKS = { useMyStoreQuery };
@@ -69,8 +71,18 @@ const API_HOOKS = {
   useSellerReviewSummaryQuery: [{ averageRating: 4.5, ratedCount: 2, distribution: [], products: [], tabCounts: { all: 2 } }, { averageRating: 4.5 }],
   useMyOrdersQuery: [{ statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001', status: 'PAID', items: [] }] },
     { statusCounts: { PAYMENT_DONE: 1 }, orders: [{ orderNo: '20261026-000001' }] }],
+  // product (박지연) — 변환 세부는 features/product/productApi.test.js
+  useCategoriesQuery: [[{ id: 1, name: '식품', nameEn: 'Food', children: [{ id: 101, name: '과일', nameEn: null }] }],
+    [{ id: 1, name: '식품', en: 'Food', subs: ['과일'], children: [{ id: 101, name: '과일' }] }]],
+  useProductsQuery: [{ content: [{ productId: 601, name: '햇감귤', storeId: 1, categoryId: 101, topCategoryId: 1, price: 32900, discountRate: 18, salePrice: 26980,
+    imageUrl: 'https://img/a.jpg', soldOut: false, createdAt: '2026-10-25T10:00:00+09:00' }], page: 0, size: 100, totalElements: 1, totalPages: 1, hasNext: false },
+  [{ id: 601, name: '햇감귤', storeId: 1, cat: 1, discount: 0.18, images: ['https://img/a.jpg'], status: '판매중' }]], // 임시 — 전체 배열
+  useProductSearchQuery: [{ content: [{ productId: 601, name: '햇감귤', storeId: 1, categoryId: 101, topCategoryId: 1, price: 32900, discountRate: 18, salePrice: 26980,
+    imageUrl: null, soldOut: true, createdAt: '2026-10-25T10:00:00+09:00' }], page: 0, size: 8, totalElements: 1, totalPages: 1, hasNext: false },
+  { content: [{ id: 601, status: '품절', images: [] }], totalPages: 1, hasNext: false }],
 };
-const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useSellerReviewsQuery, useSellerReviewSummaryQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery };
+const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useSellerReviewsQuery, useSellerReviewSummaryQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery,
+  useCategoriesQuery, useProductsQuery, useProductSearchQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
@@ -124,6 +136,22 @@ describe('조회 훅', () => {
     const { Wrapper } = createWrapper();
     const { result } = renderHook(() => useAdminUserPointsQuery(undefined), { wrapper: Wrapper });
     expect(result.current.fetchStatus).toBe('idle');
+  });
+
+  it('상품 상세 — id 가 있을 때만 조회, 404 는 재시도 없이 isError', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockRejectedValue({ response: { status: 404, data: { code: 'PRODUCT_NOT_FOUND' } } });
+    try {
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useProductQuery('999'), { wrapper: Wrapper });
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(get).toHaveBeenCalledTimes(1);
+      expect(get).toHaveBeenCalledWith('/api/products/999');
+
+      const idle = renderHook(() => useProductQuery(undefined), { wrapper: Wrapper });
+      expect(idle.result.current.fetchStatus).toBe('idle');
+    } finally {
+      get.mockRestore();
+    }
   });
 
   it('목업 응답은 매번 새 객체 (같은 참조면 변경 후 화면이 갱신되지 않음)', async () => {

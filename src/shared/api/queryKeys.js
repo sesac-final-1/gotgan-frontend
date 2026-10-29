@@ -44,7 +44,9 @@ export const queryKeys = {
   product: {
     all: ['product'],
     categories: () => ['product', 'categories'],
-    list: () => ['product', 'list'],
+    list: (params) => ['product', 'list', params ?? {}], // 서버 페이징 목록 · 검색 — 조건이 키에 들어감 (컨벤션 4-7)
+    detail: (productId) => ['product', 'detail', String(productId)],
+    cards: () => ['product', 'cards'], // 임시 — 상품 전체 배열 (useProductsQuery, 화면이 모두 옮겨 가면 삭제)
   },
 
   // ── order (이경석)
