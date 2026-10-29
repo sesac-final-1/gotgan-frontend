@@ -1,13 +1,10 @@
-import { useMemo } from 'react';
 import { LayoutDashboard, Package, PlusSquare, ShoppingCart, RotateCcw, Star, MessageCircle, MessagesSquare, Wallet, Store } from 'lucide-react';
 import ConsoleLayout from '@/shared/layouts/ConsoleLayout';
 import NotificationBell from '@/features/notification/components/NotificationBell';
 import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { openClaimCount } from '@/features/order/utils/orderView';
-import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
+import { useSellerInquirySummaryQuery } from '@/features/review/hooks/useInquiries';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
-import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
-import { toMap } from '@/shared/utils/collection';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useChatUnreadCountQuery } from '@/features/chat/hooks/useChatQueries';
 
@@ -15,12 +12,10 @@ import { useChatUnreadCountQuery } from '@/features/chat/hooks/useChatQueries';
 export default function SellerLayout() {
   const logout = useLogout();
   const { data: sellerOrders } = useSellerOrderItemsQuery({ page: 0, size: 1 }); // 탭 숫자(statusCounts)만 쓴다
-  const { data: qnas = [] } = useQnasQuery();
-  const { data: products = [] } = useProductsQuery();
+  const { data: inquiryCounts } = useSellerInquirySummaryQuery(); // 미답변 문의 배지
   const { data: store } = useMyStoreQuery();
   const { data: chatUnread = 0 } = useChatUnreadCountQuery();
-  const productById = useMemo(() => toMap(products), [products]);
-  const unanswered = qnas.filter((q) => productById[q.productId]?.storeId === store?.id && !q.a).length;
+  const unanswered = inquiryCounts?.unanswered ?? 0;
   const cnt = (s) => sellerOrders?.statusCounts?.[s] ?? 0;
   const claims = openClaimCount(sellerOrders?.statusCounts);
   const groups = [

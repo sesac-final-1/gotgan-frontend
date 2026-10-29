@@ -76,6 +76,11 @@ export const queryKeys = {
     sellerSummary: () => ['review', 'seller', 'summary'],
     productList: (params) => ['review', 'product', 'list', params], // 상품 상세 공개 리뷰 — 서버 페이징
     productSummary: (productId) => ['review', 'product', 'summary', productId],
+    inquiry: () => ['review', 'inquiry'], // 상품 문의 — 등록 · 수정 · 삭제 · 답변 뒤 상품 Q&A · 내 문의 · 판매자 목록 · 숫자를 함께 무효화
+    productInquiries: (params) => ['review', 'inquiry', 'product', params], // 서버 페이징
+    myInquiries: (params) => ['review', 'inquiry', 'my', params],
+    sellerInquiries: (params) => ['review', 'inquiry', 'seller', 'list', params],
+    sellerInquirySummary: () => ['review', 'inquiry', 'seller', 'summary'],
   },
 
   // ── settlement (구지훈)
