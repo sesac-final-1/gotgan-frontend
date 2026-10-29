@@ -58,7 +58,7 @@ export function useChatRoomSocket(roomId, side) {
           setCounterpartTyping(false); // 보냈으면 입력 끝
         }
         queryClient.setQueryData(queryKeys.chat.messages(roomId), (data) => prependMessage(data, frameToMessage(frame, side)));
-        void queryClient.invalidateQueries({ queryKey: ['chat', 'rooms'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.chat.roomsAll() });
       } else if (frame.type === 'READ' && frame.userRole !== side) {
         setCounterpartReadId((prev) => Math.max(prev, frame.lastMessageId));
       } else if (frame.type === 'TYPING' && frame.userRole !== side) {
@@ -66,7 +66,7 @@ export function useChatRoomSocket(roomId, side) {
         clearTimeout(typingTimer.current);
         typingTimer.current = setTimeout(() => setCounterpartTyping(false), TYPING_SHOW_MS);
       } else if (frame.type === 'STATUS') {
-        void queryClient.invalidateQueries({ queryKey: ['chat', 'rooms'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.chat.roomsAll() });
       }
     });
     setStatus(chat.status);
