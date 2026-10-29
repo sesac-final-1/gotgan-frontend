@@ -1,12 +1,8 @@
 // admin 도메인 API — 담당 구지훈. 관리자 화면은 /api/admin/**(admin-service)만 호출 (컨벤션 4-2 규칙 1)
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { mockResolve } from '@/mocks/mockApi';
 import { DEFAULT_AVATAR } from '@/features/user/constants';
 import { toPointRow } from '@/features/user/api/userApi';
 import { toSettlementDetail } from '@/features/settlement/api/settlementApi';
-import { stores } from '@/mocks/fixtures/catalog';
-import { settlements } from '@/mocks/fixtures/orders';
-import { reviews } from '@/mocks/fixtures/reviews';
 import { APPLICATION_STATUS_LABEL, STORE_STATUS_LABEL, STORE_GRADE_LABEL, BIZ_TYPE_LABEL, EXPECTED_SALES_LABEL, ACTOR_LABEL, DOC_TYPES } from '@/features/admin/constants';
 
 // GET /api/admin/dashboard — settlement · order · product 통계 조합, 한 곳이 실패하면 그 영역 null + unavailable[] (backend #95 · #112)
@@ -18,8 +14,36 @@ export const fetchAdminDashboard = async () => {
   return { ...data, platformDaily: toDailyBars(data.orderDaily) };
 };
 
-// 스토어 상세 · 카테고리 수수료(스토어 수)용 목업 — store 1절 확장(관리자 필드 · 상태 이력)이 나오면 상세와 함께 교체
-export const fetchAdminStores = () => mockResolve(stores);
+// GET /api/admin/stores/{id} — store 1절 + 관리자 필드 · 상태 이력(backend #182) 그대로. 대표자 · 상호 · 사업자번호는 원래 신청서 값
+export const fetchAdminStore = async (storeId) => {
+  const d = (await axiosInstance.get(`/api/admin/stores/${storeId}`)).data.data;
+  return {
+    id: String(d.storeId),
+    storeId: String(d.storeId),
+    name: d.storeName,
+    slug: d.slug,
+    owner: d.ownerName,
+    company: d.companyName,
+    bizNo: d.bizRegNo,
+    csPhone: d.csPhone ?? '',
+    grade: STORE_GRADE_LABEL[d.grade] ?? d.grade,
+    status: STORE_STATUS_LABEL[d.status] ?? d.status,
+    statusReason: d.statusReason ?? '',
+    dispatchNote: d.dispatchNote ?? '',
+    shippingFee: d.shippingFee,
+    freeShippingThreshold: d.freeShippingThreshold, // null = 무료배송 없음
+    courier: d.courier ?? '',
+    applicationId: d.applicationId,
+    since: new Date(d.createdAt),
+    history: (d.statusHistory ?? []).map((h) => ({ // 오래된 순 그대로 — 첫 항목은 개설(null → 운영중)
+      from: h.fromStatus ? STORE_STATUS_LABEL[h.fromStatus] ?? h.fromStatus : null,
+      to: STORE_STATUS_LABEL[h.toStatus] ?? h.toStatus,
+      actor: h.actor,
+      reason: h.reason ?? '',
+      at: new Date(h.changedAt),
+    })),
+  };
+};
 
 // GET /api/admin/stores — store /internal/stores 그대로(backend #172, 개설 최신순 · 페이징 없음) + 스토어 평점(review #160, 1~100개)
 // 평점은 화면 보조 정보라 review 가 실패해도 목록은 보여 준다(평점 없음)
@@ -96,8 +120,6 @@ export const fetchAdminUserReviews = async (userId) =>
 export const changeUserStatus = async ({ userId, request }) =>
   toAdminUser((await axiosInstance.patch(`/api/admin/users/${userId}/status`, request)).data.data);
 
-// 스토어 목록 · 상세 · 대시보드의 8주 추이용 목업 — 스토어 API 로 바꿀 때 함께 교체. 정산 관리 화면은 아래 fetchAdminSettlementWeek
-export const fetchAdminSettlements = () => mockResolve(settlements);
 
 // 정산 — admin-service 가 settlement /internal/settlements 응답을 그대로 전달 (backend #94). 목업 필드 이름으로 바꿔 넘긴다
 const SETTLEMENT_STATUS_LABEL = { SCHEDULED: '지급예정', HELD: '지급보류', PAID: '지급완료' };
@@ -143,8 +165,6 @@ export const fetchAdminSettlement = async (id) => toSettlementDetail((await axio
 // POST /api/admin/settlements/aggregate {week} → {week, created, updated, autoHeld, carriedOver} — 멱등(스토어 × 주차 1건)
 export const aggregateSettlements = async (week) => (await axiosInstance.post('/api/admin/settlements/aggregate', { week })).data.data;
 
-// 스토어 목록 · 상세 · 회원 상세의 평점 · 작성 리뷰 표시용 목업 — review 목록 API 가 생기면 교체. 리뷰 신고 · 블라인드는 아래 신고 API
-export const fetchAdminReviews = () => mockResolve(reviews);
 
 // 카테고리 · 수수료 — admin-service: product 카테고리(GET /api/admin/categories) + settlement 수수료(GET /api/admin/commissions) (backend #95)
 // 스토어 · 상품은 아직 목업이라 목업과 같은 문자열 id(food 등)로 넘긴다 — 시드 상위 1~6 은 고정 번호, 새 카테고리는 숫자 문자열

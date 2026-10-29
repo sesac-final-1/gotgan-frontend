@@ -2,12 +2,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
 import { aggregateSettlements, holdSettlement, paySettlements } from '@/features/admin/api/adminApi';
 
-// 정산 지급 · 보류 — 담당 구지훈. 성공하면 정산 목록을 다시 불러온다 (일부 실패여도 성공한 건은 반영)
+// 정산 지급 · 보류 — 담당 구지훈. 성공하면 정산 목록 · 대시보드(메뉴의 지급 보류 배지)를 다시 불러온다 (일부 실패여도 성공한 건은 반영)
 function useSettlementMutation(mutationFn) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn,
-    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.settlements() }),
+    onSettled: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.settlements() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.dashboard() }),
+    ]),
   });
 }
 

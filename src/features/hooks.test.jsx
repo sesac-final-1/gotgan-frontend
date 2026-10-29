@@ -3,14 +3,11 @@ import { createWrapper } from '@/test/queryWrapper';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { useAdminDashboardQuery } from '@/features/admin/hooks/useAdminDashboardQuery';
-import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
 import { useAdminReportsQuery } from '@/features/admin/hooks/useAdminReportsQuery';
 import { useAdminReportQuery } from '@/features/admin/hooks/useAdminReportQuery';
 import { useResolveReportMutation } from '@/features/admin/hooks/useResolveReportMutation';
 import { useCreateReportMutation } from '@/features/report/hooks/useCreateReportMutation';
 import { useAdminSettlementWeekQuery } from '@/features/admin/hooks/useAdminSettlementWeekQuery';
-import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
-import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
 import { useAdminUserPointsQuery } from '@/features/admin/hooks/useAdminUserPointsQuery';
 import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useApplicationQuery } from '@/features/admin/hooks/useApplicationQuery';
@@ -41,7 +38,6 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 
 // 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
 const LIST_HOOKS = {
-  useAdminReviewsQuery, useAdminSettlementsQuery, useAdminStoresQuery,
   useSellerBuyersQuery,
   useSellerOrderItemsMockQuery, useCategoriesQuery, useProductsQuery, useQnasQuery, useReviewsQuery,
   useSellerDailySalesQuery, useStoresQuery,
@@ -223,7 +219,8 @@ describe('정산 관리 (A안 — 고른 주차만 API 조회)', () => {
       const release = renderHook(() => useReleaseSettlementHoldMutation(), { wrapper: Wrapper }).result;
       await act(() => release.current.mutateAsync(6));
       expect(patch).toHaveBeenCalledWith('/api/admin/settlements/6/hold', { hold: false, reason: undefined });
-      expect(invalidate).toHaveBeenCalledTimes(3);
+      expect(invalidate).toHaveBeenCalledTimes(6); // 3번 × (정산 목록 · 대시보드 — 메뉴의 지급 보류 배지)
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'dashboard'] });
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'settlements'] });
     } finally {
       post.mockRestore();
