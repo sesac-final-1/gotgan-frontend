@@ -135,6 +135,27 @@ describe('관리자 스토어 상세 — 등록 상품 · 강제 판매중지 (b
   });
 });
 
+describe('관리자 스토어 상세 — 최근 8주 정산 (backend #184)', () => {
+  it('정산 이력 표 · 8주 거래액 · 수수료 KPI 를 스토어 최근 정산서 API 로, 지급 전이면 지급 예정일', async () => {
+    const summary = (id, week, weekStart, weekEnd, salesAmt, status, paidAt) => ({ id, storeId: 1, storeName: '산골농부 박씨네', week, weekStart, weekEnd,
+      itemCount: 2, carriedOverCount: 0, salesAmt, commissionAmt: salesAmt * 0.07, paymentFeeAmt: 0, payoutAmt: salesAmt * 0.9, status,
+      holdReason: null, scheduledPayDate: '2026-10-29', paidAt });
+    stubGet({
+      '/api/admin/stores': [store('ACTIVE')],
+      '/api/admin/stores/1/settlements': { storeId: 1, weeks: 8, fromWeek: '2026-W37', totals: { count: 2, salesAmt: 1_200_000, commissionAmt: 84_000 },
+        settlements: [summary(11, '2026-W43', '2026-10-19', '2026-10-25', 700_000, 'SCHEDULED', null),
+          summary(10, '2026-W42', '2026-10-12', '2026-10-18', 500_000, 'PAID', '2026-10-22T10:00:00+09:00')] },
+    });
+    renderAt('/admin/stores/1');
+
+    expect(await screen.findByText('정산서 2건 · 이번 주 포함')).toBeInTheDocument();
+    expect(screen.getByText('700,000')).toBeInTheDocument();
+    expect(screen.getByText('2026.10.29')).toBeInTheDocument();   // 지급 전 — 예정일
+    expect(screen.getByText('2026.10.22')).toBeInTheDocument();   // 지급 완료 — 지급 시각
+    expect(axiosInstance.get).toHaveBeenCalledWith('/api/admin/stores/1/settlements', { params: { weeks: 8 } });
+  });
+});
+
 describe('신고 상세 — 리뷰 사진', () => {
   it('리뷰에 사진이 있으면 썸네일로 보여 주고 원본은 새 탭으로', async () => {
     stubGet({
