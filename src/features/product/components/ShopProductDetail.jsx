@@ -5,7 +5,7 @@ import { Share2, X, Minus, Plus, ChevronRight, Truck } from 'lucide-react';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
-import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
+import { useProductInquiriesQuery } from '@/features/review/hooks/useInquiries';
 import { useCart } from '@/features/order/hooks/useCart';
 import { earnOf } from '@/features/user/constants';
 import ProductCard from '@/features/product/components/ProductCard';
@@ -46,7 +46,7 @@ function DetailBody({ p, store, cat, products, stores }) {
   const nav = useNavigate();
   const loc = useLocation();
   const { addToCart } = useCart();
-  const { data: qnas = [] } = useQnasQuery();
+  const { data: qnaPage } = useProductInquiriesQuery(p.id); // Q&A 탭 숫자 — ShopProductQna 첫 페이지와 같은 쿼리
   const [img, setImg] = useState(0);
   const [pick, setPick] = useState({});
   const [lines, setLines] = useState([]);
@@ -56,7 +56,6 @@ function DetailBody({ p, store, cat, products, stores }) {
   useEffect(() => { if (loc.hash) setTimeout(() => document.getElementById(loc.hash.slice(1))?.scrollIntoView(), 50); }, [loc.hash]);
 
   const storeById = useMemo(() => toMap(stores), [stores]);
-  const myQna = useMemo(() => qnas.filter((q) => q.productId === p.id), [qnas, p.id]);
   const others = useMemo(
     () => products.filter((x) => x.storeId === p.storeId && x.id !== p.id && x.status !== '판매중지' && storeById[x.storeId]?.status === '운영중').slice(0, 4),
     [products, storeById, p.storeId, p.id],
@@ -88,7 +87,7 @@ function DetailBody({ p, store, cat, products, stores }) {
   const onCart = async () => { const ls = ensureLines(); if (ls && await add(ls)) setCartModal(true); };
   const onBuy = async () => { const ls = ensureLines(); if (ls && await add(ls)) void nav('/checkout'); };
 
-  const TABS = [['info', '상품정보'], ['reviews', `리뷰 ${comma(p.reviews)}`], ['qna', `Q&A ${myQna.length}`], ['ship', '배송/교환/반품']];
+  const TABS = [['info', '상품정보'], ['reviews', `리뷰 ${comma(p.reviews)}`], ['qna', `Q&A ${comma(qnaPage?.totalElements ?? 0)}`], ['ship', '배송/교환/반품']];
   const go = (k) => { setTab(k); document.getElementById(k)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
   return (
@@ -222,7 +221,7 @@ function DetailBody({ p, store, cat, products, stores }) {
           <ShopProductReviews p={p} store={store} />
 
           {/* Q&A */}
-          <ShopProductQna list={myQna} />
+          <ShopProductQna p={p} />
 
           {/* 배송/교환/반품 */}
           <section id="ship" className="scroll-mt-32 pt-16">
