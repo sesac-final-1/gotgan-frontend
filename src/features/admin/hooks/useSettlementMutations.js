@@ -7,10 +7,10 @@ function useSettlementMutation(mutationFn) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn,
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.settlements() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.dashboard() });
-    },
+    onSettled: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.settlements() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.dashboard() }),
+    ]),
   });
 }
 
