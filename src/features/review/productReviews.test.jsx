@@ -1,9 +1,11 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { reviews as mockReviews } from '@/mocks/fixtures/reviews';
 import { fetchProductReviewSummary, fetchProductReviews } from '@/features/review/api/reviewApi';
 import ShopProductReviews from '@/features/review/components/ShopProductReviews';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 
 const REVIEW = {
   reviewId: 31, writerDisplayName: '곳간러버', rating: 5, title: '핏이 진짜 예뻐요', content: '평소 M 입는데 M 주문했어요.',
@@ -37,7 +39,8 @@ function renderReviews({ list = [REVIEW, PLAIN], photo = [REVIEW], totalPages = 
     return { data: { data: isPhotoStrip && photo ? page(photo) : page(list, totalPages) } };
   });
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<QueryClientProvider client={queryClient}><ShopProductReviews p={p} store={STORE} /></QueryClientProvider>);
+  // 라우터 — 신고 접수 완료 화면(ReportDone)이 현재 경로를 읽는다
+  render(<QueryClientProvider client={queryClient}><MemoryRouter><ShopProductReviews p={p} store={STORE} /></MemoryRouter></QueryClientProvider>);
   return get;
 }
 // 목록 호출만 — 포토 줄 호출에는 rating 키가 없다
@@ -133,5 +136,34 @@ describe('상품 상세 리뷰 영역', () => {
 
     renderReviews({ fail: true });
     expect(await screen.findByText(/리뷰를 불러오지 못했어요/)).toBeInTheDocument();
+  });
+});
+
+describe('상품 리뷰 신고 (REV-12)', () => {
+  afterEach(() => useAuthStore.setState({ user: null, accessToken: null }));
+
+  it('구매자만 리뷰마다 신고 — 모달에서 사유를 골라 POST /api/reports {targetType: REVIEW, targetId}', async () => {
+    useAuthStore.setState({ accessToken: 't', user: { userId: 4, name: '구매자', roles: ['BUYER'] } });
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { reportId: 5, status: 'OPEN' } } });
+    renderReviews();
+
+    const buttons = await screen.findAllByRole('button', { name: '신고' });
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[0]);
+    fireEvent.click(screen.getByRole('button', { name: '신고하기' }));
+    await waitFor(() => expect(post).toHaveBeenCalledWith('/api/reports', expect.objectContaining({ targetType: 'REVIEW', targetId: 31 })));
+    expect(await screen.findByText('신고를 접수했어요. 운영팀이 확인 후 조치합니다.')).toBeInTheDocument(); // 접수 완료 화면까지
+  });
+
+  it('비로그인 · 판매자에게는 신고 버튼이 없다', async () => {
+    renderReviews();
+    expect(await screen.findByText('곳간러버')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '신고' })).not.toBeInTheDocument();
+    cleanup();
+
+    useAuthStore.setState({ accessToken: 't', user: { userId: 2, name: '판매자', roles: ['SELLER'], storeId: 1 } });
+    renderReviews();
+    expect(await screen.findByText('곳간러버')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '신고' })).not.toBeInTheDocument();
   });
 });

@@ -5,6 +5,7 @@ import { cx } from '@/shared/utils/format';
 import { toast } from '@/shared/stores/toastStore';
 import { useChangeChatStatusMutation, useChatMessagesQuery, useOpenChatMutation, useReadChatMutation } from '@/features/chat/hooks/useChatQueries';
 import { useChatRoomSocket } from '@/features/chat/hooks/useChatRoomSocket';
+import ReportModal from '@/features/report/components/ReportModal';
 import { contextLabel, flattenMessages, MAX_LENGTH, mySide, ROOM_TYPE_LABEL, roomNotice, validateContent } from '@/features/chat/utils/chatView';
 
 const CONNECTION_TEXT = { connecting: '연결 중…', disconnected: '연결이 끊겼어요. 다시 연결하는 중…', stopped: '실시간 연결이 멈췄어요. 새로고침해 주세요.' };
@@ -22,6 +23,7 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
   const changeStatus = useChangeChatStatusMutation();
   const openHelp = useOpenChatMutation();
   const [text, setText] = useState('');
+  const [reportTarget, setReportTarget] = useState(null); // 판매자의 구매자 신고 (REV-12 회원 신고)
   const listRef = useRef(null);
   const lastId = messages.at(-1)?.messageId;
   const lastMineId = messages.findLast((m) => m.mine)?.messageId;
@@ -59,6 +61,9 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
         <div className="ml-auto flex gap-2">
           {side === 'BUYER' && room.type === 'STORE_INQUIRY' && (
             <button className="btn btn-line btn-xs" disabled={openHelp.isPending} onClick={askHelp}>운영팀에 도움 요청</button>
+          )}
+          {side === 'SELLER' && room.type === 'STORE_INQUIRY' && room.buyerId && (
+            <button className="btn btn-line btn-xs" onClick={() => setReportTarget({ type: 'USER', id: room.buyerId, label: '구매자' })}>구매자 신고</button>
           )}
           {side === 'ADMIN' && room.status && (
             <button className="btn btn-line btn-xs" disabled={changeStatus.isPending}
@@ -106,6 +111,7 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
           </div>
         </div>
       )}
+      <ReportModal target={reportTarget} onClose={() => setReportTarget(null)} />
     </section>
   );
 }
