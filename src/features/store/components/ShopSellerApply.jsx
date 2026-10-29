@@ -92,6 +92,7 @@ function Doc({ type, files, onPick, onClear }) {
       </div>
       <input ref={input} type="file" accept={type.accept} multiple={type.multiple} className="hidden" aria-label={type.label}
         onChange={(e) => { onPick(type.multiple ? [...e.target.files] : e.target.files[0] ?? null); e.target.value = ''; }} />
+      {done && type.multiple && list.length < PRODUCT_PHOTO_MAX && <button type="button" onClick={() => input.current.click()} className="btn btn-sm btn-line">추가</button>}
       {done
         ? <button type="button" onClick={onClear} className="btn btn-sm btn-ghost" aria-label={`${type.label} 지우기`}><X size={14} /></button>
         : <button type="button" onClick={() => input.current.click()} className="btn btn-sm btn-line">파일 선택</button>}
@@ -110,6 +111,16 @@ const REQUIRED = [
   ['storeName', 'slug'],
   [],
   ['number', 'holder'],
+];
+// 서버(SellerApplyRequest)가 형식을 검사하는 네 칸만 같은 규칙 · 문구로 "다음 단계" 때 미리 막는다 — 서버 규칙이 바뀌면 여기도 같이
+const RESERVED_SLUGS = ['admin', 'seller', 'new', 'api', 'me'];
+const FORMAT = [
+  [['bizRegNo', /^\d{3}-\d{2}-\d{5}$/, '사업자등록번호는 000-00-00000 형식입니다.'],
+    ['managerPhone', /^01[016789]-\d{3,4}-\d{4}$/, '휴대폰 번호는 010-0000-0000 형식입니다.'],
+    ['managerEmail', /^[^\s@]+@[^\s@]+\.[^\s@]+$/, '이메일 형식이 올바르지 않습니다.']],
+  [['slug', /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/, '스토어 주소는 영소문자 · 숫자 · 하이픈 3~30자, 하이픈으로 시작 · 끝날 수 없습니다.'],
+    ['slug', (v) => !RESERVED_SLUGS.includes(v), '사용할 수 없는 스토어 주소입니다.']],
+  [], [],
 ];
 
 function ApplyForm() {
@@ -130,6 +141,8 @@ function ApplyForm() {
   // 화면 검사는 최소 — 빈칸 · 상품 2개 이상 · 서류 개수 · 필수 약관. 형식(사업자번호 · 주소 규칙 등)은 서버 400 메시지로
   const problem = (s) => {
     if (REQUIRED[s].some((k) => !String(form[k]).trim())) return '필수 항목을 모두 입력해 주세요';
+    const bad = FORMAT[s].find(([k, rule]) => (rule instanceof RegExp ? !rule.test(form[k].trim()) : !rule(form[k].trim())));
+    if (bad) return bad[2];
     if (s === 1) {
       if (!cat) return '카테고리를 불러오는 중이에요';
       if (products.length < 2 || products.some((p) => !p.name.trim() || !(Number(p.price) > 0))) return '판매 예정 상품을 2개 이상, 상품명과 판매가까지 입력해 주세요';

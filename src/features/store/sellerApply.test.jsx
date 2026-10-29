@@ -126,7 +126,10 @@ async function fillAll() {
   fireEvent.change(screen.getByLabelText('사업자등록증'), { target: { files: [file('사업자등록증.pdf', 'application/pdf')] } });
   fireEvent.change(screen.getByLabelText('통신판매업 신고증'), { target: { files: [file('신고증.pdf', 'application/pdf')] } });
   fireEvent.change(screen.getByLabelText('정산 계좌 통장 사본'), { target: { files: [file('통장.jpg', 'image/jpeg')] } });
-  fireEvent.change(screen.getByLabelText('대표 상품 사진'), { target: { files: [file('1.jpg', 'image/jpeg'), file('2.jpg', 'image/jpeg'), file('3.png', 'image/png')] } });
+  fireEvent.change(screen.getByLabelText('대표 상품 사진'), { target: { files: [file('1.jpg', 'image/jpeg')] } });
+  expect(screen.getByText(/1\.jpg · 1장/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '추가' })).toBeInTheDocument(); // 한 장씩 골라도 이어서 올릴 수 있다
+  fireEvent.change(screen.getByLabelText('대표 상품 사진'), { target: { files: [file('2.jpg', 'image/jpeg'), file('3.png', 'image/png')] } });
   expect(screen.getByText(/1\.jpg, 2\.jpg, 3\.png · 3장/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '다음 단계' }));
 
@@ -143,6 +146,31 @@ describe('신청 폼', () => {
     fireEvent.click(screen.getByRole('button', { name: '다음 단계' }));
     expect(useToastStore.getState().current.msg).toBe('필수 항목을 모두 입력해 주세요');
     expect(screen.getByRole('heading', { name: '판매자 정보' })).toBeInTheDocument();
+  });
+
+  it('형식이 틀린 칸(사업자번호 · 휴대폰 · 이메일 · 스토어 주소)은 그 단계에서 서버와 같은 문구로 막는다', async () => {
+    stubGet(null);
+    renderApply();
+    await screen.findByRole('heading', { name: '판매자 정보' });
+    type('상호명', '곳간상회'); type('대표자명', '홍길동'); type('통신판매업 신고번호', '2026-서울성동-0000'); type('사업장 주소', '서울');
+    type('사업자등록번호', '1234567890'); type('담당자 휴대폰', '010-0000-1234'); type('담당자 이메일', 'seller@example.com');
+    const next = () => fireEvent.click(screen.getByRole('button', { name: '다음 단계' }));
+    next();
+    expect(useToastStore.getState().current.msg).toBe('사업자등록번호는 000-00-00000 형식입니다.');
+    type('사업자등록번호', '000-00-00001'); type('담당자 휴대폰', '02-000-0000'); next();
+    expect(useToastStore.getState().current.msg).toBe('휴대폰 번호는 010-0000-0000 형식입니다.');
+    type('담당자 휴대폰', '010-0000-1234'); type('담당자 이메일', 'seller'); next();
+    expect(useToastStore.getState().current.msg).toBe('이메일 형식이 올바르지 않습니다.');
+    type('담당자 이메일', 'seller@example.com'); next();
+
+    await screen.findByRole('heading', { name: '스토어 · 카테고리 · 판매 예정 상품' });
+    type('스토어 이름', '곳간상회');
+    const slug = (v) => fireEvent.change(screen.getByLabelText('스토어 주소'), { target: { value: v } });
+    slug('-bad'); next();
+    expect(useToastStore.getState().current.msg).toContain('영소문자 · 숫자 · 하이픈 3~30자');
+    slug('admin'); next();
+    expect(useToastStore.getState().current.msg).toBe('사용할 수 없는 스토어 주소입니다.');
+    expect(screen.getByRole('heading', { name: '스토어 · 카테고리 · 판매 예정 상품' })).toBeInTheDocument();
   });
 
   it('4단계 입력 → 서류 presign · S3 PUT 6건 → POST /api/seller/apply(계약 본문) → 심사대기 화면', async () => {
