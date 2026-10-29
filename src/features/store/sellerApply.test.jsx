@@ -87,7 +87,7 @@ describe('내 신청 상태', () => {
     expect(await screen.findByRole('heading', { name: '판매자 정보' })).toBeInTheDocument();
     cleanup();
 
-    stubGet(application('REJECTED', { reapplyAvailableAt: '2099-01-01T00:00:00+09:00' }));
+    stubGet(application('REJECTED', { reapplyAvailableAt: '2099-01-01T12:00:00+09:00' }));
     renderApply();
     expect(await screen.findByText(/2099\.01\.01부터/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '다시 신청하기' })).toBeNull();
