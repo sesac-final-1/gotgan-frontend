@@ -115,8 +115,9 @@ export const toAdminSettlement = (s) => ({
   status: SETTLEMENT_STATUS_LABEL[s.status] ?? s.status,
   holdReason: s.holdReason ?? '',
   start: new Date(`${s.weekStart}T00:00:00+09:00`),
-  end: new Date(`${s.weekEnd}T00:00:00+09:00`),
-  pay: s.paidAt ? new Date(s.paidAt) : new Date(`${s.scheduledPayDate}T00:00:00+09:00`), // 지급했으면 지급 시각, 아니면 지급 예정일(목)
+  // 날짜만 있는 값(YYYY-MM-DD)은 그 날짜 그대로 보이게 오프셋 없이(브라우저 시간대의 자정) — 시각이 있는 paidAt 만 그대로 변환
+  end: new Date(`${s.weekEnd}T00:00:00`),
+  pay: s.paidAt ? new Date(s.paidAt) : new Date(`${s.scheduledPayDate}T00:00:00`), // 지급했으면 지급 시각, 아니면 지급 예정일(목)
 });
 
 // GET /api/admin/stores/{id}/settlements?weeks=8 — settlement 스토어 최근 정산서(backend #184): 이번 주 포함 최근 8주, 최신 주차 먼저 + 합계
