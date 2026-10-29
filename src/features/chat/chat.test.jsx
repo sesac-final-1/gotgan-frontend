@@ -158,6 +158,24 @@ describe('채팅함', () => {
     await waitFor(() => expect(axiosInstance.post).toHaveBeenCalledWith('/api/chats/rooms', { type: 'BUYER_SUPPORT', context: { type: 'CHAT_ROOM', id: 7 } }));
   });
 
+  it('판매자: 스토어 톡에서 상대 구매자를 회원 신고 (REV-12) — 구매자 화면에는 버튼 없음', async () => {
+    useAuthStore.setState({ user: { userId: 2, name: '판매자', roles: ['SELLER'], storeId: 5 } });
+    rooms = [{ ...ROOMS[0], counterpart: { name: '김*연', role: 'BUYER' } }];
+    axiosInstance.post.mockResolvedValue({ data: { data: { reportId: 77, status: 'OPEN' } } });
+    renderAt('/seller/chats/7', <ChatInbox kind="seller" basePath="/seller/chats" />, '/seller/chats/:roomId');
+
+    fireEvent.click(await screen.findByText('구매자 신고'));
+    fireEvent.click(screen.getByRole('button', { name: '신고하기' }));
+    await waitFor(() => expect(axiosInstance.post).toHaveBeenCalledWith('/api/reports', expect.objectContaining({ targetType: 'USER', targetId: 10 })));
+    cleanup();
+
+    useAuthStore.setState({ user: { userId: 10, name: '구매자', roles: ['BUYER'] } });
+    rooms = ROOMS;
+    renderAt('/mypage/chats/7', <ChatInbox kind="buyer" basePath="/mypage/chats" />, '/mypage/chats/:roomId');
+    expect(await screen.findByText('운영팀에 도움 요청')).toBeInTheDocument();
+    expect(screen.queryByText('구매자 신고')).not.toBeInTheDocument();
+  });
+
   it('관리자: 상담 종료 버튼 · 탭 이동 · 도움 요청된 스토어 톡은 읽기 전용', async () => {
     useAuthStore.setState({ user: { userId: 1, name: '관리자', roles: ['ADMIN'] } });
     rooms = [{ ...ROOMS[1], counterpart: { name: '회원 #10', role: 'BUYER' } }];

@@ -6,6 +6,8 @@ import { FIT_LABELS } from '@/features/review/constants';
 import { Stars, Checkbox } from '@/shared/components/ui';
 import { BlockPager } from '@/shared/components/common/BlockPager';
 import { cx, comma, ymd } from '@/shared/utils/format';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import ReportModal from '@/features/report/components/ReportModal';
 
 const PAGE_SIZE = 10;
 const SORTS = [['LATEST', '최신순'], ['RATING_HIGH', '평점 높은순'], ['RATING_LOW', '평점 낮은순']];
@@ -27,6 +29,9 @@ export default function ShopProductReviews({ p, store }) {
   const avg = summary?.averageRating ?? 0;
   const total = summary?.reviewCount ?? 0;
   const fits = p.cat === 'fashion' || p.cat === 'shoes-bags' ? summary?.fits ?? [] : null;
+
+  const canReport = useAuthStore((s) => !!s.user?.roles?.includes('BUYER')); // 리뷰 신고는 구매자(REV-12) — 판매자는 판매자센터의 '관리자 검토 요청'
+  const [reportTarget, setReportTarget] = useState(null);
 
   // 필터 · 정렬이 바뀌면 1페이지로
   const changeStar = (star) => { setStarFilter(star); setPage(0); };
@@ -107,7 +112,10 @@ export default function ShopProductReviews({ p, store }) {
       <ul>
         {list.map((r) => (
           <li key={r.id} className="py-6 border-b border-line">
-            <div className="text-[13px] font-semibold">{r.writer}</div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-[13px] font-semibold">{r.writer}</div>
+              {canReport && <button onClick={() => setReportTarget({ type: 'REVIEW', id: r.id, label: '리뷰' })} className="text-[11.5px] text-mute hover:text-ink shrink-0">신고</button>}
+            </div>
             <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-mute"><Stars value={r.rating} size={11} /> {ymd(r.date)}</div>
             <div className="mt-3 text-[12px] text-mute">{r.option && <>옵션: {r.option}</>}{r.fit && <>{r.option && ' · '}사이즈 <b className="text-ink-2">{FIT_LABELS[r.fit]}</b></>}</div>
             {r.title && <p className="mt-2 text-[14px] font-semibold">{r.title}</p>}
@@ -123,6 +131,7 @@ export default function ShopProductReviews({ p, store }) {
         ))}
       </ul>
       <BlockPager className="mt-8" pageIndex={page} pageCount={data?.totalPages ?? 0} onPage={setPage} />
+      <ReportModal target={reportTarget} onClose={() => setReportTarget(null)} />
     </section>
   );
 }
