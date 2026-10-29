@@ -99,7 +99,11 @@ function ReportDetailBody({ d, onDone }) {
       <div className="bg-cream p-3">
         {!t && <p className="text-rust text-[12.5px]">대상 정보를 불러오지 못했어요 ({d.targetError}) — 신고 기록만 표시합니다</p>}
         {t && d.targetType === 'REVIEW' && (
-          <KV rows={[['리뷰', t.content], ['별점 · 상품', t.rating ? `${t.rating}점 · 상품 #${t.productId ?? '-'}` : '-'], ['상태', t.blinded ? `블라인드 (${t.blindReason ?? ''})` : '노출 중']]} />
+          <KV rows={[['리뷰', t.content],
+            // 리뷰 사진 (review #164) — 원본은 새 탭
+            ...(t.imageUrls?.length ? [['사진', <div className="flex flex-wrap gap-1.5">{t.imageUrls.map((u) => (
+              <a key={u} href={u} target="_blank" rel="noopener noreferrer"><img src={u} alt="리뷰 사진" className="w-14 h-14 object-cover bg-white" /></a>))}</div>]] : []),
+            ['별점 · 상품', t.rating ? `${t.rating}점 · 상품 #${t.productId ?? '-'}` : '-'], ['상태', t.blinded ? `블라인드 (${t.blindReason ?? ''})` : '노출 중']]} />
         )}
         {t && d.targetType === 'USER' && (
           <KV rows={[['회원', <Link to={`/admin/users/${d.targetId}`} className="hover:underline">{t.name} {t.nick && `(${t.nick})`}</Link>], ['이메일', t.email ?? '-'], ['상태', t.status === 'SUSPENDED' ? '이용정지' : '정상']]} />

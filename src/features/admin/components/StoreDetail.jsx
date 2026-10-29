@@ -8,6 +8,8 @@ import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
 import { useAdminStoreListQuery } from '@/features/admin/hooks/useAdminStoreListQuery';
+import { useChangeStoreStatusMutation } from '@/features/admin/hooks/useChangeStoreStatusMutation';
+import { STORE_STATUS_REQUEST } from '@/features/admin/constants';
 import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
 import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
@@ -62,8 +64,11 @@ export default function StoreDetail() {
 }
 
 function DetailBody({ s }) {
-  const [status, setStatus] = useState(s.status);
+  const [status, setStatus] = useState(s.status); // 모달에서 고른 상태 — 화면 표시는 s.status(다시 불러온 실제 값)
+  const [reason, setReason] = useState('');
   const [modal, setModal] = useState(false);
+  const changeStatus = useChangeStoreStatusMutation();
+  const canSubmit = status !== s.status && reason.trim() !== '' && !changeStatus.isPending; // 정지 · 해제 모두 사유 필수(store 9절)
   const { data: settlements = [] } = useAdminSettlementsQuery();
   const { data: reviews = [] } = useAdminReviewsQuery();
   const { data: categories = [] } = useAdminCategoriesQuery();
@@ -77,16 +82,21 @@ function DetailBody({ s }) {
   const settleTable = useClientTable({ data: ss, columns: SETTLEMENT_COLUMNS, initialSorting: [{ id: 'start', desc: true }] });
 
   const handleStatusSubmit = () => {
-    // TODO(구지훈): useChangeStoreStatusMutation
-    setModal(false);
-    toast(`스토어 상태: ${status}`);
+    changeStatus.mutate({ storeId: s.storeId, request: { status: STORE_STATUS_REQUEST[status], reason: reason.trim() } }, {
+      onSuccess: () => {
+        setModal(false);
+        setReason('');
+        toast(status === '정지' ? '스토어를 정지했어요 — 상품이 숨겨지고 정산 지급이 보류돼요' : '스토어 정지를 해제했어요');
+      },
+      onError: (err) => toast(err.response?.data?.message ?? '상태를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.'),
+    });
   };
 
   return (
     <div>
       <PageHead crumbs="판매자 > 스토어 관리" title={s.name} desc={`${c.name} · ${s.owner} · 입점 ${ymd(s.since)}`}
         right={<><Link to={`/store/${s.id}`} className="btn btn-line btn-sm">쇼핑몰에서 보기 <ExternalLink size={13} /></Link>
-          <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.storeId), context: { type: 'STORE', id: Number(s.storeId) } }}>판매자와 상담</OpenChatButton><button onClick={() => setModal(true)} className="btn btn-ink btn-sm">상태 변경</button></>} />
+          <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.storeId), context: { type: 'STORE', id: Number(s.storeId) } }}>판매자와 상담</OpenChatButton>{s.status !== '폐점' && <button onClick={() => { setStatus(s.status); setModal(true); }} className="btn btn-ink btn-sm">상태 변경</button>}</>} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <Kpi label="8주 거래액" value={shortWon(ss.reduce((a, x) => a + x.gross, 0))} unit="원" />
         <Kpi label="8주 수수료 수익" value={comma(ss.reduce((a, x) => a + x.commission, 0) / 10000)} unit="만원" sub={`판매수수료 ${pct(c.commission)}`} />
@@ -114,7 +124,7 @@ function DetailBody({ s }) {
         <div className="space-y-4">
           <div className="panel">
             <img src={s.cover} alt="" className="w-full h-28 object-cover" />
-            <div className="p-5"><KV rows={[['상태', <StatusPill s={status} />], ['등급', s.grade], ['사업자번호', s.bizNo], ['연락처', s.phone], ['이메일', s.email], ['배송', `${s.courier} · ${won(s.shipFee)}`], ['관심고객', comma(s.followers)]]} /></div>
+            <div className="p-5"><KV rows={[['상태', <StatusPill s={s.status} />], ['등급', s.grade], ['사업자번호', s.bizNo], ['연락처', s.phone], ['이메일', s.email], ['배송', `${s.courier} · ${won(s.shipFee)}`], ['관심고객', comma(s.followers)]]} /></div>
           </div>
           <div className="panel p-5">
             <div className="panel-title mb-2">관리 메모</div>
@@ -127,13 +137,14 @@ function DetailBody({ s }) {
         </div>
       </div>
       <Modal open={modal} onClose={() => setModal(false)} title="스토어 상태 변경" width={460}
-        footer={<><button className="btn btn-line btn-sm" onClick={() => setModal(false)}>취소</button><button className="btn btn-ink btn-sm" onClick={handleStatusSubmit}>변경</button></>}>
+        footer={<><button className="btn btn-line btn-sm" onClick={() => setModal(false)}>취소</button><button className="btn btn-ink btn-sm" onClick={handleStatusSubmit} disabled={!canSubmit}>변경</button></>}>
         <Segments items={['운영중', '정지']} value={status} onChange={setStatus} />
         <div className="mt-4 text-[13px] text-ink-2 bg-cream p-3 leading-relaxed">
           {status === '운영중' && '스토어와 판매중 상품이 쇼핑몰에 노출됩니다.'}
-          {status === '정지' && '즉시 비노출 + 판매자센터 기능 제한. 미정산 금액은 지급보류되며, 분쟁 해소 후 지급됩니다.'}
+          {status === '정지' && '상품이 쇼핑몰에서 즉시 숨겨지고 새 스토어 톡이 막힙니다. 지급예정 정산은 자동 보류되고, 해제하면 자동 보류만 풀립니다(직접 건 보류는 그대로).'}
         </div>
-        {status !== '운영중' && <><label className="label mt-4">사유 (판매자에게 통보)</label><textarea rows={3} className="field" /></>}
+        <label className="label mt-4" htmlFor="store-status-reason">사유 (스토어 이력에 기록)</label>
+        <textarea id="store-status-reason" rows={3} maxLength={255} value={reason} onChange={(e) => setReason(e.target.value)} className="field" />
       </Modal>
     </div>
   );
