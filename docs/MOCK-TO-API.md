@@ -103,6 +103,7 @@ export function useConfirmOrderItemsMutation() {
 |---|---|---|---|
 | `useSellerBuyersQuery` (order) | 판매자 대시보드 · 리뷰 · 문의 · 주문상세 | 판매자 리뷰 · 문의 응답에 작성자명(마스킹), 주문상세 응답에 구매자 요약 | 이경석 |
 | `r.author ?? 기본값` | 구매자 상품 리뷰 · 문의 · 메인 포토 리뷰 | 리뷰 · 문의 응답에 `author { name, nick, avatar, grade }` | 이경석 |
+| `useProductsQuery` (product) | 상품명 조회용 — 리뷰 · 문의 · 판매자 센터 · 공개 상품 화면 | 공개 화면은 `useProductSearchQuery(params)` · `useProductQuery(id)`, 판매자 화면은 `/api/seller/products`, 리뷰 · 문의는 응답의 상품명 | 박지연 |
 
 화면 영역마다 부를 수 있는 API가 정해져 있다 (컨벤션 4-2 규칙 1): 관리자 화면 → `/api/admin/**` 만, 판매자 화면 → `/api/seller/**` · 공개 API. 임시 훅도 이 규칙을 지키도록 영역별로 따로 뒀다.
 
