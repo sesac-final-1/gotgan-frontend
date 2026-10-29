@@ -10,7 +10,7 @@ import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery'
 import { useAdminStoreListQuery } from '@/features/admin/hooks/useAdminStoreListQuery';
 import { useChangeStoreStatusMutation } from '@/features/admin/hooks/useChangeStoreStatusMutation';
 import { STORE_STATUS_REQUEST, productStatusLabel } from '@/features/admin/constants';
-import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
+import { useAdminStoreSettlementsQuery } from '@/features/admin/hooks/useAdminStoreSettlementsQuery';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { useAdminStoreProductsQuery } from '@/features/admin/hooks/useAdminStoreProductsQuery';
 import { useBlockProductMutation } from '@/features/admin/hooks/useBlockProductMutation';
@@ -19,6 +19,7 @@ import { won, comma, ymd, pct, shortWon } from '@/shared/utils/format';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
 const NUM = { thClass: 'text-right', tdClass: 'text-right num', search: false };
+const EMPTY = []; // 조회 전 — 매 렌더 새 배열이면 표가 계속 다시 계산된다
 
 // 등록 상품 표 — product 판매자 상품 목록과 같은 응답(backend #110). 버튼이 대상 상품을 고르므로 함수로 만들고 컴포넌트에서 useMemo (컨벤션 4-7)
 function buildProductColumns(setTarget) {
@@ -50,7 +51,7 @@ const SETTLEMENT_COLUMNS = [
   { accessorKey: 'gross', header: '매출', meta: NUM, cell: ({ getValue }) => comma(getValue()) },
   { id: 'fee', accessorFn: (x) => x.commission + x.pgFee, header: '수수료', meta: NUM, cell: ({ getValue }) => comma(getValue()) },
   { accessorKey: 'payout', header: '지급액', meta: { ...NUM, tdClass: 'text-right num font-semibold' }, cell: ({ getValue }) => comma(getValue()) },
-  { accessorKey: 'pay', header: '지급일', sortingFn: 'datetime', meta: { tdClass: 'num', search: false }, cell: ({ getValue }) => ymd(getValue()) },
+  { accessorKey: 'pay', header: '지급일(예정)', sortingFn: 'datetime', meta: { tdClass: 'num', search: false }, cell: ({ getValue }) => ymd(getValue()) },
   { accessorKey: 'status', header: '상태', cell: ({ getValue }) => <StatusPill s={getValue()} /> },
 ];
 
@@ -74,7 +75,7 @@ function DetailBody({ s }) {
   const [modal, setModal] = useState(false);
   const changeStatus = useChangeStoreStatusMutation();
   const canSubmit = status !== s.status && reason.trim() !== '' && !changeStatus.isPending; // 정지 · 해제 모두 사유 필수(store 9절)
-  const { data: settlements = [] } = useAdminSettlementsQuery();
+  const { data: recent, isLoading: settleLoading, isError: settleError } = useAdminStoreSettlementsQuery(s.storeId); // 최근 8주 (backend #184)
   const { data: categories = [] } = useAdminCategoriesQuery();
   const { data: prods = [], isLoading: prodsLoading, isError: prodsError } = useAdminStoreProductsQuery(s.storeId);
   const [blockTarget, setBlockTarget] = useState(null); // { product, blocked } — 강제중지 · 해제 확인 모달
@@ -82,7 +83,7 @@ function DetailBody({ s }) {
   const block = useBlockProductMutation();
   const productColumns = useMemo(() => buildProductColumns(setBlockTarget), []);
   const onSale = prods.filter((p) => productStatusLabel(p) === '판매중').length;
-  const ss = useMemo(() => settlements.filter((x) => x.storeId === s.id), [settlements, s.id]);
+  const ss = recent?.rows ?? EMPTY;
   const c = categories.find((x) => x.id === s.cat) ?? { name: s.cat, commission: 0 };
 
   const prodTable = useClientTable({ data: prods, columns: productColumns });
@@ -117,8 +118,8 @@ function DetailBody({ s }) {
         right={<><Link to={`/store/${s.id}`} className="btn btn-line btn-sm">쇼핑몰에서 보기 <ExternalLink size={13} /></Link>
           <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.storeId), context: { type: 'STORE', id: Number(s.storeId) } }}>판매자와 상담</OpenChatButton>{s.status !== '폐점' && <button onClick={() => { setStatus(s.status); setModal(true); }} className="btn btn-ink btn-sm">상태 변경</button>}</>} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <Kpi label="8주 거래액" value={shortWon(ss.reduce((a, x) => a + x.gross, 0))} unit="원" />
-        <Kpi label="8주 수수료 수익" value={comma(ss.reduce((a, x) => a + x.commission, 0) / 10000)} unit="만원" sub={`판매수수료 ${pct(c.commission)}`} />
+        <Kpi label="8주 거래액" value={shortWon(recent?.totals.salesAmt ?? 0)} unit="원" sub={`정산서 ${comma(recent?.totals.count ?? 0)}건 · 이번 주 포함`} />
+        <Kpi label="8주 수수료 수익" value={comma(Math.floor((recent?.totals.commissionAmt ?? 0) / 10000))} unit="만원" sub={`판매수수료 ${pct(c.commission)}`} />
         <Kpi label="평균 평점" value={s.reviewCount ? s.avg.toFixed(2) : '-'} sub={`리뷰 ${comma(s.reviewCount)}건`} />
         <Kpi label="판매중 상품" value={comma(onSale)} unit="개" sub={`등록 ${comma(prods.length)}개 · 삭제 제외`} />
       </div>
@@ -137,7 +138,7 @@ function DetailBody({ s }) {
               <Link to="/admin/settlements" className="text-[12px] text-mute">정산 관리</Link>
               <SearchInput value={settleTable.globalFilter} onChange={settleTable.setGlobalFilter} placeholder="상태" className="ml-auto" />
             </div>
-            <DataTable table={settleTable.table} empty="정산 이력이 없어요" />
+            <DataTable table={settleTable.table} loading={settleLoading} error={settleError} empty="최근 8주 정산 이력이 없어요" />
           </div>
         </div>
         <div className="space-y-4">

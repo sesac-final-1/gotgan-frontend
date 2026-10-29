@@ -15,6 +15,7 @@ export const queryKeys = {
     userReviews: (userId) => ['admin', 'users', userId, 'reviews'],
     settlements: () => ['admin', 'settlements'],
     settlement: (id) => ['admin', 'settlements', 'detail', id],
+    storeSettlements: (storeId) => ['admin', 'settlements', 'store', storeId], // settlements() 아래라 지급 · 보류 후 함께 갱신
     settlementWeek: (week) => ['admin', 'settlements', 'week', week ?? 'last'], // settlements() 아래라 목록을 무효화하면 함께
     reviews: () => ['admin', 'reviews'],
     reports: () => ['admin', 'reports'],
