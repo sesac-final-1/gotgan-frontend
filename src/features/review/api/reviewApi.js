@@ -70,6 +70,10 @@ export const fetchProductReviewSummary = async (productId) => (isMockProduct(pro
   ? mockProductReviewSummary(productId)
   : (await axiosInstance.get('/api/reviews/summary', { params: { productId } })).data.data);
 
+// GET /api/reviews/ratings/products?ids= — 여러 상품 평점(review.md 10절). 요청 순서대로 · 리뷰 없으면 0 · 0, 1~100개
+export const fetchProductRatings = async (ids) => (ids.length === 0 ? []
+  : (await axiosInstance.get('/api/reviews/ratings/products', { params: { ids: ids.join(',') } })).data.data);
+
 // TODO(이경석): GET /api/products/{id}/inquiries · /api/inquiries/me · /api/seller/inquiries
 export const fetchQnas = () => mockResolve(qnas);
 
