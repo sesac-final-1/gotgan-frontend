@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { useToastStore } from '@/shared/stores/toastStore';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import StoreDetail from '@/features/admin/components/StoreDetail';
+import { productStatusLabel } from '@/features/admin/constants';
 import ReportModeration from '@/features/admin/components/ReportModeration';
 
 // 스토어 정지 · 해제 (backend #177 — store 9절 그대로) · 신고 상세의 리뷰 사진 (review #164)
@@ -72,6 +73,65 @@ describe('관리자 스토어 정지 · 해제', () => {
     renderAt('/admin/stores/1');
     expect(await screen.findByRole('button', { name: '판매자와 상담' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '상태 변경' })).not.toBeInTheDocument();
+  });
+});
+
+describe('관리자 스토어 상세 — 등록 상품 · 강제 판매중지 (backend #110 · #112)', () => {
+  const PRODUCTS = [
+    { productId: 101, name: '서귀포 노지 햇감귤 5kg', topCategoryName: '식품', categoryName: '과일', salePrice: 26980, totalStock: 900, soldOut: false,
+      status: 'ON_SALE', statusReason: null, imageUrl: 'https://img.example/p101.jpg' },
+    { productId: 102, name: '한라봉 3kg', topCategoryName: '식품', categoryName: '과일', salePrice: 32000, totalStock: 0, soldOut: true,
+      status: 'BLOCKED', statusReason: '원산지 표기 누락', imageUrl: null },
+  ];
+
+  it('실제 상품 목록 · 상태(강제중지 사유) · 판매중 수, 강제중지는 사유를 써야 · PATCH 본문 {blocked, reason}', async () => {
+    stubGet({ '/api/admin/stores': [store('ACTIVE')], '/api/admin/stores/1/products': PRODUCTS });
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { productId: 101, status: 'BLOCKED' } } });
+    renderAt('/admin/stores/1');
+
+    expect(await screen.findByText('서귀포 노지 햇감귤 5kg')).toBeInTheDocument();
+    expect(screen.getByText('원산지 표기 누락')).toBeInTheDocument();
+    expect(screen.getByText('강제중지', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByText('등록 2개 · 삭제 제외')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '강제중지' }));
+    expect(screen.getByRole('button', { name: '판매중지' })).toBeDisabled(); // 사유 없음
+    fireEvent.change(screen.getByLabelText('사유 (판매자 상품 목록에 표시)'), { target: { value: ' 허위 광고 ' } });
+    fireEvent.click(screen.getByRole('button', { name: '판매중지' }));
+    await waitFor(() => expect(useToastStore.getState().current.msg).toContain('강제 판매중지했어요'));
+    expect(patch).toHaveBeenCalledWith('/api/admin/products/101/block', { blocked: true, reason: '허위 광고' });
+  });
+
+  it('상태 라벨 — 강제중지 · 판매중지 · 재고 0 이면 품절 · 그 밖은 판매중', () => {
+    expect(productStatusLabel({ status: 'BLOCKED', soldOut: true })).toBe('강제중지');
+    expect(productStatusLabel({ status: 'STOPPED', soldOut: false })).toBe('판매중지');
+    expect(productStatusLabel({ status: 'ON_SALE', soldOut: true })).toBe('품절');
+    expect(productStatusLabel({ status: 'ON_SALE', soldOut: false })).toBe('판매중');
+  });
+
+  it('실패하면 서버 메시지 그대로 · 모달은 닫히지 않고, 취소하면 사유를 비운다', async () => {
+    stubGet({ '/api/admin/stores': [store('ACTIVE')], '/api/admin/stores/1/products': PRODUCTS });
+    vi.spyOn(axiosInstance, 'patch').mockRejectedValue({ response: { data: { message: '사유를 입력해 주세요.' } } });
+    renderAt('/admin/stores/1');
+
+    fireEvent.click(await screen.findByRole('button', { name: '강제중지' }));
+    fireEvent.change(screen.getByLabelText('사유 (판매자 상품 목록에 표시)'), { target: { value: '허위 광고' } });
+    fireEvent.click(screen.getByRole('button', { name: '판매중지' }));
+    await waitFor(() => expect(useToastStore.getState().current.msg).toBe('사유를 입력해 주세요.'));
+    fireEvent.click(screen.getAllByRole('button', { name: '취소' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: '강제중지' }));
+    expect(screen.getByLabelText('사유 (판매자 상품 목록에 표시)')).toHaveValue('');
+  });
+
+  it('강제중지 상품은 해제 — 사유 없이 {blocked: false, reason: null}', async () => {
+    stubGet({ '/api/admin/stores': [store('ACTIVE')], '/api/admin/stores/1/products': PRODUCTS });
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { productId: 102, status: 'STOPPED' } } });
+    renderAt('/admin/stores/1');
+
+    fireEvent.click(await screen.findByRole('button', { name: '해제' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '해제' }).at(-1));
+    await waitFor(() => expect(patch).toHaveBeenCalledWith('/api/admin/products/102/block', { blocked: false, reason: null }));
+    await waitFor(() => expect(useToastStore.getState().current.msg).toContain('강제 판매중지를 풀었어요'));
   });
 });
 
