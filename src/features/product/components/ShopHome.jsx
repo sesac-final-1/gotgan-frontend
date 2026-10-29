@@ -1,4 +1,4 @@
-// 쇼핑몰 메인 — 담당 박지연
+// 쇼핑몰 메인 — 담당 구지훈(화면) · 상품 데이터 API 박지연 (10/27 역할 분담)
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
