@@ -75,6 +75,43 @@ describe('관리자 스토어 정지 · 해제', () => {
   });
 });
 
+describe('관리자 스토어 상세 — 등록 상품 · 강제 판매중지 (backend #110 · #112)', () => {
+  const PRODUCTS = [
+    { productId: 101, name: '서귀포 노지 햇감귤 5kg', topCategoryName: '식품', categoryName: '과일', salePrice: 26980, totalStock: 900, soldOut: false,
+      status: 'ON_SALE', statusReason: null, imageUrl: 'https://img.example/p101.jpg' },
+    { productId: 102, name: '한라봉 3kg', topCategoryName: '식품', categoryName: '과일', salePrice: 32000, totalStock: 0, soldOut: true,
+      status: 'BLOCKED', statusReason: '원산지 표기 누락', imageUrl: null },
+  ];
+
+  it('실제 상품 목록 · 상태(강제중지 사유) · 판매중 수, 강제중지는 사유를 써야 · PATCH 본문 {blocked, reason}', async () => {
+    stubGet({ '/api/admin/stores': [store('ACTIVE')], '/api/admin/stores/1/products': PRODUCTS });
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { productId: 101, status: 'BLOCKED' } } });
+    renderAt('/admin/stores/1');
+
+    expect(await screen.findByText('서귀포 노지 햇감귤 5kg')).toBeInTheDocument();
+    expect(screen.getByText('원산지 표기 누락')).toBeInTheDocument();
+    expect(screen.getByText('강제중지', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByText('등록 2개 · 삭제 제외')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '강제중지' }));
+    expect(screen.getByRole('button', { name: '판매중지' })).toBeDisabled(); // 사유 없음
+    fireEvent.change(screen.getByLabelText('사유 (판매자 상품 목록에 표시)'), { target: { value: ' 허위 광고 ' } });
+    fireEvent.click(screen.getByRole('button', { name: '판매중지' }));
+    await waitFor(() => expect(useToastStore.getState().current.msg).toContain('강제 판매중지했어요'));
+    expect(patch).toHaveBeenCalledWith('/api/admin/products/101/block', { blocked: true, reason: '허위 광고' });
+  });
+
+  it('강제중지 상품은 해제 — 사유 없이 {blocked: false, reason: null}', async () => {
+    stubGet({ '/api/admin/stores': [store('ACTIVE')], '/api/admin/stores/1/products': PRODUCTS });
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { productId: 102, status: 'STOPPED' } } });
+    renderAt('/admin/stores/1');
+
+    fireEvent.click(await screen.findByRole('button', { name: '해제' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '해제' }).at(-1));
+    await waitFor(() => expect(patch).toHaveBeenCalledWith('/api/admin/products/102/block', { blocked: false, reason: null }));
+  });
+});
+
 describe('신고 상세 — 리뷰 사진', () => {
   it('리뷰에 사진이 있으면 썸네일로 보여 주고 원본은 새 탭으로', async () => {
     stubGet({
