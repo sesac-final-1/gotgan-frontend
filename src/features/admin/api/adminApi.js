@@ -7,7 +7,7 @@ import { toSettlementDetail } from '@/features/settlement/api/settlementApi';
 import { stores, products } from '@/mocks/fixtures/catalog';
 import { settlements } from '@/mocks/fixtures/orders';
 import { reviews } from '@/mocks/fixtures/reviews';
-import { APPLICATION_STATUS_LABEL, BIZ_TYPE_LABEL, EXPECTED_SALES_LABEL, ACTOR_LABEL, DOC_TYPES } from '@/features/admin/constants';
+import { APPLICATION_STATUS_LABEL, STORE_STATUS_LABEL, STORE_GRADE_LABEL, BIZ_TYPE_LABEL, EXPECTED_SALES_LABEL, ACTOR_LABEL, DOC_TYPES } from '@/features/admin/constants';
 
 // GET /api/admin/dashboard — settlement · order · product 통계 조합, 한 곳이 실패하면 그 영역 null + unavailable[] (backend #95 · #112)
 // 일별 거래액: orderDaily [{date: 'YYYY-MM-DD', tradeAmt, orderCount}](최근 30일 · 빈 날 0) → 차트 모양 {date, amount, orders}
@@ -18,8 +18,31 @@ export const fetchAdminDashboard = async () => {
   return { ...data, platformDaily: toDailyBars(data.orderDaily) };
 };
 
-// TODO(구지훈): GET /api/admin/stores
+// 스토어 상세 · 카테고리 수수료(스토어 수)용 목업 — store 1절 확장(관리자 필드 · 상태 이력)이 나오면 상세와 함께 교체
 export const fetchAdminStores = () => mockResolve(stores);
+
+// GET /api/admin/stores — store /internal/stores 그대로(backend #172, 개설 최신순 · 페이징 없음) + 스토어 평점(review #160, 1~100개)
+// 평점은 화면 보조 정보라 review 가 실패해도 목록은 보여 준다(평점 없음)
+export const fetchAdminStoreList = async () => {
+  const rows = (await axiosInstance.get('/api/admin/stores')).data.data;
+  const ratings = rows.length === 0 ? [] : await axiosInstance
+    .get('/api/reviews/ratings/stores', { params: { ids: rows.map((r) => r.storeId).join(',') } })
+    .then((res) => res.data.data, () => []);
+  const ratingById = Object.fromEntries(ratings.map((r) => [r.storeId, r]));
+  return rows.map((r) => ({
+    id: String(r.storeId), // 라우트 /admin/stores/:id 와 같은 문자열
+    name: r.storeName,
+    slug: r.slug,
+    owner: r.ownerName,
+    bizNo: r.bizRegNo,
+    grade: STORE_GRADE_LABEL[r.grade] ?? r.grade,
+    status: STORE_STATUS_LABEL[r.status] ?? r.status,
+    statusReason: r.statusReason ?? '',
+    since: new Date(r.createdAt),
+    avg: ratingById[r.storeId]?.averageRating ?? null,
+    reviewCount: ratingById[r.storeId]?.reviewCount ?? 0,
+  }));
+};
 
 // 회원 — admin-service 가 user /internal/users 응답을 그대로 전달 (backend #94). 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (MOCK-TO-API 2절)
 const USER_STATUS_LABEL = { ACTIVE: '정상', SUSPENDED: '이용정지' };

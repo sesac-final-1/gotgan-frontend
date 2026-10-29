@@ -8,6 +8,7 @@ export const queryKeys = {
     applications: () => ['admin', 'applications'],
     application: (id) => ['admin', 'applications', id],
     stores: () => ['admin', 'stores'],
+    storeList: () => ['admin', 'stores', 'list'], // 실제 목록 — stores() 아래라 함께 무효화
     users: () => ['admin', 'users'],
     user: (userId) => ['admin', 'users', userId], // users() 아래라 목록을 무효화하면 상세도 함께
     userPoints: (userId) => ['admin', 'users', userId, 'points'],

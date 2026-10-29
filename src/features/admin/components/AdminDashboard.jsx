@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { PageHead, Kpi, BarChart, HBars } from '@/shared/components/ui';
 import { useAdminDashboardQuery } from '@/features/admin/hooks/useAdminDashboardQuery';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
-import { useAdminStoresQuery } from '@/features/admin/hooks/useAdminStoresQuery';
+import { useAdminStoreListQuery } from '@/features/admin/hooks/useAdminStoreListQuery';
 import { useAdminReportsQuery } from '@/features/admin/hooks/useAdminReportsQuery';
 import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
@@ -16,7 +16,7 @@ import { won, comma, pct, shortWon, ymd, cx } from '@/shared/utils/format';
 export default function AdminDashboard() {
   const { data: dash, isLoading } = useAdminDashboardQuery();
   const { data: apps = [] } = useApplicationsQuery();
-  const { data: stores = [] } = useAdminStoresQuery();
+  const { data: stores = [] } = useAdminStoreListQuery();
   const { data: reports = [] } = useAdminReportsQuery();
   const { data: users = [] } = useAdminUsersQuery();
   const { data: categories = [] } = useAdminCategoriesQuery();
