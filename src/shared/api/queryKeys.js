@@ -18,7 +18,6 @@ export const queryKeys = {
     settlement: (id) => ['admin', 'settlements', 'detail', id],
     storeSettlements: (storeId) => ['admin', 'settlements', 'store', storeId], // settlements() 아래라 지급 · 보류 후 함께 갱신
     settlementWeek: (week) => ['admin', 'settlements', 'week', week ?? 'last'], // settlements() 아래라 목록을 무효화하면 함께
-    reviews: () => ['admin', 'reviews'],
     reports: () => ['admin', 'reports'],
     report: (type, id) => ['admin', 'reports', type, id], // reports() 아래라 처리 후 목록을 무효화하면 상세도 함께
     categories: () => ['admin', 'categories'],

@@ -2,7 +2,7 @@ import { LayoutDashboard, FileCheck, Store, Wallet, Users, Flag, Tags, MessagesS
 import ConsoleLayout from '@/shared/layouts/ConsoleLayout';
 import NotificationBell from '@/features/notification/components/NotificationBell';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
-import { useAdminSettlementsQuery } from '@/features/admin/hooks/useAdminSettlementsQuery';
+import { useAdminDashboardQuery } from '@/features/admin/hooks/useAdminDashboardQuery';
 import { useAdminReportsQuery } from '@/features/admin/hooks/useAdminReportsQuery';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useChatUnreadCountQuery } from '@/features/chat/hooks/useChatQueries';
@@ -11,7 +11,7 @@ import { useChatUnreadCountQuery } from '@/features/chat/hooks/useChatQueries';
 export default function AdminLayout() {
   const logout = useLogout();
   const { data: apps = [] } = useApplicationsQuery();
-  const { data: settlements = [] } = useAdminSettlementsQuery();
+  const { data: dash } = useAdminDashboardQuery(); // 정산 관리 배지 = 지급 보류 건수(settlement 플랫폼 통계)
   const { data: reports = [] } = useAdminReportsQuery();
   const { data: chatUnread = 0 } = useChatUnreadCountQuery();
   const groups = [
@@ -21,7 +21,7 @@ export default function AdminLayout() {
       items: [
         { to: '/admin/applications', label: '입점 심사', icon: FileCheck, count: apps.filter((a) => a.status === '심사대기').length },
         { to: '/admin/stores', label: '스토어 관리', icon: Store },
-        { to: '/admin/settlements', label: '정산 관리', icon: Wallet, count: settlements.filter((s) => s.status === '지급보류').length },
+        { to: '/admin/settlements', label: '정산 관리', icon: Wallet, count: dash?.settlement?.heldCount ?? 0 },
       ],
     },
     {
