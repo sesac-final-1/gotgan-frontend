@@ -11,6 +11,7 @@ export const queryKeys = {
     users: () => ['admin', 'users'],
     user: (userId) => ['admin', 'users', userId], // users() 아래라 목록을 무효화하면 상세도 함께
     userPoints: (userId) => ['admin', 'users', userId, 'points'],
+    userReviews: (userId) => ['admin', 'users', userId, 'reviews'],
     settlements: () => ['admin', 'settlements'],
     settlement: (id) => ['admin', 'settlements', 'detail', id],
     settlementWeek: (week) => ['admin', 'settlements', 'week', week ?? 'last'], // settlements() 아래라 목록을 무효화하면 함께

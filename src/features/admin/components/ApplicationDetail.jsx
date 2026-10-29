@@ -94,7 +94,10 @@ function DetailBody({ a }) {
                   <div key={d.documentId} className={cx('flex items-center gap-3 border border-line p-3', !d.current && 'opacity-60')}>
                     <FileText size={18} className="text-ink" />
                     <div className="flex-1 min-w-0 text-[13px]"><div className="font-semibold">{label}{!d.current && ' (이전 제출본)'}</div><div className="text-[11.5px] text-mute truncate">{d.originalName}</div></div>
-                    <a href={d.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-xs"><ExternalLink size={13} /> 열기</a>
+                    {/* url 은 10분짜리 서명 주소 — 만들지 못하면 null(store #158). 만료되면 새로고침해 다시 받는다 */}
+                    {d.url
+                      ? <a href={d.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-xs" title="주소는 10분 뒤 만료돼요 — 열리지 않으면 새로고침"><ExternalLink size={13} /> 열기</a>
+                      : <span className="text-[11.5px] text-mute shrink-0">파일을 불러오지 못했어요 · 새로고침</span>}
                   </div>
                 ));
               })}

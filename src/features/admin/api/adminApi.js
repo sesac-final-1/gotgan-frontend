@@ -59,6 +59,11 @@ export const fetchAdminUser = async (userId) => toAdminUser((await axiosInstance
 export const fetchAdminUserPoints = async (userId) =>
   (await axiosInstance.get(`/api/admin/users/${userId}/points`, { params: { size: 100 } })).data.data.history.content.map(toPointRow);
 
+// GET /api/admin/users/{id}/reviews — review 회원별 목록 그대로(삭제 제외 · 블라인드 포함, 최신순, backend #173). 상세 화면은 최근 5개
+export const fetchAdminUserReviews = async (userId) =>
+  (await axiosInstance.get(`/api/admin/users/${userId}/reviews`, { params: { size: 5 } })).data.data.content
+    .map((r) => ({ ...r, createdAt: new Date(r.createdAt) }));
+
 // PATCH /api/admin/users/{id}/status — 본문은 constants 의 toUserStatusRequest 그대로 ({status, reason, days?}) → 회원 상세
 export const changeUserStatus = async ({ userId, request }) =>
   toAdminUser((await axiosInstance.patch(`/api/admin/users/${userId}/status`, request)).data.data);

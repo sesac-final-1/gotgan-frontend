@@ -1,5 +1,5 @@
 // 회원 상세 — 담당 구지훈
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router';
 import { PageHead, StatusPill, Modal, KV, Kpi, Stars, Pill, GradeBadge } from '@/shared/components/ui';
 import { DataTable } from '@/shared/components/common/DataTable';
@@ -8,14 +8,12 @@ import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useAdminUserQuery } from '@/features/admin/hooks/useAdminUserQuery';
 import { useChangeUserStatusMutation } from '@/features/admin/hooks/useChangeUserStatusMutation';
 import { useAdminUserPointsQuery } from '@/features/admin/hooks/useAdminUserPointsQuery';
-import { useAdminReviewsQuery } from '@/features/admin/hooks/useAdminReviewsQuery';
-import { useAdminProductsQuery } from '@/features/admin/hooks/useAdminProductsQuery';
+import { useAdminUserReviewsQuery } from '@/features/admin/hooks/useAdminUserReviewsQuery';
 import { useAdminReportQuery } from '@/features/admin/hooks/useAdminReportQuery';
 import { REPORT_ACTION_LABEL } from '@/features/admin/constants';
 import { REPORT_REASON_LABEL } from '@/features/report/constants';
 import { nextGrade } from '@/features/user/constants';
 import { SUSPEND_DURATIONS, SUSPEND_REASONS, suspensionLabel, toUserStatusRequest } from '@/features/admin/constants';
-import { toMap } from '@/shared/utils/collection';
 import { toast } from '@/shared/stores/toastStore';
 import { won, comma, ymd, ymdhm, cx } from '@/shared/utils/format';
 
@@ -40,11 +38,8 @@ export default function UserDetail() {
 function DetailBody({ u }) {
   const [modal, setModal] = useState(null);
   const { data: ph = [], isLoading: pointsLoading } = useAdminUserPointsQuery(u.id);
-  const { data: reviews = [] } = useAdminReviewsQuery();
-  const { data: products = [] } = useAdminProductsQuery();
   const { data: moderation } = useAdminReportQuery('USER', u.id); // 이 회원이 받은 신고 · 신고 관리에서 한 조치
-  const productById = useMemo(() => toMap(products), [products]);
-  const urev = useMemo(() => reviews.filter((r) => r.userId === u.id).slice(0, 5), [reviews, u.id]);
+  const { data: urev = [] } = useAdminUserReviewsQuery(u.id);
   const next = nextGrade(u.spent);
   const { table, globalFilter, setGlobalFilter } = useClientTable({ data: ph, columns: POINT_COLUMNS, initialSorting: [{ id: 'date', desc: true }] });
 
@@ -100,9 +95,9 @@ function DetailBody({ u }) {
             <div className="panel-head"><span className="panel-title">작성 리뷰</span></div>
             {urev.length === 0 && <div className="py-10 text-center text-mute text-sm">작성한 리뷰가 없습니다.</div>}
             {urev.map((r) => (
-              <div key={r.id} className="px-5 py-3.5 border-b border-line last:border-0 text-[13px]">
-                <div className="flex items-center gap-2"><Stars value={r.rating} size={11} /><span className="text-mute">{ymd(r.date)} · {productById[r.productId]?.name}</span>{r.blinded && <Pill tone="rust">블라인드</Pill>}</div>
-                <p className="mt-1 text-ink-2">{r.body}</p>
+              <div key={r.reviewId} className="px-5 py-3.5 border-b border-line last:border-0 text-[13px]">
+                <div className="flex items-center gap-2"><Stars value={r.rating} size={11} /><span className="text-mute">{ymd(r.createdAt)} · {r.productName}</span>{r.blinded && <Pill tone="rust">블라인드</Pill>}</div>
+                <p className="mt-1 text-ink-2">{r.content}</p>
               </div>
             ))}
           </div>
