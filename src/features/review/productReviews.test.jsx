@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { reviews as mockReviews } from '@/mocks/fixtures/reviews';
 import { fetchProductReviewSummary, fetchProductReviews } from '@/features/review/api/reviewApi';
@@ -38,7 +39,8 @@ function renderReviews({ list = [REVIEW, PLAIN], photo = [REVIEW], totalPages = 
     return { data: { data: isPhotoStrip && photo ? page(photo) : page(list, totalPages) } };
   });
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<QueryClientProvider client={queryClient}><ShopProductReviews p={p} store={STORE} /></QueryClientProvider>);
+  // 라우터 — 신고 접수 완료 화면(ReportDone)이 현재 경로를 읽는다
+  render(<QueryClientProvider client={queryClient}><MemoryRouter><ShopProductReviews p={p} store={STORE} /></MemoryRouter></QueryClientProvider>);
   return get;
 }
 // 목록 호출만 — 포토 줄 호출에는 rating 키가 없다
@@ -150,6 +152,7 @@ describe('상품 리뷰 신고 (REV-12)', () => {
     fireEvent.click(buttons[0]);
     fireEvent.click(screen.getByRole('button', { name: '신고하기' }));
     await waitFor(() => expect(post).toHaveBeenCalledWith('/api/reports', expect.objectContaining({ targetType: 'REVIEW', targetId: 31 })));
+    expect(await screen.findByText('신고를 접수했어요. 운영팀이 확인 후 조치합니다.')).toBeInTheDocument(); // 접수 완료 화면까지
   });
 
   it('비로그인 · 판매자에게는 신고 버튼이 없다', async () => {
