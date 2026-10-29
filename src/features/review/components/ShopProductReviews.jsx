@@ -28,7 +28,7 @@ export default function ShopProductReviews({ p, store }) {
   const photos = photoPage?.content ?? [];
   const avg = summary?.averageRating ?? 0;
   const total = summary?.reviewCount ?? 0;
-  const fits = p.cat === 'fashion' || p.cat === 'shoes-bags' ? summary?.fits ?? [] : null;
+  const fits = ['패션의류', '신발·가방'].includes(p.catName) ? summary?.fits ?? [] : null; // 사이즈 체감은 의류 · 신발 상위 카테고리만
 
   const canReport = useAuthStore((s) => !!s.user?.roles?.includes('BUYER')); // 리뷰 신고는 구매자(REV-12) — 판매자는 판매자센터의 '관리자 검토 요청'
   const [reportTarget, setReportTarget] = useState(null);

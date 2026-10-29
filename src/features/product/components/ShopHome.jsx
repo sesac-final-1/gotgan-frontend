@@ -1,9 +1,11 @@
 // 쇼핑몰 메인 — 담당 구지훈(화면) · 상품 데이터 API 박지연 (10/27 역할 분담)
+// 상품은 실제 API(GET /api/products) — 상위 카테고리별 신상품 8개(PRD-14) · 전체 신상품. 스토어 · 포토 리뷰는 공개 API 가 생기면 연결
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
-import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
+import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
+import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import ProductCard from '@/features/product/components/ProductCard';
@@ -12,11 +14,13 @@ import { toMap } from '@/shared/utils/collection';
 import { cx, comma, maskName } from '@/shared/utils/format';
 
 const BANNERS = [
-  { img: '/images/banner/b1-1.jpg', kicker: 'LIVING · 10월 기획전', title: '해가 짧아지는 계절,\n방 안을 데우는 물건들', sub: '조명 · 패브릭 · 캔들 최대 30%', to: '/products?cat=living' },
+  { img: '/images/banner/b1-1.jpg', kicker: 'LIVING · 10월 기획전', title: '해가 짧아지는 계절,\n방 안을 데우는 물건들', sub: '조명 · 패브릭 · 캔들 최대 30%', to: '/products?cat=2' },
   { img: '/images/banner/b2-1.jpg', kicker: 'STORE PICK · 오롯이 리넨', title: '간절기에도\n리넨을 입는 이유', sub: '성수동 작업실에서 직접 만든 F/W 리넨', to: '/store/s1' },
   { img: '/images/banner/b3-1.jpg', kicker: 'FOOD · 로스터리 하루', title: '볶은 지 3일,\n가장 맛있는 원두만', sub: '월·목 로스팅 / 화·금 발송', to: '/store/s7' },
   { img: '/images/banner/b4-1.jpg', kicker: 'HANDMADE · 토담공방', title: '같은 모양은\n하나도 없습니다', sub: '전주 공방의 손빚음 식기', to: '/store/s4' },
 ];
+
+const EMPTY = [];
 
 function Hero() {
   const [i, setI] = useState(0);
@@ -49,24 +53,22 @@ function Hero() {
 
 export default function ShopHome() {
   const { data: categories = [] } = useCategoriesQuery();
-  const { data: products = [] } = useProductsQuery();
   const { data: stores = [] } = useStoresQuery();
   const { data: reviews = [] } = useReviewsQuery();
-  const [rankCat, setRankCat] = useState('all');
+  const [pickedCat, setPickedCat] = useState(null);
+  const newCat = pickedCat ?? categories[0]?.id; // 처음엔 첫 번째 상위 카테고리
+
+  // 목록 API 는 노출 가능한 상품만 준다(판매중지 · 스토어 정지 제외)
+  const { data: freshPage } = useProductSearchQuery({ sort: 'NEW', size: 24 });
+  const { data: catPage } = useProductSearchQuery({ categoryId: newCat, sort: 'NEW', size: 8 });
+  const fresh = useRatedProducts(useMemo(() => (freshPage?.content ?? []).slice(0, 8), [freshPage]));
+  const catNew = useRatedProducts(catPage?.content ?? EMPTY);
+  const products = freshPage?.content ?? EMPTY; // 카테고리 칸 대표 사진 · 포토 리뷰 상품 조인용
 
   const storeById = useMemo(() => toMap(stores), [stores]);
   const productById = useMemo(() => toMap(products), [products]);
-  const visibleProducts = useMemo(
-    () => products.filter((p) => p.status !== '판매중지' && storeById[p.storeId]?.status === '운영중'),
-    [products, storeById],
-  );
-  const ranked = useMemo(
-    () => visibleProducts.filter((p) => rankCat === 'all' || p.cat === rankCat).sort((a, b) => b.sold - a.sold).slice(0, 10),
-    [visibleProducts, rankCat],
-  );
-  const fresh = useMemo(() => [...visibleProducts].sort((a, b) => b.created - a.created).slice(0, 8), [visibleProducts]);
   const featured = stores[3]; // 토담공방
-  const featuredItems = featured ? visibleProducts.filter((p) => p.storeId === featured.id).slice(0, 3) : [];
+  const featuredItems = featured ? products.filter((p) => p.storeId === featured.id).slice(0, 3) : [];
   const photoReviews = useMemo(
     () => reviews.filter((r) => r.photos.length && r.rating >= 4 && !r.blinded && storeById[r.storeId]?.status === '운영중' && productById[r.productId]).slice(0, 10),
     [reviews, storeById, productById],
@@ -80,7 +82,7 @@ export default function ShopHome() {
       <section className="max-w-[1280px] mx-auto px-4 md:px-6 mt-10">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-l border-line">
           {categories.map((c) => {
-            const cover = visibleProducts.find((p) => p.cat === c.id) || products.find((p) => p.cat === c.id);
+            const cover = products.find((p) => p.cat === c.id);
             return (
               <Link key={c.id} to={`/products?cat=${c.id}`} className="group border-r border-b border-line p-3 md:p-4 flex items-center gap-3 hover:bg-cream">
                 {cover && <img src={cover.images[0]} alt="" className="w-11 h-11 object-cover shrink-0 grayscale group-hover:grayscale-0 transition" />}
@@ -94,17 +96,19 @@ export default function ShopHome() {
         </div>
       </section>
 
-      {/* 랭킹 */}
+      {/* 카테고리별 신상품 (PRD-14) — 판매량 랭킹은 범위 밖 */}
       <section className="max-w-[1280px] mx-auto px-4 md:px-6 mt-16">
-        <SectionHead eyebrow="Ranking · 최근 7일 판매량" title="지금 가장 많이 담기는 상품" right={<Link to="/products?sort=rank" className="text-[13px] text-ink-2 flex items-center gap-1 hover:text-ink">전체보기 <ArrowRight size={14} /></Link>} />
+        <SectionHead eyebrow="New by category" title="카테고리별 신상품" right={newCat && <Link to={`/products?cat=${newCat}`} className="text-[13px] text-ink-2 flex items-center gap-1 hover:text-ink">전체보기 <ArrowRight size={14} /></Link>} />
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-6">
-          {[{ id: 'all', name: '전체' }, ...categories].map((c) => (
-            <button key={c.id} onClick={() => setRankCat(c.id)} className={cx('h-9 px-4 text-[13px] border shrink-0', rankCat === c.id ? 'bg-ink text-white border-ink font-semibold' : 'border-line-2 text-ink-2 hover:border-ink')}>{c.name}</button>
+          {categories.map((c) => (
+            <button key={c.id} onClick={() => setPickedCat(c.id)} className={cx('h-9 px-4 text-[13px] border shrink-0', newCat === c.id ? 'bg-ink text-white border-ink font-semibold' : 'border-line-2 text-ink-2 hover:border-ink')}>{c.name}</button>
           ))}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-9">
-          {ranked.map((p, i) => <ProductCard key={p.id} p={p} store={storeById[p.storeId]} rank={i + 1} />)}
-        </div>
+        {catNew.length ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-9">
+            {catNew.map((p) => <ProductCard key={p.id} p={p} store={storeById[p.storeId]} />)}
+          </div>
+        ) : <p className="py-16 text-center text-sm text-mute">이 카테고리에 새로 들어온 상품이 아직 없어요.</p>}
       </section>
 
       {/* 이번 주의 가게 */}
@@ -119,7 +123,7 @@ export default function ShopHome() {
               <div className="eyebrow">Store of the week</div>
               <h2 className="mt-3 text-[30px] font-bold leading-tight tracking-tight">“흙을 고르는 데만<br />한 달이 걸려요”</h2>
               <p className="mt-4 text-[15px] text-ink-2 leading-relaxed max-w-md">{featured.intro} 이번 주, 토담공방 이수아 작가의 작업실을 찾아가 가마를 여는 날의 이야기를 들었습니다.</p>
-              <div className="mt-7 grid grid-cols-3 gap-3">
+              {featuredItems.length > 0 && <div className="mt-7 grid grid-cols-3 gap-3">
                 {featuredItems.map((p) => (
                   <Link key={p.id} to={`/products/${p.id}`} className="group">
                     <img src={p.images[0]} alt="" className="w-full aspect-square object-cover" />
@@ -127,7 +131,7 @@ export default function ShopHome() {
                     <div className="text-[13px] font-bold num">{comma(p.price)}원</div>
                   </Link>
                 ))}
-              </div>
+              </div>}
               <Link to={`/store/${featured.id}`} className="btn btn-ink mt-7">스토어 방문하기 <ArrowUpRight size={16} /></Link>
             </div>
           </div>
@@ -142,8 +146,8 @@ export default function ShopHome() {
         </div>
       </section>
 
-      {/* 포토 리뷰 */}
-      <section className="max-w-[1280px] mx-auto px-4 md:px-6 mt-20">
+      {/* 포토 리뷰 — 상품 묶음 포토 리뷰 공개 API 가 없어 지금 상품과 이어지는 리뷰만(없으면 영역 숨김) */}
+      {photoReviews.length > 0 && <section className="max-w-[1280px] mx-auto px-4 md:px-6 mt-20">
         <SectionHead eyebrow="Real reviews" title="구매자들이 직접 찍은 사진" />
         <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 md:mx-0 md:px-0">
           {photoReviews.map((r) => {
@@ -162,7 +166,7 @@ export default function ShopHome() {
             );
           })}
         </div>
-      </section>
+      </section>}
 
       {/* 입점 CTA */}
       <section className="max-w-[1280px] mx-auto px-4 md:px-6 mt-20">

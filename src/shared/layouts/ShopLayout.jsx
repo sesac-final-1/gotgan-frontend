@@ -13,10 +13,8 @@ export function Wordmark({ dark = false, sub }) {
 }
 
 const NAV = [
-  { to: '/products?sort=rank', label: '랭킹' },
+  { to: '/products', label: '전체 상품' }, // 판매량(랭킹) 정렬 · 태그(산지직송 · 핸드메이드)는 상품 API 에 없어 뺐다 (product.md 9절)
   { to: '/products?sort=new', label: '신상' },
-  { to: '/products?tag=산지직송', label: '산지직송' },
-  { to: '/products?tag=핸드메이드', label: '핸드메이드' },
   { to: '/stores', label: '스토어' },
 ];
 
@@ -82,7 +80,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
                     <div key={c.id}>
                       <Link to={`/products?cat=${c.id}`} className="text-sm font-bold hover:text-point">{c.name}</Link>
                       <ul className="mt-2 space-y-1">
-                        {c.subs.map((s) => <li key={s}><Link to={`/products?cat=${c.id}&sub=${s}`} className="text-[13px] font-normal text-ink-2 hover:underline">{s}</Link></li>)}
+                        {c.children.map((s) => <li key={s.id}><Link to={`/products?cat=${c.id}&sub=${s.id}`} className="text-[13px] font-normal text-ink-2 hover:underline">{s.name}</Link></li>)}
                       </ul>
                     </div>
                   ))}
