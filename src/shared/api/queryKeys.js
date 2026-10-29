@@ -36,6 +36,7 @@ export const queryKeys = {
   store: {
     all: ['store'],
     list: () => ['store', 'list'],
+    detail: (storeId) => ['store', 'detail', String(storeId)], // 공개 스토어 홈
     mine: () => ['store', 'mine'],
     sellerDailySales: () => ['store', 'seller', 'daily-sales'],
   },
