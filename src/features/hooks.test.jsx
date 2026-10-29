@@ -34,6 +34,7 @@ import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettleme
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useSellerDailySalesQuery } from '@/features/store/hooks/useSellerDailySalesQuery';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
+import { useStoreQuery } from '@/features/store/hooks/useStoreQuery';
 import { useMyApplicationQuery } from '@/features/store/hooks/useMyApplicationQuery';
 import { useApplySellerMutation } from '@/features/store/hooks/useApplySellerMutation';
 import { useMeQuery } from '@/features/user/hooks/useMeQuery';
@@ -44,7 +45,7 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 const LIST_HOOKS = {
   useSellerBuyersQuery,
   useSellerOrderItemsMockQuery, useQnasQuery, useReviewsQuery,
-  useSellerDailySalesQuery, useStoresQuery,
+  useSellerDailySalesQuery,
 };
 const OBJECT_HOOKS = { useMyStoreQuery };
 // 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
@@ -82,9 +83,12 @@ const API_HOOKS = {
   useProductSearchQuery: [{ content: [{ productId: 601, name: '햇감귤', storeId: 1, categoryId: 101, topCategoryId: 1, price: 32900, discountRate: 18, salePrice: 26980,
     imageUrl: null, soldOut: true, createdAt: '2026-10-25T10:00:00+09:00' }], page: 0, size: 8, totalElements: 1, totalPages: 1, hasNext: false },
   { content: [{ id: 601, status: '품절', images: [] }], totalPages: 1, hasNext: false }],
+  // store (박지연) — 변환 세부는 features/store/storeApi.test.js
+  useStoresQuery: [[{ storeId: 1, storeName: '산골농부 박씨네', slug: 'park-farm', categoryId: 1, intro: null, imageUrl: null, color: '#d0701f', grade: 'BIG_POWER', createdAt: '2024-03-23T10:00:00+09:00' }],
+    [{ id: 1, name: '산골농부 박씨네', cat: 1, grade: '빅파워', status: '운영중', cover: null }]],
 };
 const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useSellerReviewsQuery, useSellerReviewSummaryQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery,
-  useCategoriesQuery, useProductsQuery, useProductSearchQuery };
+  useCategoriesQuery, useProductsQuery, useProductSearchQuery, useStoresQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
@@ -156,6 +160,25 @@ describe('조회 훅', () => {
     }
   });
 
+  it('스토어 홈 — 정지 · 폐점도 200 으로 받아 상태 한글, 404 는 재시도 없이 isError, id 없으면 조회 안 함', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { storeId: 15, storeName: '볕드는집', status: 'SUSPENDED' } } });
+    try {
+      expect(await load(useStoreQuery, '15')).toMatchObject({ id: 15, name: '볕드는집', status: '정지' });
+      expect(get).toHaveBeenCalledWith('/api/stores/15');
+
+      get.mockRejectedValue({ response: { status: 404, data: { code: 'STORE_NOT_FOUND' } } });
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useStoreQuery('999'), { wrapper: Wrapper });
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(get).toHaveBeenCalledTimes(2);
+
+      const idle = renderHook(() => useStoreQuery(undefined), { wrapper: Wrapper });
+      expect(idle.result.current.fetchStatus).toBe('idle');
+    } finally {
+      get.mockRestore();
+    }
+  });
+
   it('내 입점 신청 — 신청한 적 없으면 null(폼), 제출하면 상태를 다시 불러온다', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: null } });
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { applicationId: 27, status: 'PENDING' } } });
@@ -176,8 +199,8 @@ describe('조회 훅', () => {
   });
 
   it('목업 응답은 매번 새 객체 (같은 참조면 변경 후 화면이 갱신되지 않음)', async () => {
-    const a = await load(useStoresQuery);
-    const b = await load(useStoresQuery);
+    const a = await load(useQnasQuery);
+    const b = await load(useQnasQuery);
     expect(a).toEqual(b);
     expect(a).not.toBe(b);
   });
