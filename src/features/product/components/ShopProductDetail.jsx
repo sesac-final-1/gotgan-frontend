@@ -1,11 +1,14 @@
-// 상품 상세 — 담당 박지연 (리뷰 · Q&A 영역은 review 도메인 컴포넌트)
+// 상품 상세 — 담당 박지연 (리뷰 · Q&A 영역은 review 도메인 컴포넌트) · 실제 API 화면 연결 구지훈(10/30)
+// 상품은 GET /api/products/{id}, 스토어(이름 · 배송비 · 소개)는 공개 스토어 API(박지연 storeApi 교체) 전까지 비어 있어 기본 문구로 보인다
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router';
 import { Share2, X, Minus, Plus, ChevronRight, Truck } from 'lucide-react';
-import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
-import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
+import { useProductQuery } from '@/features/product/hooks/useProductQuery';
+import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
+import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useProductInquiriesQuery } from '@/features/review/hooks/useInquiries';
+import { useProductReviewSummaryQuery } from '@/features/review/hooks/useProductReviews';
 import { useCart } from '@/features/order/hooks/useCart';
 import { earnOf } from '@/features/user/constants';
 import ProductCard from '@/features/product/components/ProductCard';
@@ -13,7 +16,6 @@ import ShopProductReviews from '@/features/review/components/ShopProductReviews'
 import ShopProductQna from '@/features/review/components/ShopProductQna';
 import { Stars, Price, Modal } from '@/shared/components/ui';
 import { toast } from '@/shared/stores/toastStore';
-import { toMap } from '@/shared/utils/collection';
 import { cx, comma, won, salePrice } from '@/shared/utils/format';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
@@ -29,24 +31,26 @@ function Qty({ value, onChange }) {
 
 export default function ShopProductDetail() {
   const { id } = useParams();
-  const { data: products = [], isLoading } = useProductsQuery();
+  const { data: p, isLoading, isError } = useProductQuery(id);
   const { data: stores = [] } = useStoresQuery();
-  const { data: categories = [] } = useCategoriesQuery();
-  const p = products.find((x) => x.id === id);
-  const store = p && stores.find((s) => s.id === p.storeId);
-  const cat = p && categories.find((c) => c.id === p.cat);
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
-  if (!p) return <div className="p-20 text-center">상품을 찾을 수 없습니다. <Link to="/" className="underline">홈으로</Link></div>;
-  if (!store || !cat) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
+  if (isError || !p) return <div className="p-20 text-center">상품을 찾을 수 없습니다. <Link to="/" className="underline">홈으로</Link></div>;
   // key: 다른 상품으로 이동하면 이미지 · 옵션 선택 · 리뷰 필터 상태 초기화
-  return <DetailBody key={p.id} p={p} store={store} cat={cat} products={products} stores={stores} />;
+  return <DetailBody key={p.id} p={p} store={stores.find((x) => x.id === p.storeId)} />;
 }
 
-function DetailBody({ p, store, cat, products, stores }) {
+const STORE_FALLBACK = { name: '판매 스토어' };
+
+function DetailBody({ p, store: storeInfo }) {
+  const store = storeInfo ?? { ...STORE_FALLBACK, id: p.storeId };
   const nav = useNavigate();
   const loc = useLocation();
   const { addToCart } = useCart();
   const { data: qnaPage } = useProductInquiriesQuery(p.id); // Q&A 탭 숫자 — ShopProductQna 첫 페이지와 같은 쿼리
+  const { data: summary } = useProductReviewSummaryQuery(p.id); // 별점 · 리뷰 수 — ShopProductReviews 와 같은 쿼리
+  const rating = summary?.averageRating ?? 0;
+  const reviewCount = summary?.reviewCount ?? 0;
+  const { data: storePage } = useProductSearchQuery({ storeId: p.storeId, size: 5 });
   const [img, setImg] = useState(0);
   const [pick, setPick] = useState({});
   const [lines, setLines] = useState([]);
@@ -55,47 +59,45 @@ function DetailBody({ p, store, cat, products, stores }) {
 
   useEffect(() => { if (loc.hash) setTimeout(() => document.getElementById(loc.hash.slice(1))?.scrollIntoView(), 50); }, [loc.hash]);
 
-  const storeById = useMemo(() => toMap(stores), [stores]);
-  const others = useMemo(
-    () => products.filter((x) => x.storeId === p.storeId && x.id !== p.id && x.status !== '판매중지' && storeById[x.storeId]?.status === '운영중').slice(0, 4),
-    [products, storeById, p.storeId, p.id],
-  );
+  const storeProducts = useMemo(() => (storePage?.content ?? []).filter((x) => x.id !== p.id).slice(0, 4), [storePage, p.id]);
+  const others = useRatedProducts(storeProducts);
   const unit = salePrice(p);
   const soldOut = p.status === '품절';
-  const total = lines.reduce((a, l) => a + l.qty * unit, 0);
-  const ship = store.freeOver && total >= store.freeOver ? 0 : store.shipFee;
+  const canBuy = p.purchasable; // 판매중지 · 스토어 정지 등은 200 + purchasable=false (product.md 10절)
+  const total = lines.reduce((a, l) => a + l.qty * (unit + l.extra), 0);
+  const ship = !storeInfo ? 0 : store.freeOver && total >= store.freeOver ? 0 : store.shipFee;
 
+  // 장바구니는 언제나 productOptionId 로 담는다 — 고른 값 조합과 같은 optionItems 의 id · 추가금
+  const single = p.optionItems[0]; // 옵션 없는 상품은 값 없는 옵션 1개
+  const singleLine = (qty) => ({ label: '', qty, productOptionId: single?.id, extra: single?.extraPrice ?? 0 });
   const choose = (name, v) => {
     const next = { ...pick, [name]: v };
     if (p.options.every((o) => next[o.name])) {
-      const label = p.options.map((o) => next[o.name]).join(' / ');
-      if (!lines.find((l) => l.label === label)) setLines([...lines, { label, qty: 1 }]);
+      const values = p.options.map((o) => next[o.name]);
+      const item = p.optionItems.find((x) => x.values.every((v, i) => v === values[i]));
+      if (!item || item.soldOut) toast('품절된 옵션이에요');
+      else if (!lines.find((l) => l.productOptionId === item.id)) setLines([...lines, { label: values.join(' / '), qty: 1, productOptionId: item.id, extra: item.extraPrice }]);
       setPick({});
     } else setPick(next);
   };
   const ensureLines = () => {
-    if (p.options.length === 0) return lines.length ? lines : [{ label: '', qty: 1 }];
+    if (p.options.length === 0) return lines.length ? lines : [singleLine(1)];
     if (!lines.length) { toast('옵션을 선택해주세요'); return null; }
     return lines;
   };
-  // TODO(박지연 · 이경석): 구매자 상품 상세 API(옵션 ID 포함)가 나오면 l 에 productOptionId 를 붙여 담는다 — 목업 상품에는 옵션 ID 가 없어 지금은 안내만
-  const toItems = (ls) => ls.map((l) => ({ productOptionId: l.productOptionId, quantity: l.qty }));
-  const add = async (ls) => {
-    if (ls.some((l) => !l.productOptionId)) { toast('상품 정보 연동 후 장바구니에 담을 수 있어요'); return false; }
-    return addToCart(toItems(ls));
-  };
+  const add = (ls) => addToCart(ls.map((l) => ({ productOptionId: l.productOptionId, quantity: l.qty })));
   const onCart = async () => { const ls = ensureLines(); if (ls && await add(ls)) setCartModal(true); };
   const onBuy = async () => { const ls = ensureLines(); if (ls && await add(ls)) void nav('/checkout'); };
 
-  const TABS = [['info', '상품정보'], ['reviews', `리뷰 ${comma(p.reviews)}`], ['qna', `Q&A ${comma(qnaPage?.totalElements ?? 0)}`], ['ship', '배송/교환/반품']];
+  const TABS = [['info', '상품정보'], ['reviews', `리뷰 ${comma(reviewCount)}`], ['qna', `Q&A ${comma(qnaPage?.totalElements ?? 0)}`], ['ship', '배송/교환/반품']];
   const go = (k) => { setTab(k); document.getElementById(k)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 md:px-6 pt-6">
       <div className="text-[12px] text-mute mb-5 flex items-center gap-1">
         <Link to="/" className="hover:text-ink">홈</Link><ChevronRight size={12} />
-        <Link to={`/products?cat=${cat.id}`} className="hover:text-ink">{cat.name}</Link><ChevronRight size={12} />
-        <Link to={`/products?cat=${cat.id}&sub=${p.sub}`} className="hover:text-ink">{p.sub}</Link>
+        <Link to={`/products?cat=${p.cat}`} className="hover:text-ink">{p.catName}</Link><ChevronRight size={12} />
+        <Link to={`/products?cat=${p.cat}&sub=${p.catId}`} className="hover:text-ink">{p.sub}</Link>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_440px] gap-8 lg:gap-14">
@@ -117,33 +119,35 @@ function DetailBody({ p, store, cat, products, stores }) {
         {/* 구매 정보 */}
         <div className="lg:sticky lg:top-24 self-start">
           <Link to={`/store/${store.id}`} className="inline-flex items-center gap-2 text-[13px] font-bold hover:underline">
-            <span className="w-5 h-5 text-[10px] text-white flex items-center justify-center" style={{ background: store.color }}>{store.name[0]}</span>
+            <span className="w-5 h-5 text-[10px] text-white flex items-center justify-center bg-ink" style={{ background: store.color }}>{store.name[0]}</span>
             {store.name} <ChevronRight size={14} />
           </Link>
-          {Number.isInteger(Number(p.id)) && (
-            <OpenChatButton className="btn btn-line btn-xs ml-2" basePath="/mypage/chats"
-              request={{ type: 'STORE_INQUIRY', storeId: Number(store.id), context: { type: 'PRODUCT', id: Number(p.id) } }}>
-              판매자에게 문의
-            </OpenChatButton>
-          )}
+          <OpenChatButton className="btn btn-line btn-xs ml-2" basePath="/mypage/chats"
+            request={{ type: 'STORE_INQUIRY', storeId: p.storeId, context: { type: 'PRODUCT', id: p.id } }}>
+            판매자에게 문의
+          </OpenChatButton>
           <h1 className="mt-2 text-[22px] font-bold leading-snug tracking-tight">{p.name}</h1>
           <button onClick={() => go('reviews')} className="mt-2 flex items-center gap-2 text-[13px]">
-            <Stars value={p.rating} size={13} /> <b>{p.rating.toFixed(1)}</b> <span className="text-mute underline">리뷰 {comma(p.reviews)}개</span>
+            <Stars value={rating} size={13} /> <b>{rating.toFixed(1)}</b> <span className="text-mute underline">리뷰 {comma(reviewCount)}개</span>
           </button>
           <div className="mt-5 pb-5 border-b border-line"><Price p={p} size="lg" /></div>
 
           <dl className="py-4 border-b border-line text-[13px] grid grid-cols-[72px_1fr] gap-y-2.5">
             <dt className="text-mute">적립</dt><dd>구매확정 시 실결제금액의 5% · 약 <b className="num">{comma(earnOf(unit))}P</b></dd>
             <dt className="text-mute">배송</dt>
-            <dd>
-              <div className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {store.courier} · {store.shipFee ? `${comma(store.shipFee)}원` : '무료배송'}</div>
-              {store.freeOver > 0 && store.shipFee > 0 && <div className="text-mute mt-0.5">{comma(store.freeOver)}원 이상 구매 시 무료 (스토어 묶음배송)</div>}
-              <div className="text-moss mt-0.5 font-medium">{store.dispatch}</div>
-            </dd>
+            {storeInfo ? (
+              <dd>
+                <div className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {store.courier} · {store.shipFee ? `${comma(store.shipFee)}원` : '무료배송'}</div>
+                {store.freeOver > 0 && store.shipFee > 0 && <div className="text-mute mt-0.5">{comma(store.freeOver)}원 이상 구매 시 무료 (스토어 묶음배송)</div>}
+                <div className="text-moss mt-0.5 font-medium">{store.dispatch}</div>
+              </dd>
+            ) : (
+              <dd className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> 스토어 배송 정책 — 장바구니에서 배송비 계산</dd>
+            )}
           </dl>
 
           {/* 옵션 */}
-          {!soldOut && (
+          {!soldOut && canBuy && (
             <div className="pt-5 space-y-2.5">
               {p.options.map((o, oi) => (
                 <select key={o.name} value={pick[o.name] || ''} disabled={oi > 0 && !pick[p.options[oi - 1].name]} onChange={(e) => choose(o.name, e.target.value)} className="field disabled:bg-cream disabled:text-mute">
@@ -152,20 +156,20 @@ function DetailBody({ p, store, cat, products, stores }) {
                 </select>
               ))}
               {lines.map((l) => (
-                <div key={l.label} className="bg-cream p-3.5 flex items-center justify-between gap-3">
+                <div key={l.productOptionId} className="bg-cream p-3.5 flex items-center justify-between gap-3">
                   <div className="text-[13px] min-w-0">
-                    <div className="truncate">{l.label}</div>
-                    <div className="mt-2"><Qty value={l.qty} onChange={(q) => setLines(lines.map((x) => (x.label === l.label ? { ...x, qty: Math.max(1, q) } : x)))} /></div>
+                    <div className="truncate">{l.label}{l.extra > 0 && <span className="text-mute"> (+{comma(l.extra)}원)</span>}</div>
+                    <div className="mt-2"><Qty value={l.qty} onChange={(q) => setLines(lines.map((x) => (x.productOptionId === l.productOptionId ? { ...x, qty: Math.max(1, q) } : x)))} /></div>
                   </div>
                   <div className="text-right">
-                    <button onClick={() => setLines(lines.filter((x) => x.label !== l.label))} className="text-mute hover:text-ink"><X size={16} /></button>
-                    <div className="mt-2 font-bold num text-sm">{won(unit * l.qty)}</div>
+                    <button onClick={() => setLines(lines.filter((x) => x.productOptionId !== l.productOptionId))} className="text-mute hover:text-ink"><X size={16} /></button>
+                    <div className="mt-2 font-bold num text-sm">{won((unit + l.extra) * l.qty)}</div>
                   </div>
                 </div>
               ))}
               {p.options.length === 0 && !lines.length && (
                 <div className="bg-cream p-3.5 flex items-center justify-between text-[13px]">
-                  <span>{p.name}</span><Qty value={1} onChange={(q) => setLines([{ label: '', qty: Math.max(1, q) }])} />
+                  <span>{p.name}</span><Qty value={1} onChange={(q) => setLines([singleLine(Math.max(1, q))])} />
                 </div>
               )}
             </div>
@@ -176,7 +180,9 @@ function DetailBody({ p, store, cat, products, stores }) {
             <span className="text-[24px] font-bold num">{won(total)}</span>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            {soldOut ? (
+            {!canBuy ? (
+              <button disabled className="btn btn-line btn-lg col-span-2">현재 구매할 수 없는 상품입니다</button>
+            ) : soldOut ? (
               // TODO(박지연): useRestockAlertMutation
               <button onClick={() => toast('재입고 알림을 신청했어요')} className="btn btn-ink btn-lg col-span-2">재입고 알림 신청</button>
             ) : (
@@ -202,14 +208,14 @@ function DetailBody({ p, store, cat, products, stores }) {
             <div className="max-w-[720px] mx-auto">
               <p className="text-center eyebrow">Detail</p>
               <h3 className="text-center text-[22px] font-bold mt-2">{p.name}</h3>
-              <p className="text-center text-sm text-ink-2 mt-3 leading-relaxed">{store.intro}</p>
+              {store.intro && <p className="text-center text-sm text-ink-2 mt-3 leading-relaxed">{store.intro}</p>}
               <div className="mt-8 space-y-2">
                 {p.images.map((s) => <img key={s} src={s} alt="" className="w-full" />)}
               </div>
               <h4 className="mt-12 mb-3 font-bold text-[15px]">상품정보 제공고시</h4>
               <table className="w-full text-[13px] border-t border-ink">
                 <tbody>
-                  {[['소재', p.material], ['제조국', p.origin], ['제조자/수입자', store.name], ['품질보증기준', '관련 법 및 소비자분쟁해결 기준에 따름'], ['A/S 책임자', `${store.name} ${store.phone}`]].map(([k, v]) => (
+                  {[['소재', p.material], ['제조국', p.origin], ['제조자/수입자', store.name], ['품질보증기준', '관련 법 및 소비자분쟁해결 기준에 따름'], ['A/S 책임자', `${store.name} ${store.phone ?? ''}`]].map(([k, v]) => (
                     <tr key={k} className="border-b border-line"><th className="w-36 bg-cream text-left font-medium px-3 py-2.5 text-ink-2">{k}</th><td className="px-3 py-2.5">{v}</td></tr>
                   ))}
                 </tbody>
@@ -229,11 +235,13 @@ function DetailBody({ p, store, cat, products, stores }) {
             <table className="w-full text-[13px] mt-0">
               <tbody>
                 {[
-                  ['배송 방법', `${store.courier} 택배`],
-                  ['배송비', store.shipFee ? `${won(store.shipFee)} (${won(store.freeOver)} 이상 무료) · 제주/도서산간 3,000원 추가` : '무료배송'],
-                  ['출고', store.dispatch],
+                  ...(storeInfo ? [
+                    ['배송 방법', `${store.courier} 택배`],
+                    ['배송비', store.shipFee ? `${won(store.shipFee)} (${won(store.freeOver)} 이상 무료) · 제주/도서산간 3,000원 추가` : '무료배송'],
+                    ['출고', store.dispatch],
+                  ] : [['배송비', '스토어 배송 정책에 따름 — 장바구니에서 스토어별로 계산']]),
                   ['교환/반품 신청', '배송 완료 후 7일 이내, 마이페이지 > 주문/배송에서 신청'],
-                  ['반품 배송비', `단순 변심: 왕복 ${won((store.shipFee || 3000) * 2)} / 상품 하자·오배송: 판매자 부담`],
+                  ['반품 배송비', `단순 변심: 왕복 ${storeInfo ? won((store.shipFee || 3000) * 2) : '배송비'} / 상품 하자·오배송: 판매자 부담`],
                   ['교환/반품 불가', '착용 흔적·세탁·택 제거 시, 신선식품 단순 변심, 주문 제작 상품'],
                   ['구매 확정', '배송 완료 7일 후 자동 구매확정 (확정 이후에는 교환/반품 불가)'],
                   ['포인트', '적립은 구매확정 때 · 취소 · 반품 완료 시 그 상품분 사용 포인트는 환원'],
@@ -247,7 +255,7 @@ function DetailBody({ p, store, cat, products, stores }) {
 
         {/* 우측 스토어 카드 */}
         <aside className="hidden lg:block pt-10">
-          <div className="sticky top-32 border border-line">
+          {storeInfo && <div className="sticky top-32 border border-line">
             <img src={store.cover} alt="" className="w-full aspect-[16/9] object-cover" />
             <div className="p-5">
               <div className="flex items-center gap-2">
@@ -264,7 +272,7 @@ function DetailBody({ p, store, cat, products, stores }) {
                 <Link to={`/store/${store.id}`} className="btn btn-ink btn-sm">스토어 홈</Link>
               </div>
             </div>
-          </div>
+          </div>}
         </aside>
       </div>
 
