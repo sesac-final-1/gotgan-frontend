@@ -1,12 +1,15 @@
 // 입점 신청 (4단계) · 내 신청 상태 — 담당 박지연. 계약: backend docs/api/store.md 2 · 2-1 · 2-2절
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Upload, Check, FileText, X } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useMyApplicationQuery } from '@/features/store/hooks/useMyApplicationQuery';
 import { useApplySellerMutation } from '@/features/store/hooks/useApplySellerMutation';
 import { APPLICATION_STATUS_LABEL, BANKS, BIZ_TYPES, DOC_TYPES, DOC_TYPE_LABEL, EXPECTED_SALES, PRODUCT_PHOTO_MAX, PRODUCT_PHOTO_MIN } from '@/features/store/constants';
+import { formatProblem } from '@/features/store/applyRules';
+import { Doc, Field } from '@/features/store/components/ApplyFormParts';
+import ShopSellerResubmit from '@/features/store/components/ShopSellerResubmit';
 import { queryKeys } from '@/shared/api/queryKeys';
 import { Checkbox, Empty } from '@/shared/components/ui';
 import { PostcodeSearch } from '@/shared/components/common/PostcodeSearch';
@@ -14,21 +17,24 @@ import { toast } from '@/shared/stores/toastStore';
 import { cx, ymd, ymdhm } from '@/shared/utils/format';
 
 /* 흐름: GET /api/seller/apply/me → 없으면 신청 폼, 있으면 상태 화면(심사대기 · 보완요청 · 반려 · 승인). 반려는 재신청 가능일이 지나면 폼으로
-   제출: 서류 presign → S3 PUT → POST /api/seller/apply → me 다시 조회 → 심사대기 화면. 형식 규칙은 서버(400 메시지)에 맡기고 화면은 빈칸 · 개수 · 약관만 본다 */
+   제출: 서류 presign → S3 PUT → POST /api/seller/apply → me 다시 조회 → 심사대기 화면. 화면은 빈칸 · 개수 · 약관 · 형식 4칸만 보고 나머지는 서버 400 메시지로
+   보완요청이면 "보완 제출하기" → ShopSellerResubmit(2-3절) */
 const STEPS = ['판매자 정보', '스토어 · 상품', '서류 제출', '정산 · 약관'];
 const ACTOR_LABEL = { APPLICANT: '신청자', ADMIN: '곳간 운영팀', SYSTEM: '시스템' };
 
 export default function ShopSellerApply() {
   const { data: me, isLoading, isError } = useMyApplicationQuery();
   const [reapply, setReapply] = useState(false);
+  const [resubmit, setResubmit] = useState(false);
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
   if (isError) return <Empty title="신청 상태를 불러오지 못했어요" desc="잠시 후 다시 시도해 주세요." />;
-  if (me && !reapply) return <ApplicationStatus me={me} onReapply={() => setReapply(true)} />;
+  if (me?.status === 'SUPPLEMENT' && resubmit && me.submitted) return <ShopSellerResubmit me={me} onCancel={() => setResubmit(false)} />;
+  if (me && !reapply) return <ApplicationStatus me={me} onReapply={() => setReapply(true)} onResubmit={() => { setResubmit(true); window.scrollTo(0, 0); }} />;
   return <ApplyForm />;
 }
 
 /* ─── 내 신청 상태 (2-2절) ─── */
-function ApplicationStatus({ me, onReapply }) {
+function ApplicationStatus({ me, onReapply, onResubmit }) {
   const canReapply = me.status === 'REJECTED' && (!me.reapplyAvailableAt || me.reapplyAvailableAt <= new Date());
   const TITLE = {
     PENDING: ['Under review', '입점 신청을 심사하고 있습니다', '심사 결과는 영업일 기준 3일 이내 이메일로 안내드려요.'],
@@ -46,7 +52,6 @@ function ApplicationStatus({ me, onReapply }) {
           <b>{me.status === 'REJECTED' ? '반려 사유' : '보완 요청'}</b>
           <p className="mt-1 text-ink-2">{me.statusReason}</p>
           {me.requestedDocs.length > 0 && <p className="mt-2 text-ink-2">다시 낼 서류: {me.requestedDocs.map((d) => DOC_TYPE_LABEL[d] ?? d).join(' · ')}</p>}
-          {me.status === 'SUPPLEMENT' && <p className="mt-2 text-mute">보완 제출 기능은 준비 중이에요.</p>}
         </div>
       )}
       <ol className="mt-10 border-l-2 border-line ml-2">
@@ -62,44 +67,13 @@ function ApplicationStatus({ me, onReapply }) {
         <Link to="/" className="btn btn-line btn-lg">쇼핑몰로</Link>
         {me.status === 'APPROVED' && <Link to="/seller" className="btn btn-ink btn-lg">판매자센터로 →</Link>}
         {canReapply && <button type="button" onClick={onReapply} className="btn btn-ink btn-lg">다시 신청하기</button>}
+        {me.status === 'SUPPLEMENT' && me.submitted && <button type="button" onClick={onResubmit} className="btn btn-ink btn-lg">보완 제출하기</button>}
       </div>
     </div>
   );
 }
 
 /* ─── 신청 폼 (2절) ─── */
-function Field({ label, req, children, hint }) {
-  return (
-    <div>
-      <label className="label">{label}{req && <span className="text-point ml-0.5">*</span>}</label>
-      {children}
-      {hint && <p className="text-[12px] text-mute mt-1.5">{hint}</p>}
-    </div>
-  );
-}
-
-/** 서류 한 칸 — 단건은 File 1개, 상품 사진은 File 배열. 파일 선택은 숨긴 input 으로 */
-function Doc({ type, files, onPick, onClear }) {
-  const input = useRef(null);
-  const list = type.multiple ? files : files ? [files] : [];
-  const done = list.length > 0;
-  return (
-    <div className={cx('border p-4 flex items-center gap-4', done ? 'border-ink' : 'border-dashed border-line-2')}>
-      <div className={cx('w-10 h-10 flex items-center justify-center shrink-0', done ? 'bg-ink text-white' : 'bg-cream text-mute')}>{done ? <FileText size={18} /> : <Upload size={18} />}</div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-semibold">{type.label} <span className="text-point">*</span></div>
-        <div className="text-[12px] text-mute truncate">{done ? list.map((f) => f.name).join(', ') + (type.multiple ? ` · ${list.length}장` : '') : type.desc}</div>
-      </div>
-      <input ref={input} type="file" accept={type.accept} multiple={type.multiple} className="hidden" aria-label={type.label}
-        onChange={(e) => { onPick(type.multiple ? [...e.target.files] : e.target.files[0] ?? null); e.target.value = ''; }} />
-      {done && type.multiple && list.length < PRODUCT_PHOTO_MAX && <button type="button" onClick={() => input.current.click()} className="btn btn-sm btn-line">추가</button>}
-      {done
-        ? <button type="button" onClick={onClear} className="btn btn-sm btn-ghost" aria-label={`${type.label} 지우기`}><X size={14} /></button>
-        : <button type="button" onClick={() => input.current.click()} className="btn btn-sm btn-line">파일 선택</button>}
-    </div>
-  );
-}
-
 const EMPTY_FORM = {
   bizType: 'INDIVIDUAL', companyName: '', ownerName: '', bizRegNo: '', ecommerceRegNo: '', managerPhone: '', managerEmail: '', businessAddress: '',
   storeName: '', slug: '', categoryId: null, intro: '', expectedMonthlySales: '', salesChannel: '',
@@ -112,16 +86,8 @@ const REQUIRED = [
   [],
   ['number', 'holder'],
 ];
-// 서버(SellerApplyRequest)가 형식을 검사하는 네 칸만 같은 규칙 · 문구로 "다음 단계" 때 미리 막는다 — 서버 규칙이 바뀌면 여기도 같이
-const RESERVED_SLUGS = ['admin', 'seller', 'new', 'api', 'me'];
-const FORMAT = [
-  [['bizRegNo', /^\d{3}-\d{2}-\d{5}$/, '사업자등록번호는 000-00-00000 형식입니다.'],
-    ['managerPhone', /^01[016789]-\d{3,4}-\d{4}$/, '휴대폰 번호는 010-0000-0000 형식입니다.'],
-    ['managerEmail', /^[^\s@]+@[^\s@]+\.[^\s@]+$/, '이메일 형식이 올바르지 않습니다.']],
-  [['slug', /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/, '스토어 주소는 영소문자 · 숫자 · 하이픈 3~30자, 하이픈으로 시작 · 끝날 수 없습니다.'],
-    ['slug', (v) => !RESERVED_SLUGS.includes(v), '사용할 수 없는 스토어 주소입니다.']],
-  [], [],
-];
+// 단계별로 형식을 미리 볼 칸(규칙 · 문구는 applyRules — 서버와 같음)
+const STEP_FORMAT = [['bizRegNo', 'managerPhone', 'managerEmail'], ['slug'], [], []];
 
 function ApplyForm() {
   const nav = useNavigate();
@@ -141,8 +107,8 @@ function ApplyForm() {
   // 화면 검사는 최소 — 빈칸 · 상품 2개 이상 · 서류 개수 · 필수 약관. 형식(사업자번호 · 주소 규칙 등)은 서버 400 메시지로
   const problem = (s) => {
     if (REQUIRED[s].some((k) => !String(form[k]).trim())) return '필수 항목을 모두 입력해 주세요';
-    const bad = FORMAT[s].find(([k, rule]) => (rule instanceof RegExp ? !rule.test(form[k].trim()) : !rule(form[k].trim())));
-    if (bad) return bad[2];
+    const bad = formatProblem(STEP_FORMAT[s], form);
+    if (bad) return bad;
     if (s === 1) {
       if (!cat) return '카테고리를 불러오는 중이에요';
       if (products.length < 2 || products.some((p) => !p.name.trim() || !(Number(p.price) > 0))) return '판매 예정 상품을 2개 이상, 상품명과 판매가까지 입력해 주세요';

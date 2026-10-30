@@ -1,5 +1,5 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { fetchMyApplication, toMyApplication, uploadApplyDocuments, applySeller } from '@/features/store/api/sellerApplyApi';
+import { fetchMyApplication, toMyApplication, uploadApplyDocuments, applySeller, resubmitApplication } from '@/features/store/api/sellerApplyApi';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -90,6 +90,32 @@ describe('applySeller — 서류 올린 뒤 POST /api/seller/apply', () => {
     expect(post).toHaveBeenLastCalledWith('/api/seller/apply', { storeName: '곳간상회', slug: 'gotgan-store', categoryId: 1,
       documents: [{ docType: 'BUSINESS_REG', key: 'applications/4/a.pdf', originalName: 'a.pdf' }] });
     expect(result).toMatchObject({ applicationId: 27, status: 'PENDING' });
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('submitted · resubmitApplication — 보완 재제출 (2-2 · 2-3절)', () => {
+  it('submitted 의 서류 올린 시각은 Date, submitted 가 없으면 null', () => {
+    const me = toMyApplication({ ...ME, submitted: { companyName: '곳간상회', documents: [{ docType: 'ECOMMERCE_REG', originalName: 'old.pdf', uploadedAt: '2026-10-22T14:05:11+09:00' }] } });
+    expect(me.submitted.companyName).toBe('곳간상회');
+    expect(me.submitted.documents[0].uploadedAt).toEqual(new Date('2026-10-22T05:05:11Z'));
+    expect(toMyApplication(ME).submitted).toBeNull();
+  });
+
+  it('다시 낸 서류가 있으면 올린 뒤 documents 를 붙여 PATCH, 없으면 바뀐 항목만', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [{ key: 'applications/5/n.pdf', uploadUrl: 'https://s3/n' }] } });
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { applicationId: 102, status: 'PENDING' } } });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+
+    const result = await resubmitApplication({ applicationId: 102, request: { companyName: '곳간상회2' },
+      docs: [{ docType: 'ECOMMERCE_REG', file: file('new.pdf', 'application/pdf') }] });
+    await resubmitApplication({ applicationId: 102, request: {}, docs: [] });
+
+    expect(patch).toHaveBeenNthCalledWith(1, '/api/seller/apply/102/resubmit', { companyName: '곳간상회2',
+      documents: [{ docType: 'ECOMMERCE_REG', key: 'applications/5/n.pdf', originalName: 'new.pdf' }] });
+    expect(patch).toHaveBeenNthCalledWith(2, '/api/seller/apply/102/resubmit', {});
+    expect(post).toHaveBeenCalledTimes(1); // 서류 없으면 presign 도 안 함
+    expect(result).toMatchObject({ status: 'PENDING' });
     vi.unstubAllGlobals();
   });
 });
