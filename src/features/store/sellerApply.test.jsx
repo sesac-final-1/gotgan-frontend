@@ -66,7 +66,7 @@ describe('내 신청 상태', () => {
     expect(screen.getByText(/신청자/)).toBeInTheDocument();
   });
 
-  it('보완요청 → 사유 · 다시 낼 서류 · 기한, 보완 제출은 준비 중', async () => {
+  it('보완요청 → 사유 · 다시 낼 서류 · 기한, 제출 내용(submitted)이 오면 "보완 제출하기" 버튼', async () => {
     stubGet(application('SUPPLEMENT', { statusReason: '신고증 사본이 흐립니다', supplementDueAt: '2026-10-30T10:00:00+09:00', requestedDocs: ['ECOMMERCE_REG'],
       history: [{ fromStatus: null, toStatus: 'PENDING', actor: 'APPLICANT', reason: null, changedAt: '2026-10-22T14:05:11+09:00' },
         { fromStatus: 'PENDING', toStatus: 'SUPPLEMENT', actor: 'ADMIN', reason: '신고증 사본이 흐립니다', changedAt: '2026-10-23T10:00:00+09:00' }] }));
@@ -74,7 +74,7 @@ describe('내 신청 상태', () => {
     expect(await screen.findByText('보완이 필요한 항목이 있습니다')).toBeInTheDocument();
     expect(screen.getByText(/2026\.10\.30까지/)).toBeInTheDocument();
     expect(screen.getByText('다시 낼 서류: 통신판매업 신고증')).toBeInTheDocument();
-    expect(screen.getByText('보완 제출 기능은 준비 중이에요.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '보완 제출하기' })).toBeNull(); // submitted 없음(#200 배포 전) → 버튼 숨김
     expect(screen.getByText('02. 보완요청')).toBeInTheDocument();
   });
 
