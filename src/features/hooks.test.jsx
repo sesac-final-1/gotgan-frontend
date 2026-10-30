@@ -37,6 +37,7 @@ import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useStoreQuery } from '@/features/store/hooks/useStoreQuery';
 import { useMyApplicationQuery } from '@/features/store/hooks/useMyApplicationQuery';
 import { useApplySellerMutation } from '@/features/store/hooks/useApplySellerMutation';
+import { useResubmitApplicationMutation } from '@/features/store/hooks/useResubmitApplicationMutation';
 import { useMeQuery } from '@/features/user/hooks/useMeQuery';
 import { useMyAddressesQuery } from '@/features/user/hooks/useMyAddressesQuery';
 import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
@@ -195,6 +196,20 @@ describe('조회 훅', () => {
     } finally {
       get.mockRestore();
       post.mockRestore();
+    }
+  });
+
+  it('보완 재제출 — PATCH 뒤 내 신청 상태를 다시 불러온다', async () => {
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { applicationId: 102, status: 'PENDING' } } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      const { result } = renderHook(() => useResubmitApplicationMutation(), { wrapper: Wrapper });
+      await act(() => result.current.mutateAsync({ applicationId: 102, request: { companyName: '곳간상회2' }, docs: [] }));
+      expect(patch).toHaveBeenCalledWith('/api/seller/apply/102/resubmit', { companyName: '곳간상회2' });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['store', 'my-application'] });
+    } finally {
+      patch.mockRestore();
     }
   });
 
