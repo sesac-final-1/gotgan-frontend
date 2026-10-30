@@ -12,7 +12,7 @@ import { cx } from '@/shared/utils/format';
 export default function ConsoleLayout({ kind, groups, account, badge, bell, onLogout }) {
   const [open, setOpen] = useState(false);
   const loc = useLocation();
-  useEffect(() => { setOpen(false); window.scrollTo(0, 0); }, [loc.pathname]);
+  useEffect(() => { setOpen(false); window.scrollTo(0, 0); }, [loc.pathname, loc.search]); // 쿼리만 바뀌는 이동에도 사이드 메뉴를 닫는다
 
   const Side = (
     <nav className="py-4 text-[14px]">

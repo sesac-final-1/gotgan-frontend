@@ -1,12 +1,12 @@
 // 상품 상세 — 담당 박지연 (리뷰 · Q&A 영역은 review 도메인 컴포넌트) · 실제 API 화면 연결 구지훈(10/30)
-// 상품은 GET /api/products/{id}, 스토어(이름 · 배송비 · 소개)는 공개 스토어 API(박지연 storeApi 교체) 전까지 비어 있어 기본 문구로 보인다
+// 상품은 GET /api/products/{id}, 스토어(이름 · 배송비 · 소개)는 GET /api/stores/{storeId} — 스토어 정보를 못 받거나 운영 중이 아니면 기본 문구
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router';
 import { Share2, X, Minus, Plus, ChevronRight, Truck } from 'lucide-react';
 import { useProductQuery } from '@/features/product/hooks/useProductQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
-import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
+import { useStoreQuery } from '@/features/store/hooks/useStoreQuery';
 import { useProductInquiriesQuery } from '@/features/review/hooks/useInquiries';
 import { useProductReviewSummaryQuery } from '@/features/review/hooks/useProductReviews';
 import { useCart } from '@/features/order/hooks/useCart';
@@ -17,6 +17,7 @@ import ShopProductQna from '@/features/review/components/ShopProductQna';
 import { Stars, Price, Modal } from '@/shared/components/ui';
 import { toast } from '@/shared/stores/toastStore';
 import { cx, comma, won, salePrice } from '@/shared/utils/format';
+import { safeHtml } from '@/shared/utils/safeHtml';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
 function Qty({ value, onChange }) {
@@ -32,11 +33,12 @@ function Qty({ value, onChange }) {
 export default function ShopProductDetail() {
   const { id } = useParams();
   const { data: p, isLoading, isError } = useProductQuery(id);
-  const { data: stores = [] } = useStoresQuery();
+  // 목록 카드(GET /api/stores)에는 배송 정책이 없어 스토어 홈 응답을 쓴다
+  const { data: store } = useStoreQuery(p?.storeId);
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
   if (isError || !p) return <div className="p-20 text-center">상품을 찾을 수 없습니다. <Link to="/" className="underline">홈으로</Link></div>;
   // key: 다른 상품으로 이동하면 이미지 · 옵션 선택 · 리뷰 필터 상태 초기화
-  return <DetailBody key={p.id} p={p} store={stores.find((x) => x.id === p.storeId)} />;
+  return <DetailBody key={p.id} p={p} store={store?.status === '운영중' ? store : undefined} />;
 }
 
 const STORE_FALLBACK = { name: '판매 스토어' };
@@ -208,7 +210,7 @@ function DetailBody({ p, store: storeInfo }) {
             <div className="max-w-[720px] mx-auto">
               <p className="text-center eyebrow">Detail</p>
               <h3 className="text-center text-[22px] font-bold mt-2">{p.name}</h3>
-              {store.intro && <p className="text-center text-sm text-ink-2 mt-3 leading-relaxed">{store.intro}</p>}
+              {store.intro && <div className="text-center text-sm text-ink-2 mt-3 leading-relaxed" dangerouslySetInnerHTML={safeHtml(store.intro)} />}
               <div className="mt-8 space-y-2">
                 {p.images.map((s) => <img key={s} src={s} alt="" className="w-full" />)}
               </div>
@@ -256,7 +258,7 @@ function DetailBody({ p, store: storeInfo }) {
         {/* 우측 스토어 카드 */}
         <aside className="hidden lg:block pt-10">
           {storeInfo && <div className="sticky top-32 border border-line">
-            <img src={store.cover} alt="" className="w-full aspect-[16/9] object-cover" />
+            {store.cover ? <img src={store.cover} alt="" className="w-full aspect-[16/9] object-cover" /> : <div className="w-full aspect-[16/9]" style={{ background: store.color }} />}
             <div className="p-5">
               <div className="flex items-center gap-2">
                 <span className="w-8 h-8 text-white text-sm font-bold flex items-center justify-center" style={{ background: store.color }}>{store.name[0]}</span>
@@ -265,7 +267,7 @@ function DetailBody({ p, store: storeInfo }) {
                   <div className="text-[11.5px] text-mute">{store.grade} 판매자 · 관심고객 {comma(store.followers)}</div>
                 </div>
               </div>
-              <p className="mt-3 text-[12.5px] text-ink-2 leading-relaxed">{store.intro}</p>
+              <div className="mt-3 text-[12.5px] text-ink-2 leading-relaxed" dangerouslySetInnerHTML={safeHtml(store.intro)} />
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {/* TODO(박지연): useFollowStoreMutation */}
                 <button onClick={() => toast(`${store.name} 알림받기 완료`)} className="btn btn-line btn-sm">+ 알림받기</button>

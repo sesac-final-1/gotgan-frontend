@@ -15,6 +15,12 @@ const card = (productId, name, extra = {}) => ({
   productId, name, storeId: 1, categoryId: 301, topCategoryId: 3, price: 89000, discountRate: 15.0, salePrice: 75650,
   imageUrl: `https://cdn/p/${productId}.jpg`, soldOut: false, createdAt: '2026-10-20T10:00:00+09:00', ...extra,
 });
+// 공개 스토어 홈 응답 (store.md 14절)
+const STORE_HOME = {
+  storeId: 1, storeName: '오롯이 리넨', status: 'ACTIVE', slug: 'orot-linen', categoryId: 3, intro: '<p>성수동 리넨 작업실</p>', imageUrl: null, color: '#8c6d4f',
+  grade: 'POWER', createdAt: '2025-08-01T10:00:00+09:00', ownerName: '김오롯', bizRegNo: '000-00-00001', csPhone: '02-0000-0001',
+  shippingFee: 3500, freeShippingThreshold: 50000, courier: 'CJ대한통운', dispatchNote: '오후 2시 이전 주문 당일 출고',
+};
 const page = (content, totalPages = 1) => ({ content, page: 0, size: content.length, totalElements: content.length * totalPages, totalPages, hasNext: totalPages > 1 });
 const DETAIL = {
   productId: 3, storeId: 1, categoryId: 301, categoryName: '셔츠', topCategoryId: 3, topCategoryName: '패션의류',
@@ -43,9 +49,14 @@ function Where() {
 }
 
 // GET 을 URL 로 나눠 돌려준다 — 상품 목록은 handlers.products(params) 로
-function mockApi({ products = () => page([card(3, '리넨 셔츠')]), detail = DETAIL, ratings } = {}) {
+function mockApi({ products = () => page([card(3, '리넨 셔츠')]), detail = DETAIL, ratings, store = null, stores = [] } = {}) {
   return vi.spyOn(axiosInstance, 'get').mockImplementation(async (url, opts = {}) => {
     if (url === '/api/categories') return { data: { data: CATEGORIES } };
+    if (url === '/api/stores') return { data: { data: stores } };
+    if (url.startsWith('/api/stores/')) {
+      if (!store) throw Object.assign(new Error('404'), { response: { status: 404 } });
+      return { data: { data: store } };
+    }
     if (url === '/api/products') return { data: { data: products(opts.params) } };
     if (url.startsWith('/api/products/')) {
       if (!detail) throw Object.assign(new Error('404'), { response: { status: 404 } });
@@ -178,7 +189,37 @@ describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
   });
 });
 
+describe('상품 상세 — 스토어 정보 (GET /api/stores/{id})', () => {
+  it('운영 중 스토어면 이름 · 배송 정책 · 소개(HTML 정화)', async () => {
+    mockApi({ store: STORE_HOME });
+    renderAt('/products/3', <ShopProductDetail />, '/products/:id');
+    await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
+    expect(await screen.findByText(/CJ대한통운 · 3,500원/)).toBeInTheDocument();
+    expect(screen.getByText('50,000원 이상 구매 시 무료 (스토어 묶음배송)')).toBeInTheDocument();
+    expect(screen.getAllByText('성수동 리넨 작업실').length).toBeGreaterThan(0); // <p> 태그가 글자로 보이지 않음
+    expect(screen.queryByText(/<p>/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /오롯이 리넨/ })[0]).toHaveAttribute('href', '/store/1');
+  });
+
+  it('정지 스토어(상태만 오는 응답)는 기본 문구', async () => {
+    mockApi({ store: { storeId: 1, storeName: '오롯이 리넨', status: 'SUSPENDED' } });
+    renderAt('/products/3', <ShopProductDetail />, '/products/:id');
+    await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
+    expect(await screen.findByText(/장바구니에서 배송비 계산/)).toBeInTheDocument();
+  });
+});
+
 describe('메인 — 카테고리별 신상품 (PRD-14)', () => {
+  it('이번 주의 가게 — 공개 스토어 목록의 토담공방 · 그 스토어 상품 3개', async () => {
+    const todam = { storeId: 2, storeName: '토담공방', slug: 'todam', categoryId: 2, intro: '<p>전주 도자기 공방</p>', imageUrl: null, color: '#8c6d4f', grade: 'POWER', createdAt: '2025-08-01T10:00:00+09:00' };
+    const get = mockApi({ stores: [todam], products: (params) => page(params.storeId === 2 ? [card(204, '다완 찻잔 2인 세트', { storeId: 2 })] : []) });
+    renderAt('/', <ShopHome />, '/');
+    expect(await screen.findByText('다완 찻잔 2인 세트')).toBeInTheDocument();
+    expect(screen.getByText('전주 도자기 공방')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /스토어 방문하기/ })).toHaveAttribute('href', '/store/2');
+    expect(productCalls(get)).toContainEqual({ storeId: 2, size: 3 });
+  });
+
   it('첫 상위 카테고리의 신상품 8개, 탭을 누르면 그 카테고리로 · 전체 신상품 · 랭킹 없음', async () => {
     const get = mockApi({
       products: (params) => page(params.categoryId === 1 ? [card(50, '서귀포 감귤', { topCategoryId: 1 })] : params.categoryId === 3 ? [card(3, '리넨 셔츠')] : [card(7, '새로 온 머그')]),
