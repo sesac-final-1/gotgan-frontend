@@ -24,7 +24,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
   const [menu, setMenu] = useState(false);
   const nav = useNavigate();
   const loc = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); setMenu(false); }, [loc.pathname]);
+  useEffect(() => { window.scrollTo(0, 0); setMenu(false); }, [loc.pathname, loc.search]); // 카테고리(?cat=)만 바뀌어도 드로어를 닫는다 · 해시(#reviews) 이동은 그대로
   const isAdmin = !!user?.roles?.includes('ADMIN'); // 운영자만 관리자 콘솔 바로가기 (실제 접근 제어는 가드 · 게이트웨이)
 
   return (
