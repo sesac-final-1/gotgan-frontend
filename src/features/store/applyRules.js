@@ -74,5 +74,21 @@ export function buildResubmitRequest(me, form) {
   return { request, bizChanged: BIZ_FIELDS.some((k) => k in request) };
 }
 
+// 확인 창에 보여 줄 칸 이름 — 화면 라벨과 같게
+const FIELD_LABEL = {
+  bizType: '사업자 구분', companyName: '상호명', ownerName: '대표자명', bizRegNo: '사업자등록번호', ecommerceRegNo: '통신판매업 신고번호',
+  managerPhone: '담당자 휴대폰', managerEmail: '담당자 이메일', businessAddress: '사업장 주소', storeName: '스토어 이름', slug: '스토어 주소',
+  categoryId: '대표 카테고리', intro: '스토어 소개', representativeProducts: '판매 예정 상품', expectedMonthlySales: '월 예상 매출',
+  salesChannel: '운영 중인 채널', settlementAccount: '정산 계좌',
+};
+
+/** 제출 전 확인 문구 — 바꾼 칸 이름 + 다시 낸 서류(docLabels). 실수로 건드린 칸을 제출 전에 알아차리게 */
+export function resubmitConfirmMessage(request, docLabels) {
+  const changed = [...Object.keys(request).map((k) => FIELD_LABEL[k] ?? k), ...docLabels.map((l) => `${l}(다시 냄)`)];
+  return changed.length
+    ? `바꾼 항목: ${changed.join(' · ')}\n제출하면 다시 심사받습니다. 제출할까요?`
+    : '바꾼 항목이 없어요. 확인만 제출할까요?';
+}
+
 /** 다시 올려야 하는 서류 종류 — 보완요청 서류 전부 + 사업자 정보를 바꿨으면 사업자등록증 */
 export const requiredDocTypes = (me, bizChanged) => [...new Set([...(me.requestedDocs ?? []), ...(bizChanged ? ['BUSINESS_REG'] : [])])];

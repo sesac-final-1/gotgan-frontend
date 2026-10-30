@@ -1,4 +1,4 @@
-import { formatProblem, toResubmitForm, buildResubmitRequest, requiredDocTypes } from '@/features/store/applyRules';
+import { formatProblem, toResubmitForm, buildResubmitRequest, requiredDocTypes, resubmitConfirmMessage } from '@/features/store/applyRules';
 
 describe('formatProblem — 서버와 같은 형식 규칙', () => {
   it('틀린 첫 칸의 문구, 모두 맞으면 null', () => {
@@ -62,5 +62,13 @@ describe('보완 재제출 — 바뀐 칸만', () => {
     expect(requiredDocTypes(ME, true)).toEqual(['ECOMMERCE_REG', 'BUSINESS_REG']);
     expect(requiredDocTypes({ ...ME, requestedDocs: ['BUSINESS_REG'] }, true)).toEqual(['BUSINESS_REG']); // 중복 없음
     expect(requiredDocTypes({ ...ME, requestedDocs: null }, false)).toEqual([]); // 옛 보완요청 · 내용 보완
+  });
+});
+
+describe('resubmitConfirmMessage — 제출 전 확인 문구', () => {
+  it('바꾼 칸 이름(화면 라벨) + 다시 낸 서류, 없으면 확인만', () => {
+    expect(resubmitConfirmMessage({ companyName: 'x', settlementAccount: {} }, ['통신판매업 신고증']))
+      .toBe('바꾼 항목: 상호명 · 정산 계좌 · 통신판매업 신고증(다시 냄)\n제출하면 다시 심사받습니다. 제출할까요?');
+    expect(resubmitConfirmMessage({}, [])).toBe('바꾼 항목이 없어요. 확인만 제출할까요?');
   });
 });
