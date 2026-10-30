@@ -73,8 +73,13 @@ describe('보완 재제출', () => {
 
     fireEvent.change(screen.getByLabelText('통신판매업 신고증'), { target: { files: [pdf('new.pdf')] } });
     type('계좌번호', '111-111-111');
+    const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: '보완 제출하기' }));
+    expect(ask).toHaveBeenLastCalledWith('바꾼 항목: 정산 계좌 · 통신판매업 신고증(다시 냄)\n제출하면 다시 심사받습니다. 제출할까요?');
+    expect(patch).not.toHaveBeenCalled(); // 취소 → 아무것도 안 보냄, 폼에 그대로
+    expect(input('계좌번호')).toHaveValue('111-111-111');
 
+    fireEvent.click(screen.getByRole('button', { name: '보완 제출하기' }));
     expect(await screen.findByText('입점 신청을 심사하고 있습니다')).toBeInTheDocument();
     expect(put).toHaveBeenCalledWith('https://s3/new', expect.objectContaining({ method: 'PUT' }));
     expect(patch).toHaveBeenCalledWith('/api/seller/apply/102/resubmit', {
@@ -105,8 +110,10 @@ describe('보완 재제출', () => {
     const patch = vi.spyOn(axiosInstance, 'patch').mockImplementation(async () => { me = pending; return { data: { data: { status: 'PENDING' } } }; });
     await openResubmit();
     expect(screen.getByText('고친 항목 없음 — 확인만 제출돼요')).toBeInTheDocument();
+    const ask = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     fireEvent.click(screen.getByRole('button', { name: '보완 제출하기' }));
+    expect(ask).toHaveBeenCalledWith('바꾼 항목이 없어요. 확인만 제출할까요?');
 
     expect(await screen.findByText('입점 신청을 심사하고 있습니다')).toBeInTheDocument();
     expect(patch).toHaveBeenCalledWith('/api/seller/apply/102/resubmit', {});
@@ -126,6 +133,7 @@ describe('보완 재제출', () => {
     await screen.findByRole('heading', { name: '보완 제출' });
 
     type('상호명', '곳간상회2');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: '보완 제출하기' }));
 
     await waitFor(() => expect(lastToast()).toBe('보완 기한이 지났습니다.'));

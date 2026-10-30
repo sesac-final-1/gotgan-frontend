@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useResubmitApplicationMutation } from '@/features/store/hooks/useResubmitApplicationMutation';
-import { buildResubmitRequest, formatProblem, requiredDocTypes, toResubmitForm } from '@/features/store/applyRules';
+import { buildResubmitRequest, formatProblem, requiredDocTypes, resubmitConfirmMessage, toResubmitForm } from '@/features/store/applyRules';
 import { BANKS, BIZ_TYPES, DOC_TYPES, EXPECTED_SALES, PRODUCT_PHOTO_MAX, PRODUCT_PHOTO_MIN } from '@/features/store/constants';
 import { Doc, Field } from '@/features/store/components/ApplyFormParts';
 import { queryKeys } from '@/shared/api/queryKeys';
@@ -50,6 +50,7 @@ export default function ShopSellerResubmit({ me, onCancel }) {
   const submit = () => {
     const p = problem();
     if (p) { toast(p); return; }
+    if (!window.confirm(resubmitConfirmMessage(request, needDocs.map((t) => t.label)))) return; // 바꾼 칸을 한 번 더 보여 주고, 취소면 폼에 그대로
     resubmit.mutate({
       applicationId: me.applicationId,
       request,
