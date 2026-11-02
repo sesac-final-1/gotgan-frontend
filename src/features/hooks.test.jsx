@@ -23,6 +23,8 @@ import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery'
 import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useProductQuery } from '@/features/product/hooks/useProductQuery';
+import { useSellerProductsQuery } from '@/features/product/hooks/useSellerProductsQuery';
+import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation } from '@/features/product/hooks/useSellerProductMutations';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
@@ -84,12 +86,15 @@ const API_HOOKS = {
   useProductSearchQuery: [{ content: [{ productId: 601, name: '햇감귤', storeId: 1, categoryId: 101, topCategoryId: 1, price: 32900, discountRate: 18, salePrice: 26980,
     imageUrl: null, soldOut: true, createdAt: '2026-10-25T10:00:00+09:00' }], page: 0, size: 8, totalElements: 1, totalPages: 1, hasNext: false },
   { content: [{ id: 601, status: '품절', images: [] }], totalPages: 1, hasNext: false }],
+  useSellerProductsQuery: [[{ productId: 3, name: '리넨 셔츠', categoryId: 301, categoryName: '셔츠', topCategoryName: '패션의류', price: 89000, discountRate: 15,
+    salePrice: 75650, imageUrl: null, totalStock: 0, soldOut: true, status: 'ON_SALE', statusReason: null, displayable: true, hiddenReason: null,
+    createdAt: '2026-10-20T10:00:00+09:00' }], [{ id: 3, status: '품절', stock: 0, images: [] }]],
   // store (박지연) — 변환 세부는 features/store/storeApi.test.js
   useStoresQuery: [[{ storeId: 1, storeName: '산골농부 박씨네', slug: 'park-farm', categoryId: 1, intro: null, imageUrl: null, color: '#d0701f', grade: 'BIG_POWER', createdAt: '2024-03-23T10:00:00+09:00' }],
     [{ id: 1, name: '산골농부 박씨네', cat: 1, grade: '빅파워', status: '운영중', cover: null }]],
 };
 const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useSellerReviewsQuery, useSellerReviewSummaryQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery,
-  useCategoriesQuery, useProductsQuery, useProductSearchQuery, useStoresQuery };
+  useCategoriesQuery, useProductsQuery, useProductSearchQuery, useSellerProductsQuery, useStoresQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
@@ -337,6 +342,29 @@ describe('카테고리 · 수수료 mutation', () => {
     } finally {
       post.mockRestore();
       put.mockRestore();
+    }
+  });
+});
+
+describe('판매자 상품 mutation', () => {
+  it('판매중지 · 재개는 PATCH /status · 삭제는 건마다 DELETE — 끝나면 판매자 상품 목록 · 상세 다시 불러오기', async () => {
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { success: [3], failed: [] } } });
+    const del = vi.spyOn(axiosInstance, 'delete').mockResolvedValue({ data: { data: null } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      const status = renderHook(() => useUpdateSellerProductStatusMutation(), { wrapper: Wrapper }).result;
+      await act(() => status.current.mutateAsync({ productIds: [3], status: '판매중지' }));
+      expect(patch).toHaveBeenCalledWith('/api/seller/products/status', { productIds: [3], status: 'STOPPED' });
+
+      const remove = renderHook(() => useDeleteSellerProductsMutation(), { wrapper: Wrapper }).result;
+      expect(await act(() => remove.current.mutateAsync([3]))).toEqual({ success: [3], failed: [] });
+      expect(del).toHaveBeenCalledWith('/api/seller/products/3');
+      expect(invalidate).toHaveBeenCalledTimes(2);
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['product', 'seller'] });
+    } finally {
+      patch.mockRestore();
+      del.mockRestore();
     }
   });
 });

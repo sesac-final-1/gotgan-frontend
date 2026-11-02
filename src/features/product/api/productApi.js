@@ -73,6 +73,60 @@ export const toProductDetail = (r) => ({
 // 없거나 삭제된 상품은 404 PRODUCT_NOT_FOUND · 판매중지 · 스토어 정지 상품도 200 (purchasable=false)
 export const fetchProduct = async (productId) => toProductDetail((await axiosInstance.get(`/api/products/${productId}`)).data.data);
 
+// ── 판매자 상품 (product.md 11 · 15 · 16절) — SELLER, 게이트웨이가 넣은 X-Store-Id 스토어 상품만 온다
+// 화면 상태 탭은 판매중 · 품절 · 판매중지 3개 — BLOCKED(관리자 강제 판매중지)는 판매중지 탭에 사유와 함께 (11절)
+export const sellerStatusOf = ({ status, soldOut }) => {
+  if (status === 'ON_SALE') return soldOut ? '품절' : '판매중';
+  return '판매중지'; // STOPPED · BLOCKED
+};
+
+// 쇼핑몰에 안 보이는 이유 중 상태로 드러나지 않는 것만 문구로 — STOPPED · BLOCKED 는 상태 칸에 이미 보인다
+const HIDDEN_REASON = { CATEGORY_INACTIVE: '카테고리 사용 중지', STORE_INACTIVE: '스토어 운영 중지' };
+
+// GET /api/seller/products 한 건 — { productId, name, categoryId, categoryName, topCategoryName, price, discountRate, salePrice,
+//   imageUrl, totalStock, soldOut, status, statusReason, displayable, hiddenReason, createdAt }
+export const toSellerProductRow = (r) => ({
+  id: r.productId,
+  name: r.name,
+  catId: r.categoryId,
+  catName: r.topCategoryName,
+  sub: r.categoryName,
+  price: r.price,
+  discount: Number(r.discountRate ?? 0) / 100,
+  salePrice: r.salePrice,
+  images: r.imageUrl ? [r.imageUrl] : [],
+  stock: r.totalStock,
+  soldOut: r.soldOut,
+  status: sellerStatusOf(r), // 탭 · 필터 값
+  pill: r.status === 'BLOCKED' ? '강제중지' : sellerStatusOf(r), // 상태 칸 표시
+  blocked: r.status === 'BLOCKED',
+  statusReason: r.statusReason ?? '',
+  hidden: HIDDEN_REASON[r.hiddenReason] ?? '',
+  created: new Date(r.createdAt),
+  rating: 0, // 화면이 review 평점 API 로 붙인다 (useRatedProducts)
+  reviews: 0,
+});
+
+// 전체 조회(페이징 없음) — 탭 개수 · 검색 · 정렬 · 페이징은 화면에서 (컨벤션 4-7)
+export const fetchSellerProducts = async () => (await axiosInstance.get('/api/seller/products')).data.data.map(toSellerProductRow);
+
+const API_STATUS = { 판매중: 'ON_SALE', 판매중지: 'STOPPED' };
+
+// PATCH /api/seller/products/status — 판매중지 · 재개 일괄(최대 100개). 건마다 처리 → { success[id], failed[{ productId, code, message }] }
+export const updateSellerProductStatus = async ({ productIds, status }) =>
+  (await axiosInstance.patch('/api/seller/products/status', { productIds, status: API_STATUS[status] })).data.data;
+
+// DELETE /api/seller/products/{id} — 소프트 삭제. 일괄 삭제는 건마다 호출(데모 규모, 16절)하고 결과를 상태 변경과 같은 모양으로 나눈다
+export const deleteSellerProducts = async (productIds) => {
+  const results = await Promise.allSettled(productIds.map((id) => axiosInstance.delete(`/api/seller/products/${id}`)));
+  return {
+    success: productIds.filter((_, i) => results[i].status === 'fulfilled'),
+    failed: productIds.flatMap((productId, i) => (results[i].status === 'rejected'
+      ? [{ productId, code: results[i].reason?.response?.data?.code ?? null, message: results[i].reason?.response?.data?.message ?? '삭제하지 못했어요' }]
+      : [])),
+  };
+};
+
 // 임시 — 화면이 쓰던 "상품 전체 배열"(최대 100개, 노출 가능 상품만). useProductsQuery() 를 부르는 화면이 모두
 // useProductSearchQuery · useProductQuery · 판매자 상품 목록으로 옮겨 가면 삭제 (docs/MOCK-TO-API.md 5절 임시 훅)
 export const fetchProductCards = async () => (await fetchProducts({ size: 100 })).content;
