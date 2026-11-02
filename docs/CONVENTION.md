@@ -222,6 +222,7 @@ gotgan-frontend/src/
 - 로그인 화면은 React 자체 폼 — Keycloak 로그인 페이지로 리다이렉트하지 않음
 - 부팅: `app/bootstrap.js`가 `/api/auth/refresh`를 1회 호출 → 성공 시 로그인 복구, 401이면 비로그인 상태
 - AT 만료(401): axios 응답 인터셉터가 single-flight(`shared/api/refresh.js`)로 재발급 후 원 요청 재시도
+- 요청 제한(429, 게이트웨이 · 본문 없음): 같은 인터셉터가 `{ code: 'TOO_MANY_REQUESTS', message }` 를 채워 화면의 `data.message` 그대로 안내. 조회는 429 면 재시도하지 않음(`shared/api/retry.js`)
 - AT를 `localStorage` · `sessionStorage`에 저장 금지. RT는 프론트 코드에서 다루지 않음
 - 판매자 전환(입점 승인) 후에는 refresh로 새 roles를 받음
 

@@ -28,9 +28,15 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
+// 게이트웨이 요청 제한(429)은 본문이 없다 — 업무 서비스 오류와 같은 { code, message } 를 채워, 화면의 data.message 그대로 안내되게
+export const TOO_MANY_REQUESTS_MESSAGE = '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.';
+
 // Access Token 만료(401) → single-flight 재발급 후 원 요청 한 번 재시도. 재발급도 실패하면 비로그인 상태로
 axiosInstance.interceptors.response.use(undefined, async (error) => {
   const { config, response } = error;
+  if (response?.status === 429 && !response.data?.message) {
+    response.data = { code: 'TOO_MANY_REQUESTS', message: TOO_MANY_REQUESTS_MESSAGE, data: null };
+  }
   const canRetry = response?.status === 401 && config && !config._retried && !isAuthEndpoint(config.url)
     && authHandlers.refresh && authHandlers.getAccessToken(); // 토큰 없이 받은 401 = 원래 로그인이 필요한 요청
   if (!canRetry) return Promise.reject(error);
