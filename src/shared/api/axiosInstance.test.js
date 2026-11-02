@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { axiosInstance, setAuthHandlers } from '@/shared/api/axiosInstance';
+import { axiosInstance, setAuthHandlers, TOO_MANY_REQUESTS_MESSAGE } from '@/shared/api/axiosInstance';
 import { refreshOnce } from '@/shared/api/refresh';
 
 // 네트워크 대신 어댑터를 바꿔 끼워 요청 · 응답을 흉내 낸다
@@ -75,5 +75,24 @@ describe('axiosInstance 인증 인터셉터', () => {
     token = null;
     await expect(axiosInstance.get('/api/users/me')).rejects.toBeInstanceOf(AxiosError);
     expect(refresh).not.toHaveBeenCalled();
+  });
+});
+
+describe('axiosInstance 요청 제한(429)', () => {
+  const tooMany = (config, data) => Promise.reject(
+    new AxiosError('fail', 'ERR', config, null, { data, status: 429, statusText: '', headers: {}, config }));
+
+  it('본문 없는 429 는 { code, message } 를 채워 던진다 — 화면은 data.message 로 안내 (로그인 포함)', async () => {
+    axiosInstance.defaults.adapter = vi.fn((config) => tooMany(config, ''));
+
+    await expect(axiosInstance.post('/api/auth/login', {})).rejects.toMatchObject({
+      response: { status: 429, data: { code: 'TOO_MANY_REQUESTS', message: TOO_MANY_REQUESTS_MESSAGE } },
+    });
+  });
+
+  it('서버가 보낸 message 가 있으면 그대로 둔다', async () => {
+    axiosInstance.defaults.adapter = vi.fn((config) => tooMany(config, { code: 'X', message: '서버 문구' }));
+
+    await expect(axiosInstance.get('/api/products')).rejects.toMatchObject({ response: { data: { message: '서버 문구' } } });
   });
 });
