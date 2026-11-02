@@ -1,6 +1,5 @@
 // 쇼핑몰 메인 — 담당 구지훈(화면) · 상품 데이터 API 박지연 (10/27 역할 분담)
 // 상품은 실제 API(GET /api/products) — 상위 카테고리별 신상품 8개(PRD-14) · 전체 신상품. 이번 주의 가게는 공개 스토어 목록(GET /api/stores)
-// 포토 리뷰는 상품 묶음 공개 API 가 없어 지금 상품과 이어지는 것만
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
@@ -8,11 +7,10 @@ import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery'
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
-import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import ProductCard from '@/features/product/components/ProductCard';
-import { SectionHead, Stars } from '@/shared/components/ui';
+import { SectionHead } from '@/shared/components/ui';
 import { toMap } from '@/shared/utils/collection';
-import { cx, comma, maskName } from '@/shared/utils/format';
+import { cx, comma } from '@/shared/utils/format';
 import { safeHtml } from '@/shared/utils/safeHtml';
 
 const BANNERS = [
@@ -58,7 +56,6 @@ function Hero() {
 export default function ShopHome() {
   const { data: categories = [] } = useCategoriesQuery();
   const { data: stores = [] } = useStoresQuery();
-  const { data: reviews = [] } = useReviewsQuery();
   const [pickedCat, setPickedCat] = useState(null);
   const newCat = pickedCat ?? categories[0]?.id; // 처음엔 첫 번째 상위 카테고리
 
@@ -67,18 +64,13 @@ export default function ShopHome() {
   const { data: catPage } = useProductSearchQuery({ categoryId: newCat, sort: 'NEW', size: 8 });
   const fresh = useRatedProducts(useMemo(() => (freshPage?.content ?? []).slice(0, 8), [freshPage]));
   const catNew = useRatedProducts(catPage?.content ?? EMPTY);
-  const products = freshPage?.content ?? EMPTY; // 카테고리 칸 대표 사진 · 포토 리뷰 상품 조인용
+  const products = freshPage?.content ?? EMPTY; // 카테고리 칸 대표 사진용
 
   const storeById = useMemo(() => toMap(stores), [stores]);
-  const productById = useMemo(() => toMap(products), [products]);
   const featured = stores.find((s) => s.slug === FEATURED_SLUG); // 아래 소개 문구가 토담공방 기준
   // 스토어가 정해지기 전에는 없는 스토어(0)로 묻는다 — 빈 결과
   const { data: featuredPage } = useProductSearchQuery({ storeId: featured?.id ?? 0, size: 3 });
   const featuredItems = featured ? featuredPage?.content ?? EMPTY : EMPTY;
-  const photoReviews = useMemo(
-    () => reviews.filter((r) => r.photos.length && r.rating >= 4 && !r.blinded && storeById[r.storeId]?.status === '운영중' && productById[r.productId]).slice(0, 10),
-    [reviews, storeById, productById],
-  );
 
   return (
     <div>
@@ -152,28 +144,6 @@ export default function ShopHome() {
           {fresh.map((p) => <ProductCard key={p.id} p={p} store={storeById[p.storeId]} />)}
         </div>
       </section>
-
-      {/* 포토 리뷰 — 상품 묶음 포토 리뷰 공개 API 가 없어 지금 상품과 이어지는 리뷰만(없으면 영역 숨김) */}
-      {photoReviews.length > 0 && <section className="max-w-[1280px] mx-auto px-4 md:px-6 mt-20">
-        <SectionHead eyebrow="Real reviews" title="구매자들이 직접 찍은 사진" />
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-          {photoReviews.map((r) => {
-            const p = productById[r.productId];
-            return (
-              <Link to={`/products/${p.id}#reviews`} key={r.id} className="w-[220px] shrink-0 group">
-                <img src={r.photos[0]} alt="" className="w-full aspect-square object-cover" />
-                {/* TODO(이경석): 리뷰 응답에 작성자 표시 정보(author: name · nick · avatar · grade) 필요 — 지금은 목업 리뷰에 없어 '구매자' 표시 */}
-                <div className="mt-2.5 flex items-center gap-2"><Stars value={r.rating} size={11} /><span className="text-[11px] text-mute">{maskName(r.author?.name ?? '구매자')}</span></div>
-                <p className="mt-1 text-[13px] leading-snug line-clamp-2 text-ink-2">{r.body}</p>
-                <div className="mt-2 flex items-center gap-2 border-t border-line pt-2">
-                  <img src={p.images[0]} alt="" className="w-8 h-8 object-cover" />
-                  <span className="text-[11.5px] text-mute line-clamp-1 group-hover:text-ink">{p.name}</span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>}
 
       {/* 입점 CTA */}
       <section className="max-w-[1280px] mx-auto px-4 md:px-6 mt-20">
