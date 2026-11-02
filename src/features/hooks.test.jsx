@@ -20,7 +20,6 @@ import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
 import { useSellerBuyersQuery } from '@/features/order/hooks/useSellerBuyersQuery';
 import { useSellerOrderItemsMockQuery, useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
-import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useProductQuery } from '@/features/product/hooks/useProductQuery';
 import { useSellerProductsQuery } from '@/features/product/hooks/useSellerProductsQuery';
@@ -37,7 +36,7 @@ import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettleme
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useStoreRatingQuery } from '@/features/store/hooks/useStoreRatingQuery';
 import { useUpdateMyStoreMutation, useCloseMyStoreMutation } from '@/features/store/hooks/useMyStoreMutations';
-import { useSellerDailySalesQuery } from '@/features/store/hooks/useSellerDailySalesQuery';
+import { useSellerDashboardQuery } from '@/features/store/hooks/useSellerDashboardQuery';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useStoreQuery } from '@/features/store/hooks/useStoreQuery';
 import { useMyApplicationQuery } from '@/features/store/hooks/useMyApplicationQuery';
@@ -51,7 +50,6 @@ import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 const LIST_HOOKS = {
   useSellerBuyersQuery,
   useSellerOrderItemsMockQuery, useQnasQuery, useReviewsQuery,
-  useSellerDailySalesQuery,
 };
 // 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
 const API_HOOKS = {
@@ -82,9 +80,9 @@ const API_HOOKS = {
   // product (박지연) — 변환 세부는 features/product/productApi.test.js
   useCategoriesQuery: [[{ id: 1, name: '식품', nameEn: 'Food', children: [{ id: 101, name: '과일', nameEn: null }] }],
     [{ id: 1, name: '식품', en: 'Food', subs: ['과일'], children: [{ id: 101, name: '과일' }] }]],
-  useProductsQuery: [{ content: [{ productId: 601, name: '햇감귤', storeId: 1, categoryId: 101, topCategoryId: 1, price: 32900, discountRate: 18, salePrice: 26980,
-    imageUrl: 'https://img/a.jpg', soldOut: false, createdAt: '2026-10-25T10:00:00+09:00' }], page: 0, size: 100, totalElements: 1, totalPages: 1, hasNext: false },
-  [{ id: 601, name: '햇감귤', storeId: 1, cat: 1, discount: 0.18, images: ['https://img/a.jpg'], status: '판매중' }]], // 임시 — 전체 배열
+  useSellerDashboardQuery: [{ order: { storeId: 1, toConfirmCount: 2, toShipCount: 1, claimCount: 0, inProgressCount: 3, todaySalesAmt: 52000 },
+    orderDaily: [{ date: '2026-10-30', tradeAmt: 26980, orderCount: 1 }], product: null, settlement: null, unavailable: ['product', 'settlement'] },
+  { todaySales: 52000, daily: [{ amount: 26980, orders: 1 }], product: null, settlement: null, unavailable: ['product', 'settlement'] }],
   useProductSearchQuery: [{ content: [{ productId: 601, name: '햇감귤', storeId: 1, categoryId: 101, topCategoryId: 1, price: 32900, discountRate: 18, salePrice: 26980,
     imageUrl: null, soldOut: true, createdAt: '2026-10-25T10:00:00+09:00' }], page: 0, size: 8, totalElements: 1, totalPages: 1, hasNext: false },
   { content: [{ id: 601, status: '품절', images: [] }], totalPages: 1, hasNext: false }],
@@ -100,7 +98,7 @@ const API_HOOKS = {
     [{ id: 1, name: '산골농부 박씨네', cat: 1, grade: '빅파워', status: '운영중', cover: null }]],
 };
 const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useSellerReviewsQuery, useSellerReviewSummaryQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery,
-  useCategoriesQuery, useProductsQuery, useProductSearchQuery, useSellerProductsQuery, useStoresQuery, useMyStoreQuery };
+  useCategoriesQuery, useSellerDashboardQuery, useProductSearchQuery, useSellerProductsQuery, useStoresQuery, useMyStoreQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();

@@ -178,7 +178,3 @@ export async function uploadProductImages(files) {
   }));
   return issued.map(({ key }) => key);
 }
-
-// 임시 — 화면이 쓰던 "상품 전체 배열"(최대 100개, 노출 가능 상품만). useProductsQuery() 를 부르는 화면이 모두
-// useProductSearchQuery · useProductQuery · 판매자 상품 목록으로 옮겨 가면 삭제 (docs/MOCK-TO-API.md 5절 임시 훅)
-export const fetchProductCards = async () => (await fetchProducts({ size: 100 })).content;

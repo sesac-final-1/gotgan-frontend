@@ -1,8 +1,6 @@
 // store 도메인 API — 담당 박지연. 공개 API(목록 · 스토어 홈)는 실제 호출, 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절)
 // 계약: backend docs/api/store.md 14절. 스토어 · 카테고리 id 는 숫자다 (목업 's1' · 'fashion' 아님)
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { mockResolve } from '@/mocks/mockApi';
-import { sellerDaily } from '@/mocks/fixtures/orders';
 
 // 화면 표시 문구 — admin/constants 에 같은 표가 있지만 store 가 admin 을 참조하지 않도록 여기 둔다
 const GRADE_LABEL = { SPROUT: '새싹', POWER: '파워', BIG_POWER: '빅파워' };
@@ -83,5 +81,22 @@ export const closeMyStore = async () => {
   return { ...r, closedAt: new Date(r.closedAt) };
 };
 
-// TODO(박지연): GET /api/seller/dashboard 의 sales.daily[] (최근 30일)
-export const fetchSellerDailySales = () => mockResolve(sellerDaily);
+// GET /api/seller/dashboard (15절) — order · product · settlement 통계를 그대로 담고, 못 받은 영역은 null + unavailable[]
+// 화면 이름으로: 날짜는 KST 자정 Date, 영역이 null 이면 그대로 null(화면은 그 카드만 "일시적으로 불러올 수 없음")
+const kstDate = (ymd) => new Date(`${ymd}T00:00:00+09:00`);
+export const toSellerDashboard = (r) => ({
+  unavailable: r.unavailable ?? [],
+  todaySales: r.order ? r.order.todaySalesAmt : null,
+  daily: r.orderDaily ? r.orderDaily.map((d) => ({ date: kstDate(d.date), amount: d.tradeAmt, orders: d.orderCount })) : null, // 오래된 날부터 30일
+  product: r.product && {
+    onSale: r.product.onSaleCount, lowStock: r.product.lowStockCount, soldOut: r.product.soldOutCount, stopped: r.product.stoppedCount,
+    lowStockProducts: r.product.lowStockProducts.map((p) => ({ id: p.productId, name: p.name, stock: p.stock, image: p.imageUrl })),
+  },
+  settlement: r.settlement && {
+    pendingCount: r.settlement.pendingItemCount,
+    pendingPayout: r.settlement.pendingPayoutAmt,
+    nextPayout: r.settlement.nextPayout && { payout: r.settlement.nextPayout.payoutAmt, pay: kstDate(r.settlement.nextPayout.scheduledPayDate) },
+  },
+});
+
+export const fetchSellerDashboard = async () => toSellerDashboard((await axiosInstance.get('/api/seller/dashboard')).data.data);
