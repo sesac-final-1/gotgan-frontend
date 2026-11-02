@@ -91,7 +91,7 @@ export function Modal({ open, onClose, title, children, footer, width = 520 }) {
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-6">
-      <button type="button" tabIndex={-1} aria-label="닫기" className="absolute inset-0 bg-black/45 cursor-default" onClick={onClose} />
+      <button type="button" tabIndex={-1} aria-label="배경 닫기" className="absolute inset-0 bg-black/45 cursor-default" onClick={onClose} />
       <div className="relative w-full bg-white max-h-[90vh] flex flex-col" style={{ maxWidth: width }}>
         <div className="flex items-center justify-between h-14 px-5 border-b border-line shrink-0">
           <h3 className="text-[16px] font-bold">{title}</h3>
