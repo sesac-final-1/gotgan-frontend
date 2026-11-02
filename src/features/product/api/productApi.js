@@ -38,11 +38,15 @@ const common = (r) => ({
 // GET /api/products 한 건 — ProductSummary { productId, name, storeId, categoryId, topCategoryId, price, discountRate, salePrice, imageUrl, soldOut, createdAt }
 export const toProductCard = (r) => ({ ...common(r), images: r.imageUrl ? [r.imageUrl] : [], options: [] });
 
+// 비어 있는 조건(undefined · null · '')을 뺀 조회 조건 — 요청과 캐시 키(useProductSearchQuery)가 같은 값을 쓴다
+// ({ q: '' } · { q: undefined } · {} 가 같은 요청인데 키가 달라 같은 목록을 여러 번 받던 것)
+export const cleanParams = (params = {}) =>
+  Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''));
+
 // 서버 페이징 목록 · 검색 — params { categoryId(상위면 하위 전부), storeId, q, minPrice, maxPrice(미포함), excludeSoldOut, sort(NEW · PRICE_ASC · PRICE_DESC), page(0부터), size(최대 100) }
 // 비어 있는 값은 보내지 않는다 → 응답 { content[], page, size, totalElements, totalPages, hasNext }
 export const fetchProducts = async (params = {}) => {
-  const query = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''));
-  const page = (await axiosInstance.get('/api/products', { params: query })).data.data;
+  const page = (await axiosInstance.get('/api/products', { params: cleanParams(params) })).data.data;
   return { ...page, content: page.content.map(toProductCard) };
 };
 

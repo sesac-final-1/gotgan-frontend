@@ -253,3 +253,14 @@ describe('메인 — 카테고리별 신상품 (PRD-14)', () => {
     expect(await screen.findByText('이 카테고리에 새로 들어온 상품이 아직 없어요.')).toBeInTheDocument();
   });
 });
+
+describe('상품 상세 — 판매가는 서버 salePrice', () => {
+  it('화면 계산(89,000 × 0.85 = 75,650)과 달라도 서버 판매가로 가격 · 총 상품금액을 보여 줌', async () => {
+    mockApi({ store: STORE_HOME, detail: { ...DETAIL, salePrice: 75000 } });
+    renderAt('/products/3', <ShopProductDetail />, '/products/:id');
+    await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
+
+    expect(screen.getAllByText('75,000').length).toBeGreaterThan(0);
+    expect(screen.queryByText('75,650')).not.toBeInTheDocument();
+  });
+});

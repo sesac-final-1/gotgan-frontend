@@ -3,6 +3,7 @@ import { fetchCategories, fetchProducts, fetchProduct, fetchProductCards, toCate
   fetchSellerProducts, toSellerProductRow, updateSellerProductStatus, deleteSellerProducts,
   fetchSellerProduct, saveSellerProduct, uploadProductImages, updateSellerProductStocks } from '@/features/product/api/productApi';
 import { salePrice } from '@/shared/utils/format';
+import { cleanParams } from '@/features/product/api/productApi';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -238,5 +239,13 @@ describe('updateSellerProductStocks — PATCH /api/seller/products/{id}/stocks',
 
     expect(await updateSellerProductStocks({ productId: 3, items })).toEqual({ options: [{ productOptionId: 11, stock: 50 }] });
     expect(patch).toHaveBeenCalledWith('/api/seller/products/3/stocks', { items });
+  });
+});
+
+describe('cleanParams — 목록 조회 조건 정리(요청 · 캐시 키 공통)', () => {
+  it('undefined · null · 빈 문자열만 빼고, 0 · false 는 남김', () => {
+    expect(cleanParams({ q: '', categoryId: undefined, storeId: null, page: 0, excludeSoldOut: false, sort: 'NEW' }))
+      .toEqual({ page: 0, excludeSoldOut: false, sort: 'NEW' });
+    expect(cleanParams()).toEqual({});
   });
 });
