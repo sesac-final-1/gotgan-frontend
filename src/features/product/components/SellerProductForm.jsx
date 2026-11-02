@@ -2,7 +2,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { X, ImagePlus } from 'lucide-react';
-import { PageHead, Segments, Checkbox, Price, StatusPill } from '@/shared/components/ui';
+import { PageHead, Segments, Checkbox, Price, StatusPill, Modal } from '@/shared/components/ui';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useSellerProductQuery } from '@/features/product/hooks/useSellerProductQuery';
 import { useSaveSellerProductMutation, useDeleteSellerProductsMutation } from '@/features/product/hooks/useSellerProductMutations';
@@ -51,6 +51,7 @@ function FormBody({ src, categories, storeName }) {
   const catById = useMemo(() => toMap(categories), [categories]);
   const [f, setF] = useState(() => initialForm(src, categories));
   const [uploading, setUploading] = useState(false);
+  const [ask, setAsk] = useState(null); // 확인 창: 'zeroStock' | 'delete'
   const save = useSaveSellerProductMutation();
   const remove = useDeleteSellerProductsMutation();
   const set = (patch) => setF((prev) => ({ ...prev, ...patch }));
@@ -81,21 +82,21 @@ function FormBody({ src, categories, storeName }) {
     }
   };
 
+  const doSave = () => save.mutate({ productId: src?.id, request: buildProductRequest(f) }, {
+    onSuccess: () => { toast(edit ? '상품이 수정되었어요' : '상품이 등록되었어요'); void nav('/seller/products'); },
+    onError: (err) => toast(errorMessage(err, '저장하지 못했어요. 잠시 후 다시 시도해 주세요.')),
+    onSettled: () => setAsk(null),
+  });
+  const doDelete = () => remove.mutate([src.id], {
+    onSuccess: ({ failed }) => { if (failed.length) return toast(failed[0].message); toast('상품을 삭제했어요'); void nav('/seller/products'); },
+    onError: (err) => toast(errorMessage(err, '삭제하지 못했어요')),
+    onSettled: () => setAsk(null),
+  });
   const submit = () => {
     const problem = validateForm(f);
     if (problem) return toast(problem);
-    if (!edit && allStockZero(f) && !window.confirm('재고가 0이라 등록하자마자 품절로 보여요. 그래도 등록할까요?')) return;
-    save.mutate({ productId: src?.id, request: buildProductRequest(f) }, {
-      onSuccess: () => { toast(edit ? '상품이 수정되었어요' : '상품이 등록되었어요'); void nav('/seller/products'); },
-      onError: (err) => toast(errorMessage(err, '저장하지 못했어요. 잠시 후 다시 시도해 주세요.')),
-    });
-  };
-  const del = () => {
-    if (!window.confirm('이 상품을 삭제할까요? 지난 주문과 리뷰는 그대로 남아요.')) return;
-    remove.mutate([src.id], {
-      onSuccess: ({ failed }) => { if (failed.length) return toast(failed[0].message); toast('상품을 삭제했어요'); void nav('/seller/products'); },
-      onError: (err) => toast(errorMessage(err, '삭제하지 못했어요')),
-    });
+    if (!edit && allStockZero(f)) return setAsk('zeroStock');
+    doSave();
   };
   const busy = save.isPending || remove.isPending || uploading;
 
@@ -226,10 +227,22 @@ function FormBody({ src, categories, storeName }) {
               <button onClick={() => nav('/seller/products')} className="btn btn-line">취소</button>
               <button disabled={busy} onClick={submit} className="btn btn-ink">{save.isPending ? '저장 중…' : edit ? '수정 저장' : '등록하기'}</button>
             </div>
-            {edit && <button disabled={busy} onClick={del} className="btn btn-ghost btn-sm w-full text-rust">상품 삭제</button>}
+            {edit && <button disabled={busy} onClick={() => setAsk('delete')} className="btn btn-ghost btn-sm w-full text-rust">상품 삭제</button>}
           </div>
         </div>
       </div>
+
+      {/* 확인 창 — 브라우저 기본 confirm 대신 목록 삭제와 같은 Modal */}
+      <Modal open={ask === 'zeroStock'} onClose={() => setAsk(null)} title="재고 확인" width={420}
+        footer={<><button className="btn btn-line btn-sm" onClick={() => setAsk(null)}>재고 입력하기</button><button disabled={busy} className="btn btn-ink btn-sm" onClick={doSave}>그대로 등록</button></>}>
+        <p className="text-[14px]">판매할 옵션의 재고가 모두 <b>0</b>이에요.</p>
+        <p className="text-[13px] text-mute mt-2">이대로 등록하면 쇼핑몰에 바로 <b>품절</b>로 보여요.</p>
+      </Modal>
+      <Modal open={ask === 'delete'} onClose={() => setAsk(null)} title="상품 삭제" width={420}
+        footer={<><button className="btn btn-line btn-sm" onClick={() => setAsk(null)}>취소</button><button disabled={busy} className="btn btn-sm bg-rust text-white border-rust" onClick={doDelete}>삭제</button></>}>
+        <p className="text-[14px]">이 상품을 삭제할까요?</p>
+        <p className="text-[13px] text-mute mt-2">삭제한 상품은 쇼핑몰 · 장바구니에서 구매할 수 없게 돼요. 지난 주문과 리뷰는 그대로 남아요.</p>
+      </Modal>
     </div>
   );
 }
