@@ -68,8 +68,9 @@ export function GradeBadge({ grade, dark = false, className = '' }) {
 }
 
 /* ─── 가격 ─── */
+// 판매가는 서버 값(p.salePrice)이 있으면 그대로 — 주문 · 결제와 같은 금액. 없을 때(상품 폼 미리보기)만 화면 계산
 export function Price({ p, size = 'md' }) {
-  const sp = salePrice(p);
+  const sp = p.salePrice ?? salePrice(p);
   const big = size === 'lg';
   return (
     <div className="flex items-baseline gap-1.5 flex-wrap">

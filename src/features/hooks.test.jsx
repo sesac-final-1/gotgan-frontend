@@ -567,3 +567,23 @@ describe('신고 (admin-service — 접수 · 대상별 묶음 · 상세 · 처�
     }
   });
 });
+
+describe('상품 목록 훅 캐시 키 — 빈 조건을 뺀 값', () => {
+  it('{ q: "" } · { q: undefined, categoryId: null } 는 같은 캐시 키 하나 · enabled=false 면 요청 안 함', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0, hasNext: false } } });
+    const { client, Wrapper } = createWrapper();
+    try {
+      const a = renderHook(() => useProductSearchQuery({ sort: 'NEW', q: '' }), { wrapper: Wrapper }).result;
+      await waitFor(() => expect(a.current.isSuccess).toBe(true));
+      const b = renderHook(() => useProductSearchQuery({ sort: 'NEW', q: undefined, categoryId: null }), { wrapper: Wrapper }).result;
+      await waitFor(() => expect(b.current.isSuccess).toBe(true));
+      renderHook(() => useProductSearchQuery({ storeId: undefined, size: 3 }, { enabled: false }), { wrapper: Wrapper });
+
+      const keys = client.getQueryCache().findAll({ queryKey: ['product', 'list'] }).map((q) => q.queryKey[2]);
+      expect(keys).toEqual([{ sort: 'NEW' }, { size: 3 }]); // 빈 조건이 빠진 키 — 앞 두 훅이 하나를 같이 씀
+      expect(get.mock.calls.every(([, opts]) => JSON.stringify(opts.params) === '{"sort":"NEW"}')).toBe(true); // 막힌 훅은 요청 없음
+    } finally {
+      get.mockRestore();
+    }
+  });
+});

@@ -16,7 +16,7 @@ import ShopProductReviews from '@/features/review/components/ShopProductReviews'
 import ShopProductQna from '@/features/review/components/ShopProductQna';
 import { Stars, Price, Modal } from '@/shared/components/ui';
 import { toast } from '@/shared/stores/toastStore';
-import { cx, comma, won, salePrice } from '@/shared/utils/format';
+import { cx, comma, won } from '@/shared/utils/format';
 import { safeHtml } from '@/shared/utils/safeHtml';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
@@ -63,7 +63,7 @@ function DetailBody({ p, store: storeInfo }) {
 
   const storeProducts = useMemo(() => (storePage?.content ?? []).filter((x) => x.id !== p.id).slice(0, 4), [storePage, p.id]);
   const others = useRatedProducts(storeProducts);
-  const unit = salePrice(p);
+  const unit = p.salePrice; // 서버 판매가(product.md 공통 — 10원 단위 반올림) — 주문 금액과 같은 값
   const soldOut = p.status === '품절';
   const canBuy = p.purchasable; // 판매중지 · 스토어 정지 등은 200 + purchasable=false (product.md 10절)
   const total = lines.reduce((a, l) => a + l.qty * (unit + l.extra), 0);

@@ -68,8 +68,8 @@ export default function ShopHome() {
 
   const storeById = useMemo(() => toMap(stores), [stores]);
   const featured = stores.find((s) => s.slug === FEATURED_SLUG); // 아래 소개 문구가 토담공방 기준
-  // 스토어가 정해지기 전에는 없는 스토어(0)로 묻는다 — 빈 결과
-  const { data: featuredPage } = useProductSearchQuery({ storeId: featured?.id ?? 0, size: 3 });
+  // 스토어 목록을 받기 전에는 묻지 않는다(전에는 없는 스토어 0 으로 한 번 더 요청)
+  const { data: featuredPage } = useProductSearchQuery({ storeId: featured?.id, size: 3 }, { enabled: Boolean(featured) });
   const featuredItems = featured ? featuredPage?.content ?? EMPTY : EMPTY;
 
   return (
