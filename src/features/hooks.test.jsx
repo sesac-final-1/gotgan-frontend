@@ -50,7 +50,6 @@ const LIST_HOOKS = {
   useSellerOrderItemsMockQuery, useQnasQuery, useReviewsQuery,
   useSellerDailySalesQuery,
 };
-const OBJECT_HOOKS = { useMyStoreQuery };
 // 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
 const API_HOOKS = {
   useApplicationsQuery: [[{ applicationId: 27, applicationNo: 'AP-2610-027', storeName: '곳간상회', ownerName: '홍길동', bizType: 'INDIVIDUAL',
@@ -90,11 +89,15 @@ const API_HOOKS = {
     salePrice: 75650, imageUrl: null, totalStock: 0, soldOut: true, status: 'ON_SALE', statusReason: null, displayable: true, hiddenReason: null,
     createdAt: '2026-10-20T10:00:00+09:00' }], [{ id: 3, status: '품절', stock: 0, images: [] }]],
   // store (박지연) — 변환 세부는 features/store/storeApi.test.js
+  useMyStoreQuery: [{ storeId: 1, storeName: '산골농부 박씨네', slug: 'park-farm', status: 'SUSPENDED', statusReason: '서류 확인 필요', intro: null, imageKey: null, imageUrl: null,
+    color: '#5b6b4a', csPhone: '010-0000-0002', shippingFee: 3000, freeShippingThreshold: null, courier: 'CJ대한통운', dispatchNote: null, grade: 'SPROUT',
+    ownerName: '박농부', bizRegNo: '000-00-00001', createdAt: '2026-10-15T09:00:00+09:00' },
+  { id: 1, name: '산골농부 박씨네', status: '정지', statusReason: '서류 확인 필요', imageKey: null, owner: '박농부', grade: '새싹', courier: 'CJ대한통운', freeOver: 0 }],
   useStoresQuery: [[{ storeId: 1, storeName: '산골농부 박씨네', slug: 'park-farm', categoryId: 1, intro: null, imageUrl: null, color: '#d0701f', grade: 'BIG_POWER', createdAt: '2024-03-23T10:00:00+09:00' }],
     [{ id: 1, name: '산골농부 박씨네', cat: 1, grade: '빅파워', status: '운영중', cover: null }]],
 };
 const API_HOOK_FNS = { useMyReviewsQuery, useWritableReviewsQuery, useSellerReviewsQuery, useSellerReviewSummaryQuery, useApplicationsQuery, useAdminDashboardQuery, useMeQuery, useMyPointsQuery, useMyAddressesQuery, useAdminUsersQuery, useMyOrdersQuery, useSellerOrderItemsQuery,
-  useCategoriesQuery, useProductsQuery, useProductSearchQuery, useSellerProductsQuery, useStoresQuery };
+  useCategoriesQuery, useProductsQuery, useProductSearchQuery, useSellerProductsQuery, useStoresQuery, useMyStoreQuery };
 
 async function load(hook, ...args) {
   const { Wrapper } = createWrapper();
@@ -108,10 +111,6 @@ describe('조회 훅', () => {
     const data = await load(hook);
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBeGreaterThan(0);
-  });
-
-  it.each(Object.entries(OBJECT_HOOKS))('%s → 객체', async (_, hook) => {
-    expect(await load(hook)).toBeTypeOf('object');
   });
 
   it.each(Object.entries(API_HOOKS))('%s → API 응답을 화면 필드로', async (name, [response, expected]) => {

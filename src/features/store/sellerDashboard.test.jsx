@@ -12,11 +12,12 @@ const settlementsResponse = (nextPayout) => ({
   settlements: [],
 });
 
-// 정산 API 만 응답을 정하고, 나머지(아직 목업인 스토어 · 일별 매출 등)는 그대로 둔다
+// 정산 · 내 스토어 API 만 응답을 정하고, 나머지(아직 목업인 일별 매출 등)는 그대로 둔다
 function mockApi(nextPayout) {
   vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => {
     if (url === '/api/seller/settlements') return { data: { data: settlementsResponse(nextPayout) } };
     if (url === '/api/categories') return { data: { data: [] } };
+    if (url === '/api/seller/store') return { data: { data: { storeId: 1, storeName: '산골농부 박씨네', status: 'ACTIVE', ownerName: '박농부', grade: 'POWER' } } };
     throw new Error(`unexpected GET ${url}`);
   });
 }

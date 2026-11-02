@@ -127,7 +127,12 @@ describe('SellerOrderList — 서버 페이징 목록 · 일괄 처리', () => {
   });
 
   it('처리 요청 자체가 실패하면 서버 메시지 토스트, 목록 조회 실패는 표에 안내', async () => {
-    vi.spyOn(axiosInstance, 'get').mockResolvedValueOnce({ data: { data: LIST } }).mockRejectedValue(httpError(500, 'x'));
+    let listCalls = 0; // 내 스토어(택배사 기본값)는 그대로, 목록은 처음만 성공하고 다시 불러오면 실패
+    vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => {
+      if (url === '/api/seller/store') return { data: { data: { storeId: 1, storeName: '산골농부 박씨네', status: 'ACTIVE', courier: 'CJ대한통운' } } };
+      if (listCalls++ === 0) return { data: { data: LIST } };
+      throw httpError(500, 'x');
+    });
     vi.spyOn(axiosInstance, 'patch').mockRejectedValue(httpError(403, '스토어 정보가 없습니다.'));
     renderAt('/seller/orders', <SellerOrderList />, '/seller/orders');
 
