@@ -1,5 +1,6 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { fetchCategories, fetchProducts, fetchProduct, fetchProductCards, toCategory, toProductCard, toProductDetail } from '@/features/product/api/productApi';
+import { fetchCategories, fetchProducts, fetchProduct, fetchProductCards, toCategory, toProductCard, toProductDetail,
+  fetchSellerProducts, toSellerProductRow, updateSellerProductStatus, deleteSellerProducts } from '@/features/product/api/productApi';
 import { salePrice } from '@/shared/utils/format';
 
 afterEach(() => vi.restoreAllMocks());
@@ -105,5 +106,67 @@ describe('fetchProduct — GET /api/products/{id} 를 상세 필드로', () => {
   it('구매 불가(purchasable=false) 는 판매중지, 구매 가능인데 전부 품절이면 품절', () => {
     expect(toProductDetail({ ...DETAIL, purchasable: false }).status).toBe('판매중지');
     expect(toProductDetail({ ...DETAIL, soldOut: true }).status).toBe('품절');
+  });
+});
+
+// product.md 11절 응답 한 건
+const SELLER_ROW = {
+  productId: 3, name: '프렌치 리넨 오버핏 셔츠', categoryId: 301, categoryName: '셔츠', topCategoryName: '패션의류',
+  price: 89000, discountRate: 15.0, salePrice: 75650, imageUrl: 'https://img/products/1/a.jpg', totalStock: 142, soldOut: false,
+  status: 'ON_SALE', statusReason: null, displayable: true, hiddenReason: null, createdAt: '2026-10-20T10:00:00+09:00',
+};
+
+describe('판매자 상품 목록 — GET /api/seller/products 를 표 행으로', () => {
+  it('전체 배열 변환 — 카테고리 이름 · 재고 합계 · 할인 비율 · Date, 평점은 기본값', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [SELLER_ROW] } });
+
+    const rows = await fetchSellerProducts();
+
+    expect(get).toHaveBeenCalledWith('/api/seller/products');
+    expect(rows).toEqual([{ id: 3, name: '프렌치 리넨 오버핏 셔츠', catId: 301, catName: '패션의류', sub: '셔츠', price: 89000, discount: 0.15,
+      salePrice: 75650, images: ['https://img/products/1/a.jpg'], stock: 142, soldOut: false, status: '판매중', pill: '판매중', blocked: false,
+      statusReason: '', hidden: '', created: new Date('2026-10-20T10:00:00+09:00'), rating: 0, reviews: 0 }]);
+  });
+
+  it('상태 — 품절 · 판매중지 · 강제중지(판매중지 탭 + 사유), 이미지 없으면 빈 배열', () => {
+    expect(toSellerProductRow({ ...SELLER_ROW, soldOut: true })).toMatchObject({ status: '품절', pill: '품절' });
+    expect(toSellerProductRow({ ...SELLER_ROW, status: 'STOPPED', hiddenReason: 'STOPPED' })).toMatchObject({ status: '판매중지', pill: '판매중지', hidden: '' });
+    expect(toSellerProductRow({ ...SELLER_ROW, status: 'BLOCKED', statusReason: '허위 표시', hiddenReason: 'BLOCKED', imageUrl: null }))
+      .toMatchObject({ status: '판매중지', pill: '강제중지', blocked: true, statusReason: '허위 표시', hidden: '', images: [] });
+  });
+
+  it('판매중인데 쇼핑몰 미노출 — 카테고리 · 스토어 이유를 문구로', () => {
+    expect(toSellerProductRow({ ...SELLER_ROW, displayable: false, hiddenReason: 'CATEGORY_INACTIVE' }).hidden).toBe('카테고리 사용 중지');
+    expect(toSellerProductRow({ ...SELLER_ROW, displayable: false, hiddenReason: 'STORE_INACTIVE' }).hidden).toBe('스토어 운영 중지');
+  });
+});
+
+describe('판매자 상품 변경 — 판매중지 · 재개 일괄 · 삭제', () => {
+  it('화면 상태 이름을 API 값으로 보내고 결과(success · failed)를 그대로', async () => {
+    const result = { success: [3], failed: [{ productId: 7, code: 'PRODUCT_BLOCKED', message: '관리자가 판매중지한 상품은 재개할 수 없습니다.' }] };
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: result } });
+
+    expect(await updateSellerProductStatus({ productIds: [3, 7], status: '판매중' })).toEqual(result);
+    await updateSellerProductStatus({ productIds: [3], status: '판매중지' });
+
+    expect(patch).toHaveBeenNthCalledWith(1, '/api/seller/products/status', { productIds: [3, 7], status: 'ON_SALE' });
+    expect(patch).toHaveBeenNthCalledWith(2, '/api/seller/products/status', { productIds: [3], status: 'STOPPED' });
+  });
+
+  it('일괄 삭제는 건마다 DELETE — 실패한 건은 서버 코드 · 메시지로 failed 에', async () => {
+    const del = vi.spyOn(axiosInstance, 'delete').mockImplementation(async (url) => {
+      if (url.endsWith('/9')) throw Object.assign(new Error('404'), { response: { data: { code: 'PRODUCT_NOT_FOUND', message: '상품을 찾을 수 없습니다.' } } });
+      if (url.endsWith('/8')) throw new Error('Network Error');
+      return { data: { data: null } };
+    });
+
+    const result = await deleteSellerProducts([3, 9, 8]);
+
+    expect(del).toHaveBeenCalledTimes(3);
+    expect(del).toHaveBeenCalledWith('/api/seller/products/3');
+    expect(result).toEqual({ success: [3], failed: [
+      { productId: 9, code: 'PRODUCT_NOT_FOUND', message: '상품을 찾을 수 없습니다.' },
+      { productId: 8, code: null, message: '삭제하지 못했어요' },
+    ] });
   });
 });
