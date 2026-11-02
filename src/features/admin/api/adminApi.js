@@ -200,7 +200,7 @@ export const reserveCommissions = async (rows) => (await axiosInstance.put('/api
 
 // GET /api/admin/stores/{storeId}/products — product 판매자 상품 목록과 같은 응답 그대로 (backend #110 · #112, 삭제 제외 · 상태 무관)
 //   [{productId, name, categoryName, salePrice, imageUrl, totalStock, soldOut, status, statusReason, displayable, hiddenReason, createdAt}]
-// 스토어 상세(B안 — 스토어 목업)는 store API 교체 때 이 함수로 바꾼다. 지금은 임시 점검 화면(/qa)만 사용
+// 관리자 스토어 상세 "등록 상품" 표 · 강제 판매중지(frontend #54)
 export const fetchAdminStoreProducts = async (storeId) => (await axiosInstance.get(`/api/admin/stores/${storeId}/products`)).data.data;
 
 // PATCH /api/admin/products/{productId}/block {blocked, reason} → {productId, status, statusReason} — 해제하면 STOPPED(판매자가 재개)
