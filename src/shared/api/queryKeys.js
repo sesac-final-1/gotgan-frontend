@@ -37,6 +37,7 @@ export const queryKeys = {
     all: ['store'],
     list: () => ['store', 'list'],
     detail: (storeId) => ['store', 'detail', String(storeId)], // 공개 스토어 홈
+    rating: (storeId) => ['store', 'rating', String(storeId)], // 스토어 홈 별점(review API)
     mine: () => ['store', 'mine'],
     myApplication: () => ['store', 'my-application'], // 내 입점 신청 상태 — 제출 · 재제출 뒤 무효화
     sellerDailySales: () => ['store', 'seller', 'daily-sales'],

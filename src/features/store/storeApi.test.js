@@ -1,5 +1,5 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { fetchStores, fetchStore, toStoreCard, toStoreHome, fetchMyStore, toMyStore, updateMyStore, uploadStoreImage, closeMyStore } from '@/features/store/api/storeApi';
+import { fetchStores, fetchStore, toStoreCard, toStoreHome, fetchMyStore, toMyStore, updateMyStore, uploadStoreImage, closeMyStore, fetchStoreRating } from '@/features/store/api/storeApi';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -107,5 +107,16 @@ describe('내 스토어 수정 · 대표 이미지 · 폐점', () => {
 
     expect(await closeMyStore()).toEqual({ storeId: 1, status: 'CLOSED', closedAt: new Date('2026-11-02T15:00:00+09:00') });
     expect(patch).toHaveBeenCalledWith('/api/seller/store/close');
+  });
+});
+
+describe('fetchStoreRating — GET /api/reviews/ratings/stores?ids=', () => {
+  it('스토어 하나의 평균 · 리뷰 수, 리뷰가 없으면 0', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValueOnce({ data: { data: [{ storeId: 1, averageRating: 4.57, reviewCount: 12 }] } })
+      .mockResolvedValueOnce({ data: { data: [] } });
+
+    expect(await fetchStoreRating(1)).toEqual({ avg: 4.57, count: 12 });
+    expect(get).toHaveBeenCalledWith('/api/reviews/ratings/stores', { params: { ids: '1' } });
+    expect(await fetchStoreRating(2)).toEqual({ avg: 0, count: 0 });
   });
 });
