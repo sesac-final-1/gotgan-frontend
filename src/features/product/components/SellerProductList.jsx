@@ -9,6 +9,7 @@ import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useSellerProductsQuery } from '@/features/product/hooks/useSellerProductsQuery';
 import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation, useCopySellerProductMutation } from '@/features/product/hooks/useSellerProductMutations';
 import SellerStockModal from '@/features/product/components/SellerStockModal';
+import { bulkResultMessage } from '@/features/product/sellerProductList';
 import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
 import { toast } from '@/shared/stores/toastStore';
 import { comma, ymd, cx } from '@/shared/utils/format';
@@ -98,12 +99,15 @@ export default function SellerProductList() {
   const allOn = list.length > 0 && list.every((r) => sel.has(r.id));
   const busy = updateStatus.isPending || deleteProducts.isPending;
   // 건마다 처리 결과가 온다 — 실패한 상품은 선택에 남겨 다시 볼 수 있게 (강제중지 상품 재개 등)
-  const report = (verb) => ({ success, failed }) => {
-    toast(failed.length ? `${success.length}개 ${verb} · ${failed.length}개 실패 — ${failed[0].message}` : `${success.length}개 상품을 ${verb}`);
+  const report = (verb, soldOutIds) => ({ success, failed }) => {
+    toast(bulkResultMessage({ verb, success, failed, soldOutIds }));
     setSel(new Set(failed.map((f) => f.productId)));
   };
   const fail = (err) => toast(err.response?.data?.message ?? '처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
-  const bulk = (st) => updateStatus.mutate({ productIds: [...sel], status: st }, { onSuccess: report(`'${st}' 처리했어요`), onError: fail });
+  const bulk = (st) => {
+    const soldOutIds = st === '판매중' ? rows.filter((r) => sel.has(r.id) && r.stock === 0).map((r) => r.id) : [];
+    updateStatus.mutate({ productIds: [...sel], status: st }, { onSuccess: report(st === '판매중' ? '판매재개했어요' : '판매중지했어요', soldOutIds), onError: fail });
+  };
   const remove = () => deleteProducts.mutate([...sel], { onSuccess: report('삭제했어요'), onError: fail, onSettled: () => setDel(false) });
 
   return (
