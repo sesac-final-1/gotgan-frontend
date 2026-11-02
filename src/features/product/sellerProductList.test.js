@@ -7,9 +7,14 @@ describe('bulkResultMessage — 일괄 처리 토스트', () => {
       .toBe('1개 판매재개했어요 · 1개 실패 — 관리자가 판매중지한 상품은 재개할 수 없습니다.');
   });
 
-  it('재고 0 상품을 재개하면 품절로 보인다고 덧붙임 — 실패한 상품은 세지 않음', () => {
+  it('재개한 상품이 모두 재고 0 — 개수 없이 품절 안내', () => {
+    expect(bulkResultMessage({ verb: '판매재개했어요', success: [4], failed: [], soldOutIds: [4] }))
+      .toBe('판매재개했어요. 재고가 0이라 품절로 보여요 — 「재고」에서 채워 주세요');
+  });
+
+  it('일부만 재고 0 — "그중 n개", 실패한 상품은 세지 않음', () => {
     expect(bulkResultMessage({ verb: '판매재개했어요', success: [3, 4], failed: [], soldOutIds: [4] }))
-      .toBe('2개 상품을 판매재개했어요 · 1개는 재고가 0이라 품절로 보여요. 「재고」에서 채워 주세요');
+      .toBe('2개 상품을 판매재개했어요. 그중 1개는 재고가 0이라 품절로 보여요');
     expect(bulkResultMessage({ verb: '판매재개했어요', success: [3], failed: [{ productId: 4, message: 'x' }], soldOutIds: [4] }))
       .toBe('1개 판매재개했어요 · 1개 실패 — x');
   });
