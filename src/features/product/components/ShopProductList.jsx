@@ -129,8 +129,9 @@ export default function ShopProductList() {
       </div>
 
       {mobileFilter && (
-        <div className="fixed inset-0 z-50 bg-black/40 lg:hidden" onClick={() => setMobileFilter(false)}>
-          <div className="absolute right-0 top-0 h-full w-[85%] max-w-[340px] bg-white p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button type="button" tabIndex={-1} aria-label="필터 닫기" className="absolute inset-0 bg-black/40 cursor-default" onClick={() => setMobileFilter(false)} />
+          <div className="absolute right-0 top-0 h-full w-[85%] max-w-[340px] bg-white p-5 overflow-y-auto">
             <div className="flex justify-between items-center mb-6"><b>필터</b><button onClick={() => setMobileFilter(false)}><X size={20} /></button></div>
             {Filters}
             <button className="btn btn-ink w-full mt-8" onClick={() => setMobileFilter(false)}>{total}개 상품 보기</button>

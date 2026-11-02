@@ -58,8 +58,9 @@ export default function ConsoleLayout({ kind, groups, account, badge, bell, onLo
       <div className="flex">
         <aside className="hidden lg:block w-[228px] shrink-0 bg-white border-r border-line sticky top-14 h-[calc(100vh-56px)] overflow-y-auto">{Side}</aside>
         {open && (
-          <div className="fixed inset-0 z-50 bg-black/40 lg:hidden" onClick={() => setOpen(false)}>
-            <aside className="w-[260px] h-full bg-white overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <button type="button" tabIndex={-1} aria-label="메뉴 닫기" className="absolute inset-0 bg-black/40 cursor-default" onClick={() => setOpen(false)} />
+            <aside className="relative w-[260px] h-full bg-white overflow-y-auto">
               <div className="h-14 flex items-center justify-between px-5 border-b border-line"><Wordmark sub={kind === 'seller' ? 'SELLER' : 'ADMIN'} /><button onClick={() => setOpen(false)}><X size={20} /></button></div>
               {Side}
             </aside>

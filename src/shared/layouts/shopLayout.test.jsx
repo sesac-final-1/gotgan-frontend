@@ -22,3 +22,17 @@ describe('쇼핑몰 레이아웃 — 모바일 드로어', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('쇼핑몰 레이아웃 — 드로어 배경', () => {
+  it('배경(버튼)을 누르면 드로어를 닫는다', () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    render(<MemoryRouter initialEntries={['/']}><ShopLayout categories={CATEGORIES} /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: '메뉴' }));
+    expect(screen.getByRole('link', { name: '식품Food' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '메뉴 닫기' }));
+
+    expect(screen.queryByRole('link', { name: '식품Food' })).not.toBeInTheDocument();
+    vi.restoreAllMocks();
+  });
+});
