@@ -22,11 +22,15 @@ export const initialSettings = (s) => ({
 
 const PHONE = /^0\d{1,2}-\d{3,4}-\d{4}$/; // 휴대 · 지역 · 070
 
+// 기본 배송비 0원 = 모든 주문 무료배송 — 이때 무료배송 기준은 의미가 없어 보내지 않는다(null).
+// 기준이 남아 있으면 order 장바구니가 "무료배송까지 N원 더 담기"를 엉뚱하게 보여 줌(amountToFree 가 기준만 봄)
+export const isAllFree = (f) => f.shippingFee !== '' && Number(f.shippingFee) === 0;
+
 // 화면 검사 — 서버가 같은 규칙으로 다시 검사한다(13-2). 첫 번째 문제만 문구로
 export function validateSettings(f) {
   if (!PHONE.test(f.csPhone.trim())) return '고객센터 전화번호를 010-0000-0000 형식으로 입력해 주세요';
   if (f.shippingFee === '' || Number(f.shippingFee) > 100000) return '기본 배송비는 0 ~ 100,000원이에요';
-  if (f.freeOver !== '' && (Number(f.freeOver) < 1 || Number(f.freeOver) > 10000000)) return '무료배송 기준금액은 1 ~ 10,000,000원이에요 (없으면 비워 두세요)';
+  if (!isAllFree(f) && f.freeOver !== '' && (Number(f.freeOver) < 1 || Number(f.freeOver) > 10000000)) return '무료배송 기준금액은 1 ~ 10,000,000원이에요 (없으면 비워 두세요)';
   if (f.intro.length > 5000) return '소개는 5,000자까지 쓸 수 있어요';
   if (f.courier.trim().length > 30) return '택배사는 30자까지예요';
   if (f.dispatchNote.trim().length > 100) return '출고 안내 문구는 100자까지예요';
@@ -42,7 +46,7 @@ export const buildSettingsRequest = (f) => ({
   color: f.color,
   csPhone: f.csPhone.trim(),
   shippingFee: Number(f.shippingFee),
-  freeShippingThreshold: f.freeOver === '' ? null : Number(f.freeOver),
+  freeShippingThreshold: isAllFree(f) || f.freeOver === '' ? null : Number(f.freeOver),
   courier: orNull(f.courier),
   dispatchNote: orNull(f.dispatchNote),
 });

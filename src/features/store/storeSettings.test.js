@@ -1,4 +1,4 @@
-import { PALETTE, paletteWith, couriersWith, initialSettings, validateSettings, buildSettingsRequest } from '@/features/store/storeSettings';
+import { PALETTE, paletteWith, couriersWith, initialSettings, validateSettings, buildSettingsRequest, isAllFree } from '@/features/store/storeSettings';
 
 // toMyStore 결과 모양 (store.md 13-1 을 화면 이름으로)
 const STORE = { id: 1, name: '산골농부 박씨네', intro: '<p>귤 농사</p>', imageKey: null, cover: null, color: '#d0701f', phone: '064-0000-0006',
@@ -51,5 +51,15 @@ describe('buildSettingsRequest — 13-2 요청', () => {
       intro: null, imageKey: 'stores/1/a.jpg', color: '#d0701f', csPhone: '064-0000-0006', shippingFee: 3000, freeShippingThreshold: null, courier: null, dispatchNote: null,
     });
     expect(buildSettingsRequest(valid())).toMatchObject({ freeShippingThreshold: 30000, courier: '우체국택배', intro: '<p>귤 농사</p>' });
+  });
+});
+
+describe('기본 배송비 0원 = 모든 주문 무료배송', () => {
+  it('0원이면 무료배송 기준을 검사하지 않고 null 로 보냄 · 빈칸은 0원이 아님', () => {
+    const f = valid({ shippingFee: '0', freeOver: '0' });
+    expect(isAllFree(f)).toBe(true);
+    expect(validateSettings(f)).toBeNull();
+    expect(buildSettingsRequest(valid({ shippingFee: '0', freeOver: '30000' }))).toMatchObject({ shippingFee: 0, freeShippingThreshold: null });
+    expect(isAllFree(valid({ shippingFee: '' }))).toBe(false);
   });
 });

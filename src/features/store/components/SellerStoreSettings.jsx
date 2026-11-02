@@ -5,7 +5,7 @@ import { PageHead, StatusPill, KV, Modal } from '@/shared/components/ui';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useUpdateMyStoreMutation, useCloseMyStoreMutation } from '@/features/store/hooks/useMyStoreMutations';
 import { uploadStoreImage, STORE_IMAGE_TYPES, STORE_IMAGE_MAX_BYTES } from '@/features/store/api/storeApi';
-import { initialSettings, validateSettings, buildSettingsRequest, paletteWith, couriersWith } from '@/features/store/storeSettings';
+import { initialSettings, validateSettings, buildSettingsRequest, paletteWith, couriersWith, isAllFree } from '@/features/store/storeSettings';
 import { toast } from '@/shared/stores/toastStore';
 import { ymd, ymdhm, cx } from '@/shared/utils/format';
 
@@ -99,7 +99,7 @@ function StoreSettingsBody({ s }) {
                 </select>
               </div>
               <div><label className="label">기본 배송비</label><input className="field num" value={f.shippingFee} onChange={(e) => set({ shippingFee: digits(e.target.value) })} /><p className="text-[12px] text-mute mt-1">0원이면 모든 주문 무료배송이에요.</p></div>
-              <div><label className="label">무료배송 기준금액</label><input className="field num" value={f.freeOver} onChange={(e) => set({ freeOver: digits(e.target.value) })} placeholder="비우면 무료배송 없음" /></div>
+              <div><label className="label">무료배송 기준금액</label><input className="field num" disabled={isAllFree(f)} value={isAllFree(f) ? '' : f.freeOver} onChange={(e) => set({ freeOver: digits(e.target.value) })} placeholder={isAllFree(f) ? '모든 주문 무료배송' : '비우면 무료배송 없음'} /></div>
               <div className="text-[12px] text-mute sm:pt-6">반품 배송비는 기본 배송비 × 2(왕복)로 계산돼요.</div>
               <div className="sm:col-span-2"><label className="label">출고 안내 문구</label><input className="field" maxLength={100} value={f.dispatchNote} onChange={(e) => set({ dispatchNote: e.target.value })} /></div>
               <p className="sm:col-span-2 text-[12px] text-mute">바꾼 배송비는 새 주문부터 적용돼요. 이미 들어온 주문은 그대로예요.</p>
