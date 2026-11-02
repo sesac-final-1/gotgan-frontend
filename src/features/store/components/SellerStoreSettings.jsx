@@ -98,7 +98,7 @@ function StoreSettingsBody({ s }) {
                   {couriersWith(s.courier).map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
-              <div><label className="label">기본 배송비</label><input className="field num" value={f.shippingFee} onChange={(e) => set({ shippingFee: digits(e.target.value) })} /></div>
+              <div><label className="label">기본 배송비</label><input className="field num" value={f.shippingFee} onChange={(e) => set({ shippingFee: digits(e.target.value) })} /><p className="text-[12px] text-mute mt-1">0원이면 모든 주문 무료배송이에요.</p></div>
               <div><label className="label">무료배송 기준금액</label><input className="field num" value={f.freeOver} onChange={(e) => set({ freeOver: digits(e.target.value) })} placeholder="비우면 무료배송 없음" /></div>
               <div className="text-[12px] text-mute sm:pt-6">반품 배송비는 기본 배송비 × 2(왕복)로 계산돼요.</div>
               <div className="sm:col-span-2"><label className="label">출고 안내 문구</label><input className="field" maxLength={100} value={f.dispatchNote} onChange={(e) => set({ dispatchNote: e.target.value })} /></div>
