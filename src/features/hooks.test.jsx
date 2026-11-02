@@ -35,6 +35,7 @@ import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSeller
 import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
 import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettlementQuery';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
+import { useStoreRatingQuery } from '@/features/store/hooks/useStoreRatingQuery';
 import { useUpdateMyStoreMutation, useCloseMyStoreMutation } from '@/features/store/hooks/useMyStoreMutations';
 import { useSellerDailySalesQuery } from '@/features/store/hooks/useSellerDailySalesQuery';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
@@ -390,6 +391,18 @@ describe('판매자 상품 mutation', () => {
     } finally {
       get.mockRestore();
       post.mockRestore();
+    }
+  });
+});
+
+describe('스토어 별점 훅', () => {
+  it('GET /api/reviews/ratings/stores?ids={storeId} → { avg, count }', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [{ storeId: 1, averageRating: 4.5, reviewCount: 12 }] } });
+    try {
+      expect(await load(useStoreRatingQuery, 1)).toEqual({ avg: 4.5, count: 12 });
+      expect(get).toHaveBeenCalledWith('/api/reviews/ratings/stores', { params: { ids: '1' } });
+    } finally {
+      get.mockRestore();
     }
   });
 });

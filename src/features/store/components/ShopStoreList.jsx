@@ -2,14 +2,14 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
-import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
+import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { toMap } from '@/shared/utils/collection';
+import { safeHtml } from '@/shared/utils/safeHtml';
 import { cx, comma } from '@/shared/utils/format';
 
 export default function ShopStoreList() {
   const { data: stores = [] } = useStoresQuery();
-  const { data: products = [] } = useProductsQuery();
   const { data: categories = [] } = useCategoriesQuery();
   const [cat, setCat] = useState('all');
   const catById = useMemo(() => toMap(categories), [categories]);
@@ -25,25 +25,29 @@ export default function ShopStoreList() {
         ))}
       </div>
       <div className="grid md:grid-cols-2 gap-6">
-        {list.map((s) => {
-          const items = products.filter((p) => p.storeId === s.id && p.status !== '판매중지').slice(0, 3);
-          return (
-            <Link key={s.id} to={`/store/${s.id}`} className="group border border-line hover:border-ink transition-colors">
-              <div className="grid grid-cols-3 gap-px bg-line">
-                {items.map((p) => <img key={p.id} src={p.images[0]} alt="" className="w-full aspect-square object-cover" />)}
-              </div>
-              <div className="p-5 flex items-start gap-4">
-                <span className="w-11 h-11 shrink-0 text-white font-bold flex items-center justify-center" style={{ background: s.color }}>{s.name[0]}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2"><b className="text-[16px] group-hover:underline">{s.name}</b><span className="text-[11px] text-mute">{catById[s.cat]?.name}</span></div>
-                  <p className="text-[13px] text-ink-2 mt-1 line-clamp-1">{s.intro}</p>
-                  <div className="text-[12px] text-mute mt-2">관심고객 <span className="num">{comma(s.followers)}</span> · {s.grade}</div>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
+        {list.map((s) => <StoreCard key={s.id} s={s} catName={catById[s.cat]?.name} />)}
       </div>
     </div>
+  );
+}
+
+// 스토어 카드 — 그 스토어 신상품 사진 3장은 카드마다 공개 목록(GET /api/products?storeId=&size=3)으로. 운영 중 스토어 수만큼 요청(데모 규모)
+function StoreCard({ s, catName }) {
+  const { data: page } = useProductSearchQuery({ storeId: s.id, sort: 'NEW', size: 3 });
+  const items = (page?.content ?? []).filter((p) => p.images[0]);
+  return (
+    <Link to={`/store/${s.id}`} className="group border border-line hover:border-ink transition-colors">
+      <div className="grid grid-cols-3 gap-px bg-line">
+        {items.map((p) => <img key={p.id} src={p.images[0]} alt="" className="w-full aspect-square object-cover" />)}
+      </div>
+      <div className="p-5 flex items-start gap-4">
+        <span className="w-11 h-11 shrink-0 text-white font-bold flex items-center justify-center" style={{ background: s.color }}>{s.name[0]}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2"><b className="text-[16px] group-hover:underline">{s.name}</b><span className="text-[11px] text-mute">{catName}</span></div>
+          {s.intro && <div className="text-[13px] text-ink-2 mt-1 line-clamp-1" dangerouslySetInnerHTML={safeHtml(s.intro)} />}
+          <div className="text-[12px] text-mute mt-2">관심고객 <span className="num">{comma(s.followers)}</span> · {s.grade}</div>
+        </div>
+      </div>
+    </Link>
   );
 }

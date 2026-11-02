@@ -45,6 +45,13 @@ export const toStoreHome = (r) => ({
 // 없거나 삭제된 스토어는 404 STORE_NOT_FOUND
 export const fetchStore = async (storeId) => toStoreHome((await axiosInstance.get(`/api/stores/${storeId}`)).data.data);
 
+// GET /api/reviews/ratings/stores?ids= — 스토어 홈 별점(review #160, 공개). store 응답에는 평점이 없어 화면이 따로 묻는다(노션 10/28 안내)
+// 리뷰가 없으면 0 · 0, 블라인드 · 삭제 리뷰는 빠진 값
+export const fetchStoreRating = async (storeId) => {
+  const [r] = (await axiosInstance.get('/api/reviews/ratings/stores', { params: { ids: String(storeId) } })).data.data;
+  return { avg: Number(r?.averageRating ?? 0), count: r?.reviewCount ?? 0 };
+};
+
 // GET /api/seller/store — 로그인한 판매자의 스토어(X-Store-Id, store.md 13-1). 스토어 홈과 같은 이름 + 판매자만 보는 값
 // 정지 · 폐점 스토어도 200(설정 화면이 상태 · 사유를 보여 줌). 상위 카테고리(cat)는 이 응답에 없다
 export const toMyStore = (r) => ({
