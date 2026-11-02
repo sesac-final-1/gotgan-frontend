@@ -1,5 +1,5 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { fetchStores, fetchStore, toStoreCard, toStoreHome } from '@/features/store/api/storeApi';
+import { fetchStores, fetchStore, toStoreCard, toStoreHome, fetchMyStore, toMyStore } from '@/features/store/api/storeApi';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -51,5 +51,28 @@ describe('fetchStore — GET /api/stores/{id} 를 스토어 홈 필드로', () =
       color: null, grade: null, createdAt: null, ownerName: null, bizRegNo: null, csPhone: null, shippingFee: null, freeShippingThreshold: null, courier: null, dispatchNote: null });
     expect(s).toMatchObject({ id: 15, name: '볕드는집', status: '정지', intro: '', cover: null, since: null, owner: '', shipFee: 0, freeOver: 0 });
     expect(toStoreHome({ storeId: 16, storeName: '닫은집', status: 'CLOSED' }).status).toBe('폐점');
+  });
+});
+
+describe('fetchMyStore — GET /api/seller/store (13-1절) 를 화면 필드로', () => {
+  it('스토어 홈과 같은 이름 + 상태 사유 · 이미지 키, 무료배송 없음(null)은 0 · 비어 있는 값은 빈 문자열', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: {
+      storeId: 1, storeName: '산골농부 박씨네', slug: 'park-farm', status: 'ACTIVE', statusReason: null, intro: '<p>지리산 농장</p>',
+      imageKey: 'stores/1/a.jpg', imageUrl: 'https://img/stores/1/a.jpg', color: '#5b6b4a', csPhone: '010-0000-0002',
+      shippingFee: 3000, freeShippingThreshold: null, courier: null, dispatchNote: null, grade: 'BIG_POWER',
+      ownerName: '박농부', bizRegNo: '000-00-00001', createdAt: '2026-10-15T09:00:00+09:00',
+    } } });
+
+    const s = await fetchMyStore();
+
+    expect(get).toHaveBeenCalledWith('/api/seller/store');
+    expect(s).toMatchObject({ id: 1, name: '산골농부 박씨네', slug: 'park-farm', status: '운영중', statusReason: '', intro: '<p>지리산 농장</p>',
+      imageKey: 'stores/1/a.jpg', cover: 'https://img/stores/1/a.jpg', phone: '010-0000-0002', shipFee: 3000, freeOver: 0, courier: '', dispatch: '',
+      grade: '빅파워', owner: '박농부', bizNo: '000-00-00001' });
+  });
+
+  it('정지 스토어 — 상태 문구와 사유', () => {
+    expect(toMyStore({ storeId: 1, storeName: 'x', status: 'SUSPENDED', statusReason: '서류 확인 필요', imageKey: null }))
+      .toMatchObject({ status: '정지', statusReason: '서류 확인 필요', imageKey: null });
   });
 });

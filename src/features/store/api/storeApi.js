@@ -2,7 +2,6 @@
 // 계약: backend docs/api/store.md 14절. 스토어 · 카테고리 id 는 숫자다 (목업 's1' · 'fashion' 아님)
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { mockResolve } from '@/mocks/mockApi';
-import { stores } from '@/mocks/fixtures/catalog';
 import { sellerDaily } from '@/mocks/fixtures/orders';
 
 // 화면 표시 문구 — admin/constants 에 같은 표가 있지만 store 가 admin 을 참조하지 않도록 여기 둔다
@@ -46,8 +45,15 @@ export const toStoreHome = (r) => ({
 // 없거나 삭제된 스토어는 404 STORE_NOT_FOUND
 export const fetchStore = async (storeId) => toStoreHome((await axiosInstance.get(`/api/stores/${storeId}`)).data.data);
 
-// TODO(박지연): GET /api/seller/store (로그인한 판매자의 스토어) — 목업은 s1(오롯이 리넨). 판매자 스토어 설정 화면 작업 때 교체
-export const fetchMyStore = () => mockResolve(stores.find((s) => s.id === 's1'));
+// GET /api/seller/store — 로그인한 판매자의 스토어(X-Store-Id, store.md 13-1). 스토어 홈과 같은 이름 + 판매자만 보는 값
+// 정지 · 폐점 스토어도 200(설정 화면이 상태 · 사유를 보여 줌). 상위 카테고리(cat)는 이 응답에 없다
+export const toMyStore = (r) => ({
+  ...toStoreHome(r),
+  statusReason: r.statusReason ?? '',
+  imageKey: r.imageKey ?? null, // 수정(13-2) 때 그대로 돌려보냄
+});
+
+export const fetchMyStore = async () => toMyStore((await axiosInstance.get('/api/seller/store')).data.data);
 
 // TODO(박지연): GET /api/seller/dashboard 의 sales.daily[] (최근 30일)
 export const fetchSellerDailySales = () => mockResolve(sellerDaily);
