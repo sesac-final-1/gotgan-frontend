@@ -201,6 +201,15 @@ describe('상품 상세 — 스토어 정보 (GET /api/stores/{id})', () => {
     expect(screen.getAllByRole('link', { name: /오롯이 리넨/ })[0]).toHaveAttribute('href', '/store/1');
   });
 
+  it('상품정보 탭은 상품 설명(HTML 정화) — 스토어 소개는 스토어 카드에만', async () => {
+    mockApi({ store: STORE_HOME, detail: { ...DETAIL, description: '<p>도톰한 리넨<img src=x onerror="alert(1)"></p>' } });
+    renderAt('/products/3', <ShopProductDetail />, '/products/:id');
+    await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
+    expect(await screen.findByText('도톰한 리넨')).toBeInTheDocument();
+    expect(document.querySelector('[onerror]')).toBeNull();
+    await waitFor(() => expect(screen.getAllByText('성수동 리넨 작업실')).toHaveLength(1));
+  });
+
   it('정지 스토어(상태만 오는 응답)는 기본 문구', async () => {
     mockApi({ store: { storeId: 1, storeName: '오롯이 리넨', status: 'SUSPENDED' } });
     renderAt('/products/3', <ShopProductDetail />, '/products/:id');

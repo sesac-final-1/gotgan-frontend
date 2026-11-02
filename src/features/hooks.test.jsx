@@ -24,7 +24,8 @@ import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useProductQuery } from '@/features/product/hooks/useProductQuery';
 import { useSellerProductsQuery } from '@/features/product/hooks/useSellerProductsQuery';
-import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation } from '@/features/product/hooks/useSellerProductMutations';
+import { useSellerProductQuery } from '@/features/product/hooks/useSellerProductQuery';
+import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation, useSaveSellerProductMutation } from '@/features/product/hooks/useSellerProductMutations';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
@@ -365,6 +366,30 @@ describe('판매자 상품 mutation', () => {
     } finally {
       patch.mockRestore();
       del.mockRestore();
+    }
+  });
+
+  it('상세는 GET /api/seller/products/{id} · 저장은 등록 POST — 끝나면 판매자 상품 무효화', async () => {
+    const detail = { productId: 101, storeId: 1, categoryId: 101, topCategoryId: 1, name: '햇감귤', price: 32900, discountRate: 18, salePrice: 26980,
+      option1Name: null, option2Name: null, options: [{ productOptionId: 10101, option1Value: null, option2Value: null, extraPrice: 0, stock: 40 }],
+      images: [{ key: 'products/seed/a.jpg', url: 'https://img/a.jpg' }], status: 'ON_SALE', statusReason: null, soldOut: false };
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: detail } });
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: detail } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      const q = renderHook(() => useSellerProductQuery('101'), { wrapper: Wrapper }).result;
+      await waitFor(() => expect(q.current.isSuccess).toBe(true));
+      expect(q.current.data).toMatchObject({ id: 101, discountRate: 18, status: '판매중' });
+      expect(get).toHaveBeenCalledWith('/api/seller/products/101');
+
+      const save = renderHook(() => useSaveSellerProductMutation(), { wrapper: Wrapper }).result;
+      await act(() => save.current.mutateAsync({ request: { name: '햇감귤' } }));
+      expect(post).toHaveBeenCalledWith('/api/seller/products', { name: '햇감귤' });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['product', 'seller'] });
+    } finally {
+      get.mockRestore();
+      post.mockRestore();
     }
   });
 });

@@ -1,15 +1,17 @@
-// 판매자 상품 등록 / 수정 — 담당 박지연
-import { useState, useMemo } from 'react';
+// 판매자 상품 등록 / 수정 — 담당 박지연. 계약 backend docs/api/product.md 12 · 13 · 16 · 17절
+import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { X, GripVertical, ImagePlus } from 'lucide-react';
-import { PageHead, Segments, Checkbox, Price } from '@/shared/components/ui';
-import { useProductsQuery } from '@/features/product/hooks/useProductsQuery';
+import { X, ImagePlus } from 'lucide-react';
+import { PageHead, Segments, Checkbox, Price, StatusPill, Modal } from '@/shared/components/ui';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
+import { useSellerProductQuery } from '@/features/product/hooks/useSellerProductQuery';
+import { useSaveSellerProductMutation, useDeleteSellerProductsMutation } from '@/features/product/hooks/useSellerProductMutations';
+import { uploadProductImages, PRODUCT_IMAGE_TYPES, PRODUCT_IMAGE_MAX_BYTES } from '@/features/product/api/productApi';
+import { initialForm, combos, rowOf, comboKey, validateForm, buildProductRequest, allStockZero, MAX_OPTION_GROUPS, MAX_IMAGES } from '@/features/product/productForm';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
-import { PAYMENT_FEE } from '@/features/settlement/constants';
 import { toast } from '@/shared/stores/toastStore';
 import { toMap } from '@/shared/utils/collection';
-import { won, pct } from '@/shared/utils/format';
+import { won } from '@/shared/utils/format';
 
 function Block({ title, desc, children }) {
   return (
@@ -28,46 +30,79 @@ function Row({ label, req, children }) {
   );
 }
 
+const digits = (v) => Number(v.replace(/\D/g, ''));
+const errorMessage = (err, fallback) => err?.response?.data?.message ?? err?.message ?? fallback;
+
 // /seller/products/new · /seller/products/:id/edit — 데이터가 모두 온 뒤 폼을 그린다 (초기값이 훅 데이터라서)
 export default function SellerProductForm() {
   const { id } = useParams();
-  const { data: products = [], isLoading: pLoading } = useProductsQuery();
+  const { data: src, isLoading: pLoading, isError } = useSellerProductQuery(id);
   const { data: categories = [], isLoading: cLoading } = useCategoriesQuery();
-  const { data: store, isLoading: sLoading } = useMyStoreQuery();
-  if (pLoading || cLoading || sLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
-  const src = id ? products.find((p) => p.id === id) : null;
-  if ((id && !src) || !store || !categories.length) return <p className="text-mute py-10 text-center">상품을 찾을 수 없어요</p>;
-  return <FormBody key={id ?? 'new'} src={src} categories={categories} store={store} />; // key: 다른 상품으로 이동하면 폼 초기화
+  const { data: store } = useMyStoreQuery();
+  if ((id && pLoading) || cLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
+  if ((id && (isError || !src)) || !categories.length) return <p className="text-mute py-10 text-center">상품을 찾을 수 없어요</p>;
+  return <FormBody key={id ?? 'new'} src={id ? src : null} categories={categories} storeName={store?.name ?? ''} />; // key: 다른 상품으로 이동하면 폼 초기화
 }
 
-function FormBody({ src, categories, store }) {
+function FormBody({ src, categories, storeName }) {
   const edit = !!src;
   const nav = useNavigate();
+  const fileRef = useRef(null);
   const catById = useMemo(() => toMap(categories), [categories]);
-  const [name, setName] = useState(src?.name || '');
-  const [cat, setCat] = useState(src?.cat || store.cat);
-  const [sub, setSub] = useState(src?.sub || catById[store.cat]?.subs[0]);
-  const [price, setPrice] = useState(src?.price || 0);
-  const [disc, setDisc] = useState(src ? Math.round(src.discount * 100) : 0);
-  const [opts, setOpts] = useState(src?.options.length ? src.options.map((o) => ({ name: o.name, values: o.values.join(', ') })) : [{ name: '컬러', values: '' }]);
-  const [imgs, setImgs] = useState(src?.images || []);
-  const [status, setStatus] = useState(src?.status || '판매중');
-  const [shipMode, setShipMode] = useState('store');
+  const [f, setF] = useState(() => initialForm(src, categories));
+  const [uploading, setUploading] = useState(false);
+  const [ask, setAsk] = useState(null); // 확인 창: 'zeroStock' | 'delete'
+  const save = useSaveSellerProductMutation();
+  const remove = useDeleteSellerProductsMutation();
+  const set = (patch) => setF((prev) => ({ ...prev, ...patch }));
 
-  const combos = useMemo(() => {
-    const lists = opts.filter((o) => o.name && o.values.trim()).map((o) => o.values.split(',').map((v) => v.trim()).filter(Boolean));
-    if (!lists.length) return [];
-    return lists.reduce((acc, l) => acc.flatMap((a) => l.map((v) => [...a, v])), [[]]);
-  }, [opts]);
-  const c = catById[cat];
-  const sp = Math.round((price * (1 - disc / 100)) / 10) * 10;
-  const fee = Math.round(sp * (c.commission + PAYMENT_FEE));
-  // TODO(박지연): useCreateProductMutation / useUpdateProductMutation
-  const submit = () => { toast(edit ? '상품이 수정되었어요' : '상품이 등록되었어요'); void nav('/seller/products'); };
+  const top = catById[f.cat];
+  const list = useMemo(() => combos(f.groups), [f.groups]);
+  const hasOptions = list[0].length > 0;
+  const sp = Math.round((f.price * (1 - f.discountRate / 100)) / 10) * 10;
+  const setGroup = (i, patch) => set({ groups: f.groups.map((g, k) => (k === i ? { ...g, ...patch } : g)) });
+  const setRow = (values, patch) => set({ rows: { ...f.rows, [comboKey(values)]: { ...rowOf(f.rows, values), ...patch } } });
+
+  // 파일 선택 → 화면 검사(개수 · 형식 · 10MB) → 발급 · S3 PUT → 키를 폼에. 미리보기는 브라우저 메모리 주소
+  const addImages = async (e) => {
+    const files = [...e.target.files];
+    e.target.value = '';
+    if (!files.length) return;
+    if (f.images.length + files.length > MAX_IMAGES) return toast(`이미지는 ${MAX_IMAGES}장까지 올릴 수 있어요`);
+    if (files.some((x) => !PRODUCT_IMAGE_TYPES.includes(x.type))) return toast('JPG · PNG · WEBP 이미지만 올릴 수 있어요');
+    if (files.some((x) => x.size > PRODUCT_IMAGE_MAX_BYTES)) return toast('이미지는 한 장에 10MB 이하만 올릴 수 있어요');
+    setUploading(true);
+    try {
+      const keys = await uploadProductImages(files);
+      setF((prev) => ({ ...prev, images: [...prev.images, ...keys.map((key, i) => ({ key, url: URL.createObjectURL(files[i]) }))] }));
+    } catch (err) {
+      toast(errorMessage(err, '이미지를 올리지 못했어요'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const doSave = () => save.mutate({ productId: src?.id, request: buildProductRequest(f) }, {
+    onSuccess: () => { toast(edit ? '상품이 수정되었어요' : '상품이 등록되었어요'); void nav('/seller/products'); },
+    onError: (err) => toast(errorMessage(err, '저장하지 못했어요. 잠시 후 다시 시도해 주세요.')),
+    onSettled: () => setAsk(null),
+  });
+  const doDelete = () => remove.mutate([src.id], {
+    onSuccess: ({ failed }) => { if (failed.length) return toast(failed[0].message); toast('상품을 삭제했어요'); void nav('/seller/products'); },
+    onError: (err) => toast(errorMessage(err, '삭제하지 못했어요')),
+    onSettled: () => setAsk(null),
+  });
+  const submit = () => {
+    const problem = validateForm(f);
+    if (problem) return toast(problem);
+    if (!edit && allStockZero(f)) return setAsk('zeroStock');
+    doSave();
+  };
+  const busy = save.isPending || remove.isPending || uploading;
 
   return (
     <div>
-      <PageHead crumbs="상품 > 상품 조회/수정" title={edit ? '상품 수정' : '상품 등록'} desc={edit ? `${src.id.toUpperCase()} · 최근 수정 2026.09.28 14:02` : '필수 항목(*)을 모두 입력하면 바로 판매가 시작됩니다.'} />
+      <PageHead crumbs="상품 > 상품 조회/수정" title={edit ? '상품 수정' : '상품 등록'} desc={edit ? `상품번호 ${src.id}` : '필수 항목(*)을 모두 입력하면 바로 판매가 시작됩니다.'} />
       <div className="grid xl:grid-cols-[1fr_320px] gap-4">
         <div className="space-y-4 min-w-0">
           <Block title="카테고리 · 상품명">
@@ -75,105 +110,96 @@ function FormBody({ src, categories, store }) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <div className="text-[11.5px] text-mute mb-1">상위 카테고리</div>
-                  <select value={cat} onChange={(e) => { setCat(e.target.value); setSub(catById[e.target.value].subs[0]); }} className="field">{categories.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+                  <select value={f.cat ?? ''} onChange={(e) => { const t = catById[e.target.value]; set({ cat: t.id, catId: t.children[0]?.id }); }} className="field">
+                    {!top && <option value="" disabled>선택</option>}
+                    {categories.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                  </select>
                 </div>
                 <div>
                   <div className="text-[11.5px] text-mute mb-1">하위 카테고리</div>
-                  <select value={sub} onChange={(e) => setSub(e.target.value)} className="field">{c.subs.map((s) => <option key={s}>{s}</option>)}</select>
+                  <select value={f.catId ?? ''} onChange={(e) => set({ catId: Number(e.target.value) })} className="field">
+                    {!top?.children.some((s) => s.id === f.catId) && <option value="" disabled>선택</option>}
+                    {(top?.children ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
                 </div>
               </div>
-              <p className="text-[12px] text-mute mt-1.5"><span className="text-ink">{c.name} &gt; {sub}</span> · 판매수수료 {pct(c.commission)} + 결제수수료 2.2% · 카테고리는 운영자가 등록한 목록에서만 선택할 수 있어요 {cat !== store.cat && <span className="text-amber">· 입점 카테고리 외 등록은 관리자 승인 후 노출</span>}</p>
+              <p className="text-[12px] text-mute mt-1.5">카테고리는 운영자가 등록한 목록에서만 선택할 수 있어요 · 판매수수료는 카테고리별로 정산 때 적용돼요</p>
             </Row>
             <Row label="상품명" req>
-              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={50} className="field" placeholder="브랜드명 · 핵심 소재 · 상품 종류 순으로 작성하면 검색에 유리해요" />
-              <div className="text-right text-[11.5px] text-mute mt-1 num">{name.length}/50</div>
+              <input value={f.name} onChange={(e) => set({ name: e.target.value })} maxLength={100} className="field" placeholder="브랜드명 · 핵심 소재 · 상품 종류 순으로 작성하면 검색에 유리해요" />
+              <div className="text-right text-[11.5px] text-mute mt-1 num">{f.name.length}/100</div>
             </Row>
           </Block>
 
-          <Block title="판매가 · 재고">
-            <Row label="판매가" req><div className="flex items-center gap-2"><input value={price || ''} onChange={(e) => setPrice(Number(e.target.value.replace(/\D/g, '')))} className="field num w-48" /><span className="text-sm">원</span></div></Row>
+          <Block title="판매가">
+            <Row label="판매가" req><div className="flex items-center gap-2"><input value={f.price || ''} onChange={(e) => set({ price: digits(e.target.value) })} className="field num w-48" /><span className="text-sm">원</span></div></Row>
             <Row label="즉시할인">
-              <div className="flex items-center gap-2"><input value={disc || ''} onChange={(e) => setDisc(Math.min(90, Number(e.target.value.replace(/\D/g, ''))))} className="field num w-24" /><span className="text-sm">%</span>
-                {disc > 0 && <span className="text-[13px] text-ink-2 ml-2">할인가 <b className="num">{won(sp)}</b></span>}
-              </div>
-            </Row>
-            <Row label="예상 정산액">
-              <div className="bg-cream px-4 py-3 text-[13px] num">
-                {won(sp)} − 수수료 {won(fee)} = <b className="text-[15px]">{won(sp - fee)}</b> <span className="text-mute font-sans">/ 1개당</span>
+              <div className="flex items-center gap-2"><input value={f.discountRate || ''} onChange={(e) => set({ discountRate: Math.min(90, digits(e.target.value)) })} className="field num w-24" /><span className="text-sm">%</span>
+                {f.discountRate > 0 && <span className="text-[13px] text-ink-2 ml-2">할인가 <b className="num">{won(sp)}</b></span>}
               </div>
             </Row>
           </Block>
 
-          <Block title="옵션" desc="조합형 옵션: 옵션값은 쉼표(,)로 구분하세요. 조합별로 재고와 추가금액을 설정할 수 있어요.">
-            {opts.map((o, i) => (
+          <Block title="옵션 · 재고" desc="옵션은 최대 2개, 옵션값은 쉼표(,)로 구분하세요. 옵션이 없으면 비워 두고 재고만 입력하세요.">
+            {f.groups.map((g, i) => (
               <div key={i} className="grid grid-cols-[120px_1fr_36px] gap-2">
-                <input value={o.name} onChange={(e) => setOpts(opts.map((x, k) => (k === i ? { ...x, name: e.target.value } : x)))} className="field" placeholder="옵션명" />
-                <input value={o.values} onChange={(e) => setOpts(opts.map((x, k) => (k === i ? { ...x, values: e.target.value } : x)))} className="field" placeholder="예) S, M, L" />
-                <button onClick={() => setOpts(opts.filter((_, k) => k !== i))} className="btn btn-ghost px-0"><X size={16} /></button>
+                <input value={g.name} onChange={(e) => setGroup(i, { name: e.target.value })} maxLength={30} className="field" placeholder="옵션명" />
+                <input value={g.values} onChange={(e) => setGroup(i, { values: e.target.value })} className="field" placeholder="예) S, M, L" />
+                <button onClick={() => set({ groups: f.groups.filter((_, k) => k !== i) })} className="btn btn-ghost px-0" aria-label="옵션 삭제"><X size={16} /></button>
               </div>
             ))}
-            {opts.length < 3 && <button onClick={() => setOpts([...opts, { name: '', values: '' }])} className="btn btn-line btn-sm">+ 옵션 추가 (최대 3개)</button>}
-            {/* 옵션 조합 입력표 — 목록이 아니라 입력 폼이라 DataTable 대신 목업 <table> 그대로 */}
-            {combos.length > 0 && (
-              <div className="border border-line overflow-x-auto">
-                <table className="tbl">
-                  <thead><tr><th>옵션 조합</th><th className="w-32">추가금액</th><th className="w-28">재고</th><th className="w-24">판매</th></tr></thead>
-                  <tbody>
-                    {combos.slice(0, 12).map((cb, i) => (
-                      <tr key={cb.join()}>
-                        <td>{cb.join(' / ')}</td>
-                        <td><input className="field field-sm num" defaultValue="0" /></td>
-                        <td><input className="field field-sm num" defaultValue={src ? Math.max(0, Math.round(src.stock / combos.length) - (i % 3) * 4) : 0} /></td>
-                        <td><Checkbox checked onChange={() => {}} /></td>
+            {f.groups.length < MAX_OPTION_GROUPS && <button onClick={() => set({ groups: [...f.groups, { name: '', values: '' }] })} className="btn btn-line btn-sm">+ 옵션 추가 (최대 {MAX_OPTION_GROUPS}개)</button>}
+            {/* 옵션 조합 입력표 — 목록이 아니라 입력 폼이라 DataTable 대신 <table> */}
+            <div className="border border-line overflow-x-auto max-h-[420px]">
+              <table className="tbl">
+                <thead><tr><th>옵션 조합</th><th className="w-32">추가금액</th><th className="w-28">재고<span className="text-point">*</span></th><th className="w-20">판매</th></tr></thead>
+                <tbody>
+                  {list.map((values) => {
+                    const r = rowOf(f.rows, values);
+                    const saved = edit && r.productOptionId != null; // 저장된 조합의 재고는 재고 수정(14절)에서 — 수정(PUT)은 재고를 바꾸지 않음
+                    return (
+                      <tr key={comboKey(values)}>
+                        <td>{hasOptions ? values.join(' / ') : '옵션 없음'}</td>
+                        <td><input className="field field-sm num" value={r.extraPrice} disabled={!hasOptions} onChange={(e) => setRow(values, { extraPrice: digits(e.target.value) })} /></td>
+                        <td>{saved ? <span className="num text-ink-2">{r.stock}</span> : <input className="field field-sm num" value={r.stock} onChange={(e) => setRow(values, { stock: digits(e.target.value) })} />}</td>
+                        <td><Checkbox checked={r.on} onChange={(on) => setRow(values, { on })} /></td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {combos.length > 12 && <div className="text-[12px] text-mute px-3 py-2">외 {combos.length - 12}개 조합</div>}
-              </div>
-            )}
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {edit && <p className="text-[12px] text-mute">저장된 조합의 재고는 상품 목록의 재고 수정에서 바꿔요. 판매 체크를 풀면 그 조합은 삭제돼요(지난 주문은 그대로).</p>}
           </Block>
 
-          <Block title="상품 이미지" desc="대표 이미지 1장 + 추가 이미지 최대 9장 · 1000×1250px 이상 권장 · 첫 번째 이미지가 대표 이미지">
+          <Block title="상품 이미지" desc={`최대 ${MAX_IMAGES}장 · JPG · PNG · WEBP · 한 장 10MB 이하 · 1000×1250px 이상 권장 · 첫 번째 이미지가 대표 이미지`}>
             <div className="flex flex-wrap gap-2">
-              {imgs.map((s, i) => (
-                <div key={s} className="relative w-24 h-28 group">
-                  <img src={s} alt="" className="w-full h-full object-cover" />
-                  {i === 0 && <span className="absolute left-0 top-0 bg-ink text-white text-[10px] px-1.5 py-0.5">대표</span>}
-                  <span className="absolute left-1 bottom-1 bg-white/90 p-0.5 cursor-grab"><GripVertical size={12} /></span>
-                  <button onClick={() => setImgs(imgs.filter((x) => x !== s))} className="absolute right-1 top-1 bg-white/90 p-0.5"><X size={12} /></button>
+              {f.images.map((img, i) => (
+                <div key={img.key} className="relative w-24 h-28">
+                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  {i === 0
+                    ? <span className="absolute left-0 top-0 bg-ink text-white text-[10px] px-1.5 py-0.5">대표</span>
+                    : <button onClick={() => set({ images: [img, ...f.images.filter((x) => x.key !== img.key)] })} className="absolute left-1 bottom-1 bg-white/90 text-[10px] px-1">대표로</button>}
+                  <button onClick={() => set({ images: f.images.filter((x) => x.key !== img.key) })} className="absolute right-1 top-1 bg-white/90 p-0.5" aria-label="이미지 삭제"><X size={12} /></button>
                 </div>
               ))}
-              <button onClick={() => setImgs([...imgs, `/images/p/p104-${(imgs.length % 3) + 1}.jpg`])} className="w-24 h-28 border border-dashed border-line-2 text-mute text-[12px] flex flex-col items-center justify-center gap-1 hover:border-ink hover:text-ink"><ImagePlus size={20} />추가</button>
+              {f.images.length < MAX_IMAGES && (
+                <button disabled={uploading} onClick={() => fileRef.current?.click()} className="w-24 h-28 border border-dashed border-line-2 text-mute text-[12px] flex flex-col items-center justify-center gap-1 hover:border-ink hover:text-ink">
+                  <ImagePlus size={20} />{uploading ? '올리는 중…' : '추가'}
+                </button>
+              )}
+              <input ref={fileRef} type="file" accept={PRODUCT_IMAGE_TYPES.join(',')} multiple hidden onChange={addImages} />
             </div>
           </Block>
 
-          <Block title="상세 설명">
-            <div className="border border-line-2">
-              <div className="flex gap-1 px-2 h-10 items-center border-b border-line bg-cream text-[13px] overflow-x-auto no-scrollbar">
-                {['B', 'I', 'U', 'H1', 'H2', '이미지', '동영상', '표', '구분선'].map((t) => <button key={t} className="px-2 h-7 hover:bg-white">{t}</button>)}
-              </div>
-              <div className="p-4 min-h-[160px] text-[14px] text-ink-2 leading-relaxed" contentEditable suppressContentEditableWarning>
-                {edit ? <>{store.intro}<br /><br />소재: {src.material}<br />세탁: 찬물 단독 손세탁 / 건조기 사용 금지</> : <span className="text-mute">상품의 특징, 사이즈 가이드, 세탁 방법 등을 작성하세요.</span>}
-              </div>
-            </div>
+          <Block title="상세 설명" desc="HTML 로 작성할 수 있어요(최대 10,000자). 스크립트 · 스타일 같은 위험한 태그는 저장할 때 지워져요.">
+            <textarea value={f.description} onChange={(e) => set({ description: e.target.value })} maxLength={10000} rows={8} className="field font-mono text-[13px]" placeholder="<p>상품의 특징, 사이즈 가이드, 세탁 방법 등을 작성하세요.</p>" />
+            <div className="text-right text-[11.5px] text-mute num">{f.description.length}/10,000</div>
           </Block>
 
-          <Block title="상품정보 제공고시" desc="전자상거래법에 따라 카테고리별 필수 항목을 입력해야 합니다.">
-            {['소재', '제조국', '제조자/수입자', '세탁방법 및 취급 주의사항', '품질보증기준'].map((k, i) => (
-              <Row key={k} label={k} req><input className="field" defaultValue={edit ? [src.material, src.origin, store.name, '찬물 단독 손세탁', '소비자분쟁해결기준에 따름'][i] : ''} /></Row>
-            ))}
-          </Block>
-
-          <Block title="배송">
-            <Row label="배송비 설정">
-              <div className="space-y-2 text-[13px]">
-                <label className="flex items-center gap-2"><input type="radio" checked={shipMode === 'store'} onChange={() => setShipMode('store')} /> 스토어 기본 정책 사용 — {store.courier} · {won(store.shipFee)} ({won(store.freeOver)} 이상 무료)</label>
-                <label className="flex items-center gap-2"><input type="radio" checked={shipMode === 'custom'} onChange={() => setShipMode('custom')} /> 상품별 개별 설정</label>
-                {shipMode === 'custom' && <div className="grid grid-cols-3 gap-2 pl-6"><select className="field field-sm"><option>유료</option><option>무료</option><option>조건부 무료</option></select><input className="field field-sm" placeholder="배송비" /><input className="field field-sm" placeholder="무료 기준 금액" /></div>}
-              </div>
-            </Row>
-            <Row label="출고 소요일"><select className="field w-60"><option>당일 출고 (14시 이전 결제)</option><option>1~2 영업일</option><option>3~5 영업일 (주문제작)</option></select></Row>
+          <Block title="상품정보 제공고시" desc="그 밖의 항목(제조자 · 취급 주의사항 · 품질보증기준 등)은 상세 설명에 적어 주세요.">
+            <Row label="소재" req><input value={f.material} onChange={(e) => set({ material: e.target.value })} maxLength={100} className="field" /></Row>
+            <Row label="제조국" req><input value={f.origin} onChange={(e) => set({ origin: e.target.value })} maxLength={50} className="field" /></Row>
           </Block>
         </div>
 
@@ -182,23 +208,41 @@ function FormBody({ src, categories, store }) {
           <div className="panel">
             <div className="panel-head"><span className="panel-title">미리보기</span></div>
             <div className="p-5">
-              <div className="aspect-[4/5] bg-sand">{imgs[0] && <img src={imgs[0]} alt="" className="w-full h-full object-cover" />}</div>
-              <div className="text-[12px] font-bold text-ink-2 mt-2.5">{store.name}</div>
-              <div className="text-[13px] text-ink-2">{name || '상품명을 입력하세요'}</div>
-              <div className="mt-1"><Price p={{ price: price || 0, discount: disc / 100 }} /></div>
+              <div className="aspect-[4/5] bg-sand">{f.images[0] && <img src={f.images[0].url} alt="" className="w-full h-full object-cover" />}</div>
+              <div className="text-[12px] font-bold text-ink-2 mt-2.5">{storeName}</div>
+              <div className="text-[13px] text-ink-2">{f.name || '상품명을 입력하세요'}</div>
+              <div className="mt-1"><Price p={{ price: f.price || 0, discount: f.discountRate / 100 }} /></div>
             </div>
           </div>
           <div className="panel p-5 space-y-3">
             <div className="text-[13px] font-semibold">판매 상태</div>
-            <Segments items={['판매중', '판매중지']} value={status === '품절' ? '판매중' : status} onChange={setStatus} />
+            {edit ? (
+              <div className="text-[13px] space-y-1">
+                <StatusPill s={src.pill} />
+                {src.statusReason && <p className="text-rust text-[12px]">사유: {src.statusReason}</p>}
+                <p className="text-mute text-[12px]">판매중지 · 재개는 상품 목록에서 바꿔요</p>
+              </div>
+            ) : <Segments items={['판매중', '판매중지']} value={f.status} onChange={(status) => set({ status })} />}
             <div className="grid grid-cols-2 gap-2 pt-2">
               <button onClick={() => nav('/seller/products')} className="btn btn-line">취소</button>
-              <button onClick={submit} className="btn btn-ink">{edit ? '수정 저장' : '등록하기'}</button>
+              <button disabled={busy} onClick={submit} className="btn btn-ink">{save.isPending ? '저장 중…' : edit ? '수정 저장' : '등록하기'}</button>
             </div>
-            {edit && <button className="btn btn-ghost btn-sm w-full text-rust">상품 삭제</button>}
+            {edit && <button disabled={busy} onClick={() => setAsk('delete')} className="btn btn-ghost btn-sm w-full text-rust">상품 삭제</button>}
           </div>
         </div>
       </div>
+
+      {/* 확인 창 — 브라우저 기본 confirm 대신 목록 삭제와 같은 Modal */}
+      <Modal open={ask === 'zeroStock'} onClose={() => setAsk(null)} title="재고 확인" width={420}
+        footer={<><button className="btn btn-line btn-sm" onClick={() => setAsk(null)}>재고 입력하기</button><button disabled={busy} className="btn btn-ink btn-sm" onClick={doSave}>그대로 등록</button></>}>
+        <p className="text-[14px]">판매할 옵션의 재고가 모두 <b>0</b>이에요.</p>
+        <p className="text-[13px] text-mute mt-2">이대로 등록하면 쇼핑몰에 바로 <b>품절</b>로 보여요.</p>
+      </Modal>
+      <Modal open={ask === 'delete'} onClose={() => setAsk(null)} title="상품 삭제" width={420}
+        footer={<><button className="btn btn-line btn-sm" onClick={() => setAsk(null)}>취소</button><button disabled={busy} className="btn btn-sm bg-rust text-white border-rust" onClick={doDelete}>삭제</button></>}>
+        <p className="text-[14px]">이 상품을 삭제할까요?</p>
+        <p className="text-[13px] text-mute mt-2">삭제한 상품은 쇼핑몰 · 장바구니에서 구매할 수 없게 돼요. 지난 주문과 리뷰는 그대로 남아요.</p>
+      </Modal>
     </div>
   );
 }

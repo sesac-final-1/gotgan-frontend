@@ -210,7 +210,7 @@ function DetailBody({ p, store: storeInfo }) {
             <div className="max-w-[720px] mx-auto">
               <p className="text-center eyebrow">Detail</p>
               <h3 className="text-center text-[22px] font-bold mt-2">{p.name}</h3>
-              {store.intro && <div className="text-center text-sm text-ink-2 mt-3 leading-relaxed" dangerouslySetInnerHTML={safeHtml(store.intro)} />}
+              {p.description && <div className="text-sm text-ink-2 mt-6 leading-relaxed" dangerouslySetInnerHTML={safeHtml(p.description)} />}{/* 판매자 상품 설명 HTML — 서버 정화 + 화면 safeHtml */}
               <div className="mt-8 space-y-2">
                 {p.images.map((s) => <img key={s} src={s} alt="" className="w-full" />)}
               </div>

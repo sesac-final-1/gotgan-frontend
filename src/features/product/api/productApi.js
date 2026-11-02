@@ -127,6 +127,53 @@ export const deleteSellerProducts = async (productIds) => {
   };
 };
 
+// GET /api/seller/products/{id} — 수정 화면용 (12절). 공개 상세(10절) + 상태 · 사유 · 옵션별 재고 · 이미지 { key, url }
+// 폼은 요청 모양(13절)에 가까운 값을 쓰므로 이름만 화면 쪽으로 바꾸고 옵션 · 이미지는 그대로 둔다
+export const toSellerProductDetail = (r) => ({
+  id: r.productId,
+  catId: r.categoryId,
+  cat: r.topCategoryId,
+  name: r.name,
+  price: r.price,
+  discountRate: Math.round(Number(r.discountRate ?? 0)), // 15.00 → 15 (요청은 0~90 정수)
+  description: r.description ?? '',
+  material: r.material ?? '',
+  origin: r.origin ?? '',
+  option1Name: r.option1Name,
+  option2Name: r.option2Name,
+  options: r.options.map((o) => ({ productOptionId: o.productOptionId, option1Value: o.option1Value, option2Value: o.option2Value, extraPrice: o.extraPrice, stock: o.stock })),
+  images: r.images, // [{ key, url }] — 수정 때 key 를 imageKeys 로 그대로 돌려보낸다
+  status: sellerStatusOf(r),
+  pill: r.status === 'BLOCKED' ? '강제중지' : sellerStatusOf(r),
+  statusReason: r.statusReason ?? '',
+});
+
+export const fetchSellerProduct = async (productId) => toSellerProductDetail((await axiosInstance.get(`/api/seller/products/${productId}`)).data.data);
+
+// POST /api/seller/products(201) · PUT /api/seller/products/{id}(200) — 옵션 · 이미지 통째로 (13절). 응답은 12절과 같은 모양
+export const saveSellerProduct = async ({ productId, request }) => {
+  const res = productId
+    ? await axiosInstance.put(`/api/seller/products/${productId}`, request)
+    : await axiosInstance.post('/api/seller/products', request);
+  return toSellerProductDetail(res.data.data);
+};
+
+// 이미지 업로드 (17절) — 발급 → 브라우저가 S3 에 직접 PUT → 키를 13절 imageKeys 에. Content-Type · 크기가 서명에 들어간다(입점 서류와 같은 방식)
+export const PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']; // upload-guard 허용 형식과 같음
+export const PRODUCT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
+export async function uploadProductImages(files) {
+  if (files.length === 0) return [];
+  const issued = (await axiosInstance.post('/api/seller/products/images/presign', {
+    files: files.map((f) => ({ contentType: f.type, size: f.size })),
+  })).data.data;
+  await Promise.all(issued.map(async ({ uploadUrl }, i) => {
+    const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': files[i].type }, body: files[i] });
+    if (!res.ok) throw new Error('이미지를 올리지 못했어요. 다시 시도해 주세요.');
+  }));
+  return issued.map(({ key }) => key);
+}
+
 // 임시 — 화면이 쓰던 "상품 전체 배열"(최대 100개, 노출 가능 상품만). useProductsQuery() 를 부르는 화면이 모두
 // useProductSearchQuery · useProductQuery · 판매자 상품 목록으로 옮겨 가면 삭제 (docs/MOCK-TO-API.md 5절 임시 훅)
 export const fetchProductCards = async () => (await fetchProducts({ size: 100 })).content;
