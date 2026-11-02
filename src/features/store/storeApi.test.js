@@ -1,5 +1,5 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { fetchStores, fetchStore, toStoreCard, toStoreHome, fetchMyStore, toMyStore } from '@/features/store/api/storeApi';
+import { fetchStores, fetchStore, toStoreCard, toStoreHome, fetchMyStore, toMyStore, updateMyStore, uploadStoreImage, closeMyStore } from '@/features/store/api/storeApi';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -74,5 +74,38 @@ describe('fetchMyStore — GET /api/seller/store (13-1절) 를 화면 필드로'
   it('정지 스토어 — 상태 문구와 사유', () => {
     expect(toMyStore({ storeId: 1, storeName: 'x', status: 'SUSPENDED', statusReason: '서류 확인 필요', imageKey: null }))
       .toMatchObject({ status: '정지', statusReason: '서류 확인 필요', imageKey: null });
+  });
+});
+
+describe('내 스토어 수정 · 대표 이미지 · 폐점', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('PUT /api/seller/store 본문 그대로 · 응답은 내 스토어 모양', async () => {
+    const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: { storeId: 1, storeName: '산골농부 박씨네', status: 'ACTIVE', color: '#2b2b2b', shippingFee: 0, freeShippingThreshold: null } } });
+    const request = { color: '#2b2b2b', shippingFee: 0 };
+
+    expect(await updateMyStore(request)).toMatchObject({ id: 1, color: '#2b2b2b', shipFee: 0, freeOver: 0, status: '운영중' });
+    expect(put).toHaveBeenCalledWith('/api/seller/store', request);
+  });
+
+  it('대표 이미지 — 형식 · 크기로 발급받고 같은 Content-Type 으로 PUT 한 뒤 키, S3 가 거절하면 오류', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { key: 'stores/1/a.webp', uploadUrl: 'https://s3/a' } } });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', fetchMock);
+    const file = new File(['xy'], 'a.webp', { type: 'image/webp' });
+
+    expect(await uploadStoreImage(file)).toBe('stores/1/a.webp');
+    expect(post).toHaveBeenCalledWith('/api/seller/store/image/presign', { contentType: 'image/webp', size: 2 });
+    expect(fetchMock).toHaveBeenCalledWith('https://s3/a', { method: 'PUT', headers: { 'Content-Type': 'image/webp' }, body: file });
+
+    fetchMock.mockResolvedValue({ ok: false });
+    await expect(uploadStoreImage(file)).rejects.toThrow('이미지를 올리지 못했어요');
+  });
+
+  it('PATCH /api/seller/store/close — 폐점 시각은 Date', async () => {
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { storeId: 1, status: 'CLOSED', closedAt: '2026-11-02T15:00:00+09:00' } } });
+
+    expect(await closeMyStore()).toEqual({ storeId: 1, status: 'CLOSED', closedAt: new Date('2026-11-02T15:00:00+09:00') });
+    expect(patch).toHaveBeenCalledWith('/api/seller/store/close');
   });
 });
