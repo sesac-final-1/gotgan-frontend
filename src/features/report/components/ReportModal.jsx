@@ -33,8 +33,8 @@ function ReportForm({ target, onClose }) {
   return (
     <Modal open onClose={onClose} title={`${target.label ?? (target.type === 'USER' ? '회원' : '리뷰')} 신고`} width={440}
       footer={<><button className="btn btn-line btn-sm" onClick={onClose}>취소</button><button className="btn btn-ink btn-sm" disabled={report.isPending} onClick={submit}>신고하기</button></>}>
-      <label className="label">신고 사유</label>
-      <select value={reasonCode} onChange={(e) => setReasonCode(e.target.value)} className="field mb-3">
+      <label className="label" htmlFor="report-reason">신고 사유</label>
+      <select id="report-reason" value={reasonCode} onChange={(e) => setReasonCode(e.target.value)} className="field mb-3">
         {reasons.map((r) => <option key={r.code} value={r.code}>{r.label}</option>)}
       </select>
       <textarea rows={3} maxLength={500} value={detail} onChange={(e) => setDetail(e.target.value)} className="field" placeholder="자세한 내용 (선택, 500자 이하)" />

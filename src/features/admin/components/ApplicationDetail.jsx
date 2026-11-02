@@ -160,8 +160,8 @@ function DetailBody({ a }) {
       </Modal>
       <Modal open={modal === 'reject'} onClose={() => setModal(null)} title="입점 반려" width={480}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setModal(null)}>취소</button><button className="btn btn-sm bg-rust text-white border-rust" disabled={decide.isPending || rejectReason.length > MAX_REASON} onClick={() => submit('reject', { reason: rejectReason }, '반려 처리 · 사유가 신청자에게 발송되었어요')}>반려 확정</button></>}>
-        <label className="label">반려 사유</label>
-        <select value={rejectPreset} onChange={(e) => setRejectPreset(e.target.value)} className="field mb-3">{REJECT_REASONS.map((r) => <option key={r}>{r}</option>)}</select>
+        <label className="label" htmlFor="reject-reason">반려 사유</label>
+        <select id="reject-reason" value={rejectPreset} onChange={(e) => setRejectPreset(e.target.value)} className="field mb-3">{REJECT_REASONS.map((r) => <option key={r}>{r}</option>)}</select>
         <textarea rows={3} value={rejectDetail} onChange={(e) => setRejectDetail(e.target.value)} className="field" placeholder="상세 사유 (신청자에게 전달됨)" />
         <p className="text-[12px] text-mute mt-2">반려 후 30일 이내 재신청이 제한됩니다.</p>
       </Modal>

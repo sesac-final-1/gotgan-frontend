@@ -109,8 +109,9 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
 
       {/* 모바일 메뉴 */}
       {menu && (
-        <div className="fixed inset-0 z-50 bg-black/40 md:hidden" onClick={() => setMenu(false)}>
-          <div className="w-[82%] max-w-[340px] h-full bg-white p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button type="button" tabIndex={-1} aria-label="메뉴 닫기" className="absolute inset-0 bg-black/40 cursor-default" onClick={() => setMenu(false)} />
+          <div className="relative w-[82%] max-w-[340px] h-full bg-white p-5 overflow-y-auto">
             <div className="flex justify-between items-center mb-6"><Wordmark /><button onClick={() => setMenu(false)}><X size={22} /></button></div>
             <div className="grid grid-cols-2 gap-2 mb-6">
               {user
