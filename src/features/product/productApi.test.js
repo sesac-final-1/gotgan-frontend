@@ -1,6 +1,7 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { fetchCategories, fetchProducts, fetchProduct, fetchProductCards, toCategory, toProductCard, toProductDetail,
-  fetchSellerProducts, toSellerProductRow, updateSellerProductStatus, deleteSellerProducts } from '@/features/product/api/productApi';
+  fetchSellerProducts, toSellerProductRow, updateSellerProductStatus, deleteSellerProducts,
+  fetchSellerProduct, saveSellerProduct, uploadProductImages } from '@/features/product/api/productApi';
 import { salePrice } from '@/shared/utils/format';
 
 afterEach(() => vi.restoreAllMocks());
@@ -168,5 +169,64 @@ describe('판매자 상품 변경 — 판매중지 · 재개 일괄 · 삭제', 
       { productId: 9, code: 'PRODUCT_NOT_FOUND', message: '상품을 찾을 수 없습니다.' },
       { productId: 8, code: null, message: '삭제하지 못했어요' },
     ] });
+  });
+});
+
+// product.md 12절 응답 — 10절 + 상태 · 사유 · 옵션별 재고 · 이미지 { key, url }
+const SELLER_DETAIL = {
+  ...DETAIL, status: 'BLOCKED', statusReason: '허위 표시', hiddenReason: 'BLOCKED', discountRate: 15.0,
+  options: [{ productOptionId: 10101, option1Value: '오트밀', option2Value: 'M', extraPrice: 0, soldOut: false, stock: 30 }],
+  images: [{ key: 'products/1/a.jpg', url: 'https://img/products/1/a.jpg' }],
+};
+
+describe('판매자 상품 상세 · 등록 · 수정', () => {
+  it('GET /api/seller/products/{id} — 폼에 쓰는 값으로(할인율 정수 · 옵션 재고 · 이미지 key · 강제중지 사유)', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: SELLER_DETAIL } });
+
+    const p = await fetchSellerProduct(101);
+
+    expect(get).toHaveBeenCalledWith('/api/seller/products/101');
+    expect(p).toMatchObject({ id: 101, cat: 3, catId: 301, discountRate: 15, option1Name: '컬러', option2Name: '사이즈',
+      images: [{ key: 'products/1/a.jpg', url: 'https://img/products/1/a.jpg' }], status: '판매중지', pill: '강제중지', statusReason: '허위 표시' });
+    expect(p.options).toEqual([{ productOptionId: 10101, option1Value: '오트밀', option2Value: 'M', extraPrice: 0, stock: 30 }]);
+  });
+
+  it('productId 없으면 POST, 있으면 PUT /{id} — 응답은 상세 모양으로', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { ...SELLER_DETAIL, status: 'ON_SALE', description: null } } });
+    const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: SELLER_DETAIL } });
+    const request = { name: '리넨 셔츠' };
+
+    expect(await saveSellerProduct({ request })).toMatchObject({ id: 101, status: '판매중', description: '' });
+    await saveSellerProduct({ productId: 101, request });
+
+    expect(post).toHaveBeenCalledWith('/api/seller/products', request);
+    expect(put).toHaveBeenCalledWith('/api/seller/products/101', request);
+  });
+});
+
+describe('uploadProductImages — 발급 → S3 PUT → 키', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const file = (name, type) => new File(['x'], name, { type });
+
+  it('파일 형식 · 크기로 발급받고, 같은 Content-Type 으로 PUT 한 뒤 키를 순서대로', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [
+      { key: 'products/1/a.jpg', uploadUrl: 'https://s3/a' }, { key: 'products/1/b.png', uploadUrl: 'https://s3/b' }] } });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', fetchMock);
+    const files = [file('a.jpg', 'image/jpeg'), file('b.png', 'image/png')];
+
+    expect(await uploadProductImages(files)).toEqual(['products/1/a.jpg', 'products/1/b.png']);
+    expect(post).toHaveBeenCalledWith('/api/seller/products/images/presign', { files: [{ contentType: 'image/jpeg', size: 1 }, { contentType: 'image/png', size: 1 }] });
+    expect(fetchMock).toHaveBeenCalledWith('https://s3/b', { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: files[1] });
+  });
+
+  it('S3 가 거절하면 오류 · 파일이 없으면 요청 안 함', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [{ key: 'k', uploadUrl: 'https://s3/a' }] } });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+
+    await expect(uploadProductImages([file('a.jpg', 'image/jpeg')])).rejects.toThrow('이미지를 올리지 못했어요');
+    post.mockClear();
+    expect(await uploadProductImages([])).toEqual([]);
+    expect(post).not.toHaveBeenCalled();
   });
 });
