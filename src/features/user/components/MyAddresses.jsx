@@ -62,9 +62,10 @@ export default function MyAddresses() {
 
 // 등록 · 수정 — 같은 폼. 우편번호 · 기본 주소는 주소 검색으로만 채운다
 // 등록은 연락처를 내 회원정보 휴대폰으로 미리 채운다 (수정 가능, 소셜 가입처럼 비어 있으면 빈 칸)
-function AddressFormModal({ address, onClose }) {
+// 주문서도 이 폼으로 바로 등록한다 — onSaved(저장된 배송지)로 새 배송지를 고른다
+export function AddressFormModal({ address, onClose, onSaved }) {
   const editMode = !!address;
-  const { data: me } = useMeQuery(); // 마이페이지 레이아웃이 이미 불러와 캐시에 있음
+  const { data: me } = useMeQuery(); // 마이페이지 레이아웃 · 주문서가 미리 불러와 캐시에 있음
   const [form, setForm] = useState(() => (address
     ? { ...EMPTY, ...address, detail: address.detail ?? '' }
     : { ...EMPTY, phone: me?.phone ?? '' }));
@@ -92,8 +93,9 @@ function AddressFormModal({ address, onClose }) {
     }
     const request = parsed.data;
     const callbacks = {
-      onSuccess: () => {
+      onSuccess: (saved) => {
         toast(editMode ? '배송지를 수정했어요' : '배송지를 추가했어요');
+        onSaved?.(saved);
         onClose();
       },
       onError: (err) => setErrors({ form: serverMessage(err) }), // 409 ADDRESS_LIMIT_EXCEEDED 등

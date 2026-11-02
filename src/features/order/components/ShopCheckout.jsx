@@ -10,7 +10,9 @@ import { usePayOrderMutation } from '@/features/payment/hooks/usePayOrderMutatio
 import { PAY_METHODS } from '@/features/payment/constants';
 import { useMyAddressesQuery } from '@/features/user/hooks/useMyAddressesQuery';
 import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
-import { POINT_RATE } from '@/features/user/constants';
+import { useMeQuery } from '@/features/user/hooks/useMeQuery';
+import { AddressFormModal } from '@/features/user/components/MyAddresses';
+import { MAX_ADDRESSES, POINT_RATE } from '@/features/user/constants';
 import ShopOrderSummary from '@/features/order/components/ShopOrderSummary';
 import { checkoutGroups } from '@/features/order/utils/cartView';
 import { queryKeys } from '@/shared/api/queryKeys';
@@ -43,6 +45,9 @@ export default function ShopCheckout() {
   const [addrId, setAddrId] = useState(null);
   const addr = myAddresses.find((a) => a.id === addrId) ?? myAddresses[0];
   const [addrModal, setAddrModal] = useState(false);
+  const [addingAddr, setAddingAddr] = useState(false);
+  const addrFull = myAddresses.length >= MAX_ADDRESSES;
+  useMeQuery(); // 배송지 추가 폼이 연락처를 회원정보 휴대폰으로 미리 채운다
   const [point, setPoint] = useState(0);
   const [method, setMethod] = useState(PAY_METHODS[0].label);
   const [agree, setAgree] = useState(false);
@@ -182,9 +187,13 @@ export default function ShopCheckout() {
               <div className="text-ink-2 mt-1">{a.addr} {a.detail}</div>
             </button>
           ))}
-          <Link to="/mypage/addresses" className="btn btn-line w-full">+ 새 배송지 추가</Link>
+          <button type="button" onClick={() => { setAddrModal(false); setAddingAddr(true); }} disabled={addrFull} className="btn btn-line w-full"
+            title={addrFull ? `배송지는 최대 ${MAX_ADDRESSES}개까지 등록할 수 있어요` : undefined}>+ 새 배송지 추가</button>
+          {addrFull && <p className="text-[12px] text-mute">배송지는 최대 {MAX_ADDRESSES}개까지 등록할 수 있어요. 마이페이지에서 하나를 삭제한 뒤 추가해주세요.</p>}
         </div>
       </Modal>
+      {/* 주문서를 떠나지 않고 바로 등록 — 저장하면 새 배송지로 고른다 */}
+      {addingAddr && <AddressFormModal onClose={() => setAddingAddr(false)} onSaved={(saved) => setAddrId(saved.id)} />}
     </div>
   );
 }
