@@ -35,6 +35,7 @@ import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSeller
 import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
 import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettlementQuery';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
+import { useUpdateMyStoreMutation, useCloseMyStoreMutation } from '@/features/store/hooks/useMyStoreMutations';
 import { useSellerDailySalesQuery } from '@/features/store/hooks/useSellerDailySalesQuery';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useStoreQuery } from '@/features/store/hooks/useStoreQuery';
@@ -389,6 +390,28 @@ describe('판매자 상품 mutation', () => {
     } finally {
       get.mockRestore();
       post.mockRestore();
+    }
+  });
+});
+
+describe('내 스토어 mutation', () => {
+  it('설정 저장은 PUT · 폐점은 PATCH /close — 끝나면 store 전체(내 스토어 · 공개 스토어) 다시 불러오기', async () => {
+    const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: { storeId: 1, storeName: '산골농부 박씨네', status: 'ACTIVE' } } });
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { storeId: 1, status: 'CLOSED', closedAt: '2026-11-02T15:00:00+09:00' } } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      const update = renderHook(() => useUpdateMyStoreMutation(), { wrapper: Wrapper }).result;
+      await act(() => update.current.mutateAsync({ color: '#2b2b2b' }));
+      expect(put).toHaveBeenCalledWith('/api/seller/store', { color: '#2b2b2b' });
+
+      const close = renderHook(() => useCloseMyStoreMutation(), { wrapper: Wrapper }).result;
+      expect((await act(() => close.current.mutateAsync())).status).toBe('CLOSED');
+      expect(invalidate).toHaveBeenCalledTimes(2);
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['store'] });
+    } finally {
+      put.mockRestore();
+      patch.mockRestore();
     }
   });
 });

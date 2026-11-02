@@ -55,5 +55,26 @@ export const toMyStore = (r) => ({
 
 export const fetchMyStore = async () => toMyStore((await axiosInstance.get('/api/seller/store')).data.data);
 
+// PUT /api/seller/store — 설정 전체를 보냄(13-2). 응답은 13-1 과 같은 모양. 폐점 스토어는 409 STORE_CLOSED
+export const updateMyStore = async (request) => toMyStore((await axiosInstance.put('/api/seller/store', request)).data.data);
+
+// 대표 이미지 (13-3) — 발급 → 브라우저가 S3 에 직접 PUT(발급 때와 같은 Content-Type) → 키를 13-2 imageKey 에. 상품 이미지와 같은 방식
+export const STORE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const STORE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
+export async function uploadStoreImage(file) {
+  const { key, uploadUrl } = (await axiosInstance.post('/api/seller/store/image/presign', { contentType: file.type, size: file.size })).data.data;
+  const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+  if (!res.ok) throw new Error('이미지를 올리지 못했어요. 다시 시도해 주세요.');
+  return key;
+}
+
+// PATCH /api/seller/store/close — 폐점(12절, 되돌릴 수 없음) → { storeId, status: 'CLOSED', closedAt }
+// 409 STORE_ORDERS_IN_PROGRESS · STORE_SETTLEMENT_OUTSTANDING 은 서버 메시지("진행 중인 주문 n건…")를 그대로 보여 준다
+export const closeMyStore = async () => {
+  const r = (await axiosInstance.patch('/api/seller/store/close')).data.data;
+  return { ...r, closedAt: new Date(r.closedAt) };
+};
+
 // TODO(박지연): GET /api/seller/dashboard 의 sales.daily[] (최근 30일)
 export const fetchSellerDailySales = () => mockResolve(sellerDaily);
