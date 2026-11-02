@@ -1,7 +1,7 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { fetchCategories, fetchProducts, fetchProduct, fetchProductCards, toCategory, toProductCard, toProductDetail,
   fetchSellerProducts, toSellerProductRow, updateSellerProductStatus, deleteSellerProducts,
-  fetchSellerProduct, saveSellerProduct, uploadProductImages } from '@/features/product/api/productApi';
+  fetchSellerProduct, saveSellerProduct, uploadProductImages, updateSellerProductStocks } from '@/features/product/api/productApi';
 import { salePrice } from '@/shared/utils/format';
 
 afterEach(() => vi.restoreAllMocks());
@@ -228,5 +228,15 @@ describe('uploadProductImages — 발급 → S3 PUT → 키', () => {
     post.mockClear();
     expect(await uploadProductImages([])).toEqual([]);
     expect(post).not.toHaveBeenCalled();
+  });
+});
+
+describe('updateSellerProductStocks — PATCH /api/seller/products/{id}/stocks', () => {
+  it('items 그대로 보내고 바꾼 옵션 재고를 돌려받음', async () => {
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { options: [{ productOptionId: 11, stock: 50 }] } } });
+    const items = [{ productOptionId: 11, stock: 50, seenStock: 42 }];
+
+    expect(await updateSellerProductStocks({ productId: 3, items })).toEqual({ options: [{ productOptionId: 11, stock: 50 }] });
+    expect(patch).toHaveBeenCalledWith('/api/seller/products/3/stocks', { items });
   });
 });

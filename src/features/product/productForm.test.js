@@ -1,4 +1,4 @@
-import { combos, activeGroups, initialForm, rowOf, comboKey, validateForm, buildProductRequest, allStockZero } from '@/features/product/productForm';
+import { combos, activeGroups, initialForm, rowOf, comboKey, validateForm, buildProductRequest, allStockZero, buildCopyRequest, stockChanges, optionLabel } from '@/features/product/productForm';
 
 const CATEGORIES = [{ id: 1, name: '식품', children: [{ id: 101, name: '과일' }, { id: 102, name: '꿀' }] }, { id: 3, name: '패션', children: [{ id: 301, name: '셔츠' }] }];
 
@@ -112,5 +112,36 @@ describe('allStockZero — 등록 전 품절 확인', () => {
     expect(allStockZero(valid({ groups }))).toBe(true); // 새 조합 기본값 0
     expect(allStockZero(valid({ groups, rows: { [comboKey(['파랑'])]: { productOptionId: null, extraPrice: 0, stock: 3, on: true } } }))).toBe(false);
     expect(allStockZero(valid({ groups, rows: { [comboKey(['파랑'])]: { productOptionId: null, extraPrice: 0, stock: 3, on: false } } }))).toBe(true);
+  });
+});
+
+describe('buildCopyRequest — 상품 복사(12절 → 13절 등록)', () => {
+  it('이름 뒤 (복사) · 판매중지 · 옵션은 새 조합(id null) · 재고 0 · 이미지 키 재사용 · 나머지 그대로', () => {
+    expect(buildCopyRequest(SRC)).toEqual({
+      categoryId: 301, name: '리넨 셔츠 (복사)', price: 89000, discountRate: 15, description: '<p>리넨</p>', material: '리넨 100%', origin: '대한민국',
+      option1Name: '컬러', option2Name: '사이즈',
+      options: [
+        { productOptionId: null, option1Value: '오트밀', option2Value: 'M', extraPrice: 0, stock: 0 },
+        { productOptionId: null, option1Value: '오트밀', option2Value: 'L', extraPrice: 2000, stock: 0 },
+      ],
+      imageKeys: ['products/1/a.jpg'],
+      status: 'STOPPED',
+    });
+  });
+
+  it('이름이 길면 100자로 자름', () => {
+    expect(buildCopyRequest({ ...SRC, name: 'x'.repeat(98) }).name).toHaveLength(100);
+  });
+});
+
+describe('재고 수정 모달', () => {
+  it('stockChanges — 바꾼 옵션만, 열 때 본 재고를 seenStock 으로', () => {
+    expect(stockChanges(SRC.options, { 11: 30, 12: 5 })).toEqual([{ productOptionId: 12, stock: 5, seenStock: 0 }]);
+    expect(stockChanges(SRC.options, {})).toEqual([]);
+  });
+
+  it('optionLabel — 값을 / 로, 옵션 없는 상품은 "옵션 없음"', () => {
+    expect(optionLabel(SRC.options[0])).toBe('오트밀 / M');
+    expect(optionLabel({ option1Value: null, option2Value: null })).toBe('옵션 없음');
   });
 });

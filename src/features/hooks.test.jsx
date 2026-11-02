@@ -25,7 +25,7 @@ import { useProductSearchQuery } from '@/features/product/hooks/useProductSearch
 import { useProductQuery } from '@/features/product/hooks/useProductQuery';
 import { useSellerProductsQuery } from '@/features/product/hooks/useSellerProductsQuery';
 import { useSellerProductQuery } from '@/features/product/hooks/useSellerProductQuery';
-import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation, useSaveSellerProductMutation } from '@/features/product/hooks/useSellerProductMutations';
+import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation, useSaveSellerProductMutation, useUpdateSellerProductStocksMutation, useCopySellerProductMutation } from '@/features/product/hooks/useSellerProductMutations';
 import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
 import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
@@ -412,6 +412,36 @@ describe('내 스토어 mutation', () => {
     } finally {
       put.mockRestore();
       patch.mockRestore();
+    }
+  });
+});
+
+describe('판매자 상품 재고 수정 · 복사 mutation', () => {
+  it('재고는 PATCH /stocks · 복사는 상세를 읽어 판매중지로 POST — 끝나면 판매자 상품 무효화', async () => {
+    const detail = { productId: 101, storeId: 1, categoryId: 101, topCategoryId: 1, name: '햇감귤', price: 32900, discountRate: 18, salePrice: 26980,
+      option1Name: null, option2Name: null, options: [{ productOptionId: 10101, option1Value: null, option2Value: null, extraPrice: 0, stock: 40 }],
+      images: [{ key: 'products/seed/a.jpg', url: 'https://img/a.jpg' }], status: 'ON_SALE', statusReason: null, soldOut: false };
+    const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { options: [] } } });
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: detail } });
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { ...detail, productId: 1906, status: 'STOPPED' } } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    try {
+      const stocks = renderHook(() => useUpdateSellerProductStocksMutation(), { wrapper: Wrapper }).result;
+      await act(() => stocks.current.mutateAsync({ productId: 101, items: [{ productOptionId: 10101, stock: 50, seenStock: 40 }] }));
+      expect(patch).toHaveBeenCalledWith('/api/seller/products/101/stocks', { items: [{ productOptionId: 10101, stock: 50, seenStock: 40 }] });
+
+      const copy = renderHook(() => useCopySellerProductMutation(), { wrapper: Wrapper }).result;
+      expect((await act(() => copy.current.mutateAsync(101))).id).toBe(1906);
+      expect(get).toHaveBeenCalledWith('/api/seller/products/101');
+      expect(post).toHaveBeenCalledWith('/api/seller/products', expect.objectContaining({ name: '햇감귤 (복사)', status: 'STOPPED',
+        options: [{ productOptionId: null, option1Value: null, option2Value: null, extraPrice: 0, stock: 0 }], imageKeys: ['products/seed/a.jpg'] }));
+      expect(invalidate).toHaveBeenCalledTimes(2);
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['product', 'seller'] });
+    } finally {
+      patch.mockRestore();
+      get.mockRestore();
+      post.mockRestore();
     }
   });
 });

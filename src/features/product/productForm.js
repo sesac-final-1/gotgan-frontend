@@ -86,3 +86,18 @@ export function buildProductRequest(f) {
     status: f.status === '판매중지' ? 'STOPPED' : 'ON_SALE',
   };
 }
+
+// 상품 복사(12절 "상세를 읽어 STOPPED 로 다시 등록") — 이름 뒤 " (복사)", 옵션은 새 조합 · 재고 0(같은 재고가 두 상품에 생기지 않게), 이미지 키 재사용
+export function buildCopyRequest(src) {
+  const f = initialForm(src, []);
+  const rows = Object.fromEntries(Object.entries(f.rows).map(([k, r]) => [k, { ...r, productOptionId: null, stock: 0 }]));
+  return buildProductRequest({ ...f, name: `${src.name} (복사)`.slice(0, 100), rows, status: '판매중지' });
+}
+
+// 재고 수정 모달 — 바꾼 옵션만 14절 items 로. seenStock 은 모달을 열 때 본 재고
+export const stockChanges = (options, edited) => options
+  .filter((o) => edited[o.productOptionId] !== undefined && edited[o.productOptionId] !== o.stock)
+  .map((o) => ({ productOptionId: o.productOptionId, stock: edited[o.productOptionId], seenStock: o.stock }));
+
+// 옵션 한 줄 이름 — 옵션 없는 상품은 값이 null 인 1개
+export const optionLabel = (o) => [o.option1Value, o.option2Value].filter((v) => v != null).join(' / ') || '옵션 없음';
