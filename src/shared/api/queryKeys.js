@@ -40,7 +40,7 @@ export const queryKeys = {
     rating: (storeId) => ['store', 'rating', String(storeId)], // 스토어 홈 별점(review API)
     mine: () => ['store', 'mine'],
     myApplication: () => ['store', 'my-application'], // 내 입점 신청 상태 — 제출 · 재제출 뒤 무효화
-    sellerDailySales: () => ['store', 'seller', 'daily-sales'],
+    sellerDashboard: () => ['store', 'seller', 'dashboard'], // 판매자 대시보드(15절)
   },
 
   // ── product (박지연)
@@ -52,7 +52,6 @@ export const queryKeys = {
     seller: () => ['product', 'seller'], // 판매자 상품 — 등록 · 수정 · 상태 변경 · 삭제 뒤 목록 · 상세를 함께 무효화
     sellerList: () => ['product', 'seller', 'list'],
     sellerDetail: (productId) => ['product', 'seller', 'detail', String(productId)],
-    cards: () => ['product', 'cards'], // 임시 — 상품 전체 배열 (useProductsQuery, 화면이 모두 옮겨 가면 삭제)
   },
 
   // ── order (이경석)

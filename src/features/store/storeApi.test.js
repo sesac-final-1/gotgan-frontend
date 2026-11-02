@@ -1,5 +1,5 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { fetchStores, fetchStore, toStoreCard, toStoreHome, fetchMyStore, toMyStore, updateMyStore, uploadStoreImage, closeMyStore, fetchStoreRating } from '@/features/store/api/storeApi';
+import { fetchStores, fetchStore, toStoreCard, toStoreHome, fetchMyStore, toMyStore, updateMyStore, uploadStoreImage, closeMyStore, fetchStoreRating, fetchSellerDashboard, toSellerDashboard } from '@/features/store/api/storeApi';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -118,5 +118,34 @@ describe('fetchStoreRating — GET /api/reviews/ratings/stores?ids=', () => {
     expect(await fetchStoreRating(1)).toEqual({ avg: 4.57, count: 12 });
     expect(get).toHaveBeenCalledWith('/api/reviews/ratings/stores', { params: { ids: '1' } });
     expect(await fetchStoreRating(2)).toEqual({ avg: 0, count: 0 });
+  });
+});
+
+describe('판매자 대시보드 — GET /api/seller/dashboard (15절)', () => {
+  const DASH = {
+    order: { storeId: 1, toConfirmCount: 2, toShipCount: 1, claimCount: 0, inProgressCount: 3, todaySalesAmt: 52000 },
+    orderDaily: [{ date: '2026-10-29', tradeAmt: 0, orderCount: 0 }, { date: '2026-10-30', tradeAmt: 26980, orderCount: 1 }],
+    product: { onSaleCount: 5, lowStockCount: 1, soldOutCount: 0, stoppedCount: 2, lowStockProducts: [{ productId: 101, name: '햇감귤', stock: 3, imageUrl: 'https://img/a.jpg' }] },
+    settlement: { pendingItemCount: 2, pendingPayoutAmt: 48000, nextPayout: { settlementId: 7, week: '2026-W44', payoutAmt: 345600, scheduledPayDate: '2026-11-05', status: 'SCHEDULED' }, recentPaid: [] },
+    unavailable: [],
+  };
+
+  it('영역별로 화면 이름 — 일별은 KST 자정 Date · 재고 부족 상품 · 다음 지급', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: DASH } });
+
+    expect(await fetchSellerDashboard()).toEqual({
+      unavailable: [],
+      todaySales: 52000,
+      daily: [{ date: new Date('2026-10-29T00:00:00+09:00'), amount: 0, orders: 0 }, { date: new Date('2026-10-30T00:00:00+09:00'), amount: 26980, orders: 1 }],
+      product: { onSale: 5, lowStock: 1, soldOut: 0, stopped: 2, lowStockProducts: [{ id: 101, name: '햇감귤', stock: 3, image: 'https://img/a.jpg' }] },
+      settlement: { pendingCount: 2, pendingPayout: 48000, nextPayout: { payout: 345600, pay: new Date('2026-11-05T00:00:00+09:00') } },
+    });
+    expect(get).toHaveBeenCalledWith('/api/seller/dashboard');
+  });
+
+  it('못 받은 영역은 null 그대로 · 다음 지급 없음은 null', () => {
+    expect(toSellerDashboard({ order: null, orderDaily: null, product: null, settlement: { ...DASH.settlement, nextPayout: null }, unavailable: ['order', 'orderDaily', 'product'] }))
+      .toEqual({ unavailable: ['order', 'orderDaily', 'product'], todaySales: null, daily: null, product: null,
+        settlement: { pendingCount: 2, pendingPayout: 48000, nextPayout: null } });
   });
 });

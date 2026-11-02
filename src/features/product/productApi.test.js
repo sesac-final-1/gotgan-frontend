@@ -1,5 +1,5 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { fetchCategories, fetchProducts, fetchProduct, fetchProductCards, toCategory, toProductCard, toProductDetail,
+import { fetchCategories, fetchProducts, fetchProduct, toCategory, toProductCard, toProductDetail,
   fetchSellerProducts, toSellerProductRow, updateSellerProductStatus, deleteSellerProducts,
   fetchSellerProduct, saveSellerProduct, uploadProductImages, updateSellerProductStocks } from '@/features/product/api/productApi';
 import { salePrice } from '@/shared/utils/format';
@@ -66,15 +66,6 @@ describe('fetchProducts — GET /api/products (서버 페이징) 를 카드 필�
     expect(p).toMatchObject({ rating: 0, reviews: 0, sold: 0, tags: [], options: [] });
     expect(toProductCard({ ...SUMMARY, imageUrl: null, discountRate: null }).images).toEqual([]);
     expect(toProductCard({ ...SUMMARY, imageUrl: null, discountRate: null }).discount).toBe(0);
-  });
-
-  it('임시 전체 배열 — size 100 으로 한 번 불러 content 만', async () => {
-    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { content: [SUMMARY, { ...SUMMARY, productId: 602 }], page: 0, size: 100, totalElements: 2, totalPages: 1, hasNext: false } } });
-
-    const cards = await fetchProductCards();
-
-    expect(get).toHaveBeenCalledWith('/api/products', { params: { size: 100 } });
-    expect(cards.map((p) => p.id)).toEqual([601, 602]);
   });
 });
 
