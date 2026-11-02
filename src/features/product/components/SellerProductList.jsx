@@ -7,7 +7,9 @@ import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useSellerProductsQuery } from '@/features/product/hooks/useSellerProductsQuery';
-import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation } from '@/features/product/hooks/useSellerProductMutations';
+import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation, useCopySellerProductMutation } from '@/features/product/hooks/useSellerProductMutations';
+import SellerStockModal from '@/features/product/components/SellerStockModal';
+import { bulkResultMessage } from '@/features/product/sellerProductList';
 import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
 import { toast } from '@/shared/stores/toastStore';
 import { comma, ymd, cx } from '@/shared/utils/format';
@@ -15,7 +17,7 @@ import { comma, ymd, cx } from '@/shared/utils/format';
 const STATUS_TABS = ['전체', '판매중', '품절', '판매중지'];
 
 // 열 정의는 선택 상태가 바뀔 때만 새로 만든다 (컨벤션 4-7)
-function buildColumns({ sel, toggle }) {
+function buildColumns({ sel, toggle, onStock, onCopy }) {
   return [
     {
       id: 'select', header: '', enableSorting: false, meta: { thClass: 'w-10', search: false },
@@ -60,9 +62,9 @@ function buildColumns({ sel, toggle }) {
       cell: ({ row: { original: p } }) => (
         <div className="flex gap-1 justify-center">
           <Link to={`/seller/products/${p.id}/edit`} className="btn btn-line btn-xs">수정</Link>
+          <button onClick={() => onStock(p.id)} className="btn btn-line btn-xs">재고</button>
           <Link to={`/products/${p.id}`} className="btn btn-ghost btn-xs px-1.5" title="쇼핑몰에서 보기"><Eye size={14} /></Link>
-          {/* TODO(박지연): useCopyProductMutation */}
-          <button onClick={() => toast('상품을 복사했어요 (판매중지 상태로 생성)')} className="btn btn-ghost btn-xs px-1.5" title="복사"><Copy size={14} /></button>
+          <button onClick={() => onCopy(p.id)} className="btn btn-ghost btn-xs px-1.5" title="복사"><Copy size={14} /></button>
         </div>
       ),
     },
@@ -75,12 +77,19 @@ export default function SellerProductList() {
   const rows = useRatedProducts(products);
   const updateStatus = useUpdateSellerProductStatusMutation();
   const deleteProducts = useDeleteSellerProductsMutation();
+  const { mutate: copyProduct } = useCopySellerProductMutation(); // mutate 는 렌더마다 같은 함수라 열 정의를 다시 만들지 않음
+  const [stockId, setStockId] = useState(null); // 재고 수정 모달을 연 상품
   const [status, setStatus] = useState('전체');
   const [sel, setSel] = useState(() => new Set());
   const [del, setDel] = useState(false);
 
   const toggle = useCallback((id) => setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
-  const columns = useMemo(() => buildColumns({ sel, toggle }), [sel, toggle]);
+  // 복사 — 상세를 읽어 판매중지 · 재고 0 으로 새로 등록(12절), 목록은 무효화로 갱신
+  const onCopy = useCallback((id) => copyProduct(id, {
+    onSuccess: () => toast('판매중지 상태로 복사했어요. 재고를 채운 뒤 판매를 시작하세요'),
+    onError: (err) => toast(err.response?.data?.message ?? '복사하지 못했어요. 잠시 후 다시 시도해 주세요.'),
+  }), [copyProduct]);
+  const columns = useMemo(() => buildColumns({ sel, toggle, onStock: setStockId, onCopy }), [sel, toggle, onCopy]);
   const columnFilters = useMemo(() => (status === '전체' ? [] : [{ id: 'status', value: status }]), [status]);
   const { table, globalFilter, setGlobalFilter } = useClientTable({ data: rows, columns, columnFilters, initialSorting: [{ id: 'created', desc: true }] });
 
@@ -90,12 +99,15 @@ export default function SellerProductList() {
   const allOn = list.length > 0 && list.every((r) => sel.has(r.id));
   const busy = updateStatus.isPending || deleteProducts.isPending;
   // 건마다 처리 결과가 온다 — 실패한 상품은 선택에 남겨 다시 볼 수 있게 (강제중지 상품 재개 등)
-  const report = (verb) => ({ success, failed }) => {
-    toast(failed.length ? `${success.length}개 ${verb} · ${failed.length}개 실패 — ${failed[0].message}` : `${success.length}개 상품을 ${verb}`);
+  const report = (verb, soldOutIds) => ({ success, failed }) => {
+    toast(bulkResultMessage({ verb, success, failed, soldOutIds }));
     setSel(new Set(failed.map((f) => f.productId)));
   };
   const fail = (err) => toast(err.response?.data?.message ?? '처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
-  const bulk = (st) => updateStatus.mutate({ productIds: [...sel], status: st }, { onSuccess: report(`'${st}' 처리했어요`), onError: fail });
+  const bulk = (st) => {
+    const soldOutIds = st === '판매중' ? rows.filter((r) => sel.has(r.id) && r.stock === 0).map((r) => r.id) : [];
+    updateStatus.mutate({ productIds: [...sel], status: st }, { onSuccess: report(st === '판매중' ? '판매재개했어요' : '판매중지했어요', soldOutIds), onError: fail });
+  };
   const remove = () => deleteProducts.mutate([...sel], { onSuccess: report('삭제했어요'), onError: fail, onSettled: () => setDel(false) });
 
   return (
@@ -120,6 +132,7 @@ export default function SellerProductList() {
       </div>
       <DataTable table={table} loading={isLoading} error={isError} />
 
+      <SellerStockModal productId={stockId} onClose={() => setStockId(null)} />
       <Modal open={del} onClose={() => setDel(false)} title="상품 삭제" width={420}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setDel(false)}>취소</button><button disabled={busy} className="btn btn-sm bg-rust text-white border-rust" onClick={remove}>삭제</button></>}>
         <p className="text-[14px]">선택한 <b>{sel.size}개</b> 상품을 삭제할까요?</p>

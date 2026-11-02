@@ -158,6 +158,11 @@ export const saveSellerProduct = async ({ productId, request }) => {
   return toSellerProductDetail(res.data.data);
 };
 
+// PATCH /api/seller/products/{id}/stocks — 재고 수정(14절). 화면에서 본 재고(seenStock)를 같이 보내 그 사이 주문으로 바뀌었으면 409 STOCK_CHANGED(전체 롤백)
+// items [{ productOptionId, stock, seenStock }] → { options[{ productOptionId, stock }] } (바꾼 옵션만)
+export const updateSellerProductStocks = async ({ productId, items }) =>
+  (await axiosInstance.patch(`/api/seller/products/${productId}/stocks`, { items })).data.data;
+
 // 이미지 업로드 (17절) — 발급 → 브라우저가 S3 에 직접 PUT → 키를 13절 imageKeys 에. Content-Type · 크기가 서명에 들어간다(입점 서류와 같은 방식)
 export const PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']; // upload-guard 허용 형식과 같음
 export const PRODUCT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
