@@ -16,7 +16,7 @@ const HOME = {
 };
 
 describe('fetchStores — GET /api/stores 를 화면 필드로', () => {
-  it('id 숫자 · storeName → name · categoryId → cat · 등급 한글 · 운영중 고정 · cover null · since Date · followers 0', async () => {
+  it('id 숫자 · storeName → name · categoryId → cat · 등급 한글 · 운영중 고정 · cover null · since Date', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [SUMMARY] } });
 
     const list = await fetchStores();
@@ -24,7 +24,7 @@ describe('fetchStores — GET /api/stores 를 화면 필드로', () => {
     expect(get).toHaveBeenCalledWith('/api/stores');
     expect(list).toEqual([{
       id: 1, name: '산골농부 박씨네', slug: 'park-farm', cat: 1, intro: '<p>제주 서귀포에서 3대째 귤 농사를 짓습니다.</p>',
-      cover: null, color: '#d0701f', grade: '빅파워', since: new Date('2024-03-23T01:00:00Z'), followers: 0, status: '운영중',
+      cover: null, color: '#d0701f', grade: '빅파워', since: new Date('2024-03-23T01:00:00Z'), status: '운영중',
     }]);
     expect(toStoreCard({ ...SUMMARY, intro: null, grade: 'SPROUT' })).toMatchObject({ intro: '', grade: '새싹' });
   });

@@ -6,7 +6,7 @@ import { useProductSearchQuery } from '@/features/product/hooks/useProductSearch
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { toMap } from '@/shared/utils/collection';
 import { safeHtml } from '@/shared/utils/safeHtml';
-import { cx, comma } from '@/shared/utils/format';
+import { cx } from '@/shared/utils/format';
 
 export default function ShopStoreList() {
   const { data: stores = [] } = useStoresQuery();
@@ -45,7 +45,7 @@ function StoreCard({ s, catName }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2"><b className="text-[16px] group-hover:underline">{s.name}</b><span className="text-[11px] text-mute">{catName}</span></div>
           {s.intro && <div className="text-[13px] text-ink-2 mt-1 line-clamp-1" dangerouslySetInnerHTML={safeHtml(s.intro)} />}
-          <div className="text-[12px] text-mute mt-2">관심고객 <span className="num">{comma(s.followers)}</span> · {s.grade}</div>
+          <div className="text-[12px] text-mute mt-2">{s.grade}</div>
         </div>
       </div>
     </Link>

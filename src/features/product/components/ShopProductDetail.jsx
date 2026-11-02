@@ -114,7 +114,7 @@ function DetailBody({ p, store: storeInfo }) {
           </div>
           <div className="relative flex-1 bg-sand aspect-[4/5] overflow-hidden">
             <img src={p.images[img]} alt={p.name} className="absolute inset-0 w-full h-full object-cover" />
-            {soldOut && <span className="absolute left-4 top-4 bg-ink text-white text-xs font-bold px-3 py-1.5">일시품절 · 재입고 알림 신청 가능</span>}
+            {soldOut && <span className="absolute left-4 top-4 bg-ink text-white text-xs font-bold px-3 py-1.5">일시품절</span>}
           </div>
         </div>
 
@@ -185,8 +185,7 @@ function DetailBody({ p, store: storeInfo }) {
             {!canBuy ? (
               <button disabled className="btn btn-line btn-lg col-span-2">현재 구매할 수 없는 상품입니다</button>
             ) : soldOut ? (
-              // TODO(박지연): useRestockAlertMutation
-              <button onClick={() => toast('재입고 알림을 신청했어요')} className="btn btn-ink btn-lg col-span-2">재입고 알림 신청</button>
+              <button disabled className="btn btn-line btn-lg col-span-2">일시품절</button>
             ) : (
               <>
                 <button onClick={onCart} className="btn btn-line btn-lg">장바구니</button>
@@ -264,15 +263,11 @@ function DetailBody({ p, store: storeInfo }) {
                 <span className="w-8 h-8 text-white text-sm font-bold flex items-center justify-center" style={{ background: store.color }}>{store.name[0]}</span>
                 <div>
                   <div className="font-bold text-[15px]">{store.name}</div>
-                  <div className="text-[11.5px] text-mute">{store.grade} 판매자 · 관심고객 {comma(store.followers)}</div>
+                  <div className="text-[11.5px] text-mute">{store.grade} 판매자</div>
                 </div>
               </div>
               <div className="mt-3 text-[12.5px] text-ink-2 leading-relaxed" dangerouslySetInnerHTML={safeHtml(store.intro)} />
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {/* TODO(박지연): useFollowStoreMutation */}
-                <button onClick={() => toast(`${store.name} 알림받기 완료`)} className="btn btn-line btn-sm">+ 알림받기</button>
-                <Link to={`/store/${store.id}`} className="btn btn-ink btn-sm">스토어 홈</Link>
-              </div>
+              <Link to={`/store/${store.id}`} className="mt-4 btn btn-ink btn-sm w-full">스토어 홈</Link>
             </div>
           </div>}
         </aside>

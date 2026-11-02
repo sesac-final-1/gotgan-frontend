@@ -1,7 +1,7 @@
 // 스토어 홈 (판매자 개별 스토어, 스마트스토어의 '내 스토어' 개념) — 담당 박지연
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Bell, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useStoreQuery } from '@/features/store/hooks/useStoreQuery';
 import { useStoreRatingQuery } from '@/features/store/hooks/useStoreRatingQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
@@ -26,7 +26,7 @@ export default function ShopStoreHome() {
   if (s.status !== '운영중') {
     return <Empty title={`${s.name}은(는) 현재 운영하지 않는 스토어입니다`} desc="운영이 정지되었거나 폐점한 스토어예요." action={<Link to="/stores" className="btn btn-line btn-sm">다른 스토어 보기</Link>} />;
   }
-  return <StoreBody key={s.id} s={s} />; // key: 다른 스토어로 이동하면 알림 · 분류 탭 상태 초기화
+  return <StoreBody key={s.id} s={s} />; // key: 다른 스토어로 이동하면 분류 탭 상태 초기화
 }
 
 function StoreBody({ s }) {
@@ -35,7 +35,6 @@ function StoreBody({ s }) {
   const items = useRatedProducts(page?.content ?? EMPTY);
   const { data: categories = [] } = useCategoriesQuery();
   const { data: rating = { avg: 0, count: 0 } } = useStoreRatingQuery(s.id);
-  const [follow, setFollow] = useState(false);
   const [sub, setSub] = useState('전체');
 
   // 카드에는 하위 카테고리 id 만 있어 이름은 카테고리 트리로
@@ -43,9 +42,6 @@ function StoreBody({ s }) {
   const subs = ['전체', ...new Set(items.map((p) => subName[p.catId]).filter(Boolean))];
   const shown = items.filter((p) => sub === '전체' || subName[p.catId] === sub);
   const catName = categories.find((c) => c.id === s.cat)?.name;
-
-  // TODO(박지연): useFollowStoreMutation
-  const onFollow = () => { setFollow(!follow); toast(follow ? '알림을 해제했어요' : '새 상품 소식을 알려드릴게요'); };
 
   return (
     <div>
@@ -65,16 +61,12 @@ function StoreBody({ s }) {
               {s.intro && <div className="mt-1.5 text-[14px] text-ink-2 max-w-xl leading-relaxed" dangerouslySetInnerHTML={safeHtml(s.intro)} />}
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[12.5px] text-mute">
                 <span>{catName}</span>
-                <span>관심고객 <b className="text-ink num">{comma(s.followers + (follow ? 1 : 0))}</b></span>
                 <span className="flex items-center gap-1"><Stars value={rating.avg} size={11} /> <b className="text-ink">{rating.avg.toFixed(1)}</b> <span className="num">({comma(rating.count)})</span></span>
                 {s.since && <span>{ymd(s.since)} 오픈</span>}
               </div>
             </div>
           </div>
           <div className="flex md:flex-col gap-2 md:w-40">
-            <button onClick={onFollow} className={cx('btn flex-1', follow ? 'btn-line' : 'btn-ink')}>
-              <Bell size={15} /> {follow ? '알림받는 중' : '알림받기'}
-            </button>
             <button onClick={() => toast('판매자 톡 연결 (목업)')} className="btn btn-line flex-1"><MessageSquare size={15} /> 문의하기</button>
           </div>
         </div>
