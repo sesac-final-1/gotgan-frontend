@@ -8,7 +8,7 @@ import { sellerDaily } from '@/mocks/fixtures/orders';
 const GRADE_LABEL = { SPROUT: '새싹', POWER: '파워', BIG_POWER: '빅파워' };
 const STATUS_LABEL = { ACTIVE: '운영중', SUSPENDED: '정지', CLOSED: '폐점' };
 
-// 목록 · 홈 공통 — 관심고객 수(followers)는 팔로우가 범위 밖이라 0
+// 목록 · 홈 공통
 const common = (r) => ({
   id: r.storeId,
   name: r.storeName,
@@ -19,7 +19,6 @@ const common = (r) => ({
   color: r.color,
   grade: GRADE_LABEL[r.grade] ?? r.grade,
   since: r.createdAt ? new Date(r.createdAt) : null,
-  followers: 0,
 });
 
 // GET /api/stores 한 줄 — 운영 중 스토어만 오므로 status 는 항상 운영중

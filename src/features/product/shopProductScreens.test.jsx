@@ -182,6 +182,17 @@ describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 
+  it('전부 품절인 상품은 눌리지 않는 「일시품절」 — 재입고 알림 · 스토어 알림받기 버튼 없음', async () => {
+    mockApi({ store: STORE_HOME, detail: { ...DETAIL, soldOut: true, options: DETAIL.options.map((o) => ({ ...o, soldOut: true })) } });
+    renderAt('/products/3', <ShopProductDetail />, '/products/:id');
+    await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
+
+    expect(screen.getByRole('button', { name: '일시품절' })).toBeDisabled();
+    expect(screen.queryByText(/재입고/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/알림받기/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/관심고객/)).not.toBeInTheDocument();
+  });
+
   it('없는 상품(404)은 찾을 수 없음', async () => {
     mockApi({ detail: null });
     renderAt('/products/999', <ShopProductDetail />, '/products/:id');
