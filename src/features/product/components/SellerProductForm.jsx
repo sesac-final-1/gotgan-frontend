@@ -7,7 +7,7 @@ import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery'
 import { useSellerProductQuery } from '@/features/product/hooks/useSellerProductQuery';
 import { useSaveSellerProductMutation, useDeleteSellerProductsMutation } from '@/features/product/hooks/useSellerProductMutations';
 import { uploadProductImages, PRODUCT_IMAGE_TYPES, PRODUCT_IMAGE_MAX_BYTES } from '@/features/product/api/productApi';
-import { initialForm, combos, rowOf, comboKey, validateForm, buildProductRequest, MAX_OPTION_GROUPS, MAX_IMAGES } from '@/features/product/productForm';
+import { initialForm, combos, rowOf, comboKey, validateForm, buildProductRequest, allStockZero, MAX_OPTION_GROUPS, MAX_IMAGES } from '@/features/product/productForm';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { toast } from '@/shared/stores/toastStore';
 import { toMap } from '@/shared/utils/collection';
@@ -84,6 +84,7 @@ function FormBody({ src, categories, storeName }) {
   const submit = () => {
     const problem = validateForm(f);
     if (problem) return toast(problem);
+    if (!edit && allStockZero(f) && !window.confirm('재고가 0이라 등록하자마자 품절로 보여요. 그래도 등록할까요?')) return;
     save.mutate({ productId: src?.id, request: buildProductRequest(f) }, {
       onSuccess: () => { toast(edit ? '상품이 수정되었어요' : '상품이 등록되었어요'); void nav('/seller/products'); },
       onError: (err) => toast(errorMessage(err, '저장하지 못했어요. 잠시 후 다시 시도해 주세요.')),
@@ -150,7 +151,7 @@ function FormBody({ src, categories, storeName }) {
             {/* 옵션 조합 입력표 — 목록이 아니라 입력 폼이라 DataTable 대신 <table> */}
             <div className="border border-line overflow-x-auto max-h-[420px]">
               <table className="tbl">
-                <thead><tr><th>옵션 조합</th><th className="w-32">추가금액</th><th className="w-28">재고</th><th className="w-20">판매</th></tr></thead>
+                <thead><tr><th>옵션 조합</th><th className="w-32">추가금액</th><th className="w-28">재고<span className="text-point">*</span></th><th className="w-20">판매</th></tr></thead>
                 <tbody>
                   {list.map((values) => {
                     const r = rowOf(f.rows, values);

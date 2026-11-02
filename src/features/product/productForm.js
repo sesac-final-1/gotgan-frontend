@@ -59,6 +59,9 @@ export function validateForm(f) {
   return null;
 }
 
+// 판매할 조합의 재고가 모두 0 — 등록하자마자 품절로 보이므로 화면이 한 번 더 묻는다
+export const allStockZero = (f) => combos(f.groups).map((v) => rowOf(f.rows, v)).filter((r) => r.on).every((r) => r.stock === 0);
+
 // 폼 → 13절 요청. 수정이면 status 는 서버가 무시하지만 같은 모양으로 보낸다
 export function buildProductRequest(f) {
   const groups = activeGroups(f.groups);

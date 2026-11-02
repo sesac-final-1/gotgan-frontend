@@ -1,4 +1,4 @@
-import { combos, activeGroups, initialForm, rowOf, comboKey, validateForm, buildProductRequest } from '@/features/product/productForm';
+import { combos, activeGroups, initialForm, rowOf, comboKey, validateForm, buildProductRequest, allStockZero } from '@/features/product/productForm';
 
 const CATEGORIES = [{ id: 1, name: '식품', children: [{ id: 101, name: '과일' }, { id: 102, name: '꿀' }] }, { id: 3, name: '패션', children: [{ id: 301, name: '셔츠' }] }];
 
@@ -103,5 +103,14 @@ describe('buildProductRequest — 13절 요청', () => {
       options: [{ productOptionId: null, option1Value: null, option2Value: null, extraPrice: 0, stock: 40 }],
       imageKeys: ['products/1/b.jpg'], status: 'STOPPED',
     });
+  });
+});
+
+describe('allStockZero — 등록 전 품절 확인', () => {
+  it('판매할 조합 재고가 모두 0이면 true, 하나라도 있으면 false · 판매 체크를 푼 조합은 보지 않음', () => {
+    const groups = [{ name: '컬러', values: '빨강, 파랑' }];
+    expect(allStockZero(valid({ groups }))).toBe(true); // 새 조합 기본값 0
+    expect(allStockZero(valid({ groups, rows: { [comboKey(['파랑'])]: { productOptionId: null, extraPrice: 0, stock: 3, on: true } } }))).toBe(false);
+    expect(allStockZero(valid({ groups, rows: { [comboKey(['파랑'])]: { productOptionId: null, extraPrice: 0, stock: 3, on: false } } }))).toBe(true);
   });
 });
