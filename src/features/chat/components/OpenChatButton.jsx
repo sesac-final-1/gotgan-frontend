@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useOpenChatMutation } from '@/features/chat/hooks/useChatQueries';
+import { failMessage } from '@/features/chat/utils/chatView';
+import { toast } from '@/shared/stores/toastStore';
 
 /**
  * 다른 화면에서 채팅 열기 — 같은 방이 있으면 그 방에 문맥 카드만 붙는다(chat.md 1절). 열리면 basePath/{roomId} 로 이동.
@@ -12,7 +14,7 @@ export default function OpenChatButton({ request, basePath, className = 'btn btn
   const open = useOpenChatMutation();
   const onClick = () => {
     if (!loggedIn) return navigate('/login');
-    return open.mutate(request, { onSuccess: (room) => navigate(`${basePath}/${room.roomId}`) });
+    return open.mutate(request, { onSuccess: (room) => navigate(`${basePath}/${room.roomId}`), onError: (e) => toast(failMessage(e)) });
   };
   return <button type="button" className={className} disabled={open.isPending} onClick={onClick}>{children}</button>;
 }

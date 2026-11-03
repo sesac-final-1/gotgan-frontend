@@ -6,7 +6,7 @@ import { toast } from '@/shared/stores/toastStore';
 import { useChangeChatStatusMutation, useChatMessagesQuery, useOpenChatMutation, useReadChatMutation } from '@/features/chat/hooks/useChatQueries';
 import { useChatRoomSocket } from '@/features/chat/hooks/useChatRoomSocket';
 import ReportModal from '@/features/report/components/ReportModal';
-import { contextLabel, flattenMessages, MAX_LENGTH, mySide, ROOM_TYPE_LABEL, roomNotice, validateContent } from '@/features/chat/utils/chatView';
+import { contextLabel, failMessage, flattenMessages, MAX_LENGTH, mySide, ROOM_TYPE_LABEL, roomNotice, validateContent } from '@/features/chat/utils/chatView';
 
 const CONNECTION_TEXT = { connecting: '연결 중…', disconnected: '연결이 끊겼어요. 다시 연결하는 중…', stopped: '실시간 연결이 멈췄어요. 새로고침해 주세요.' };
 const time = (d) => d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -46,6 +46,7 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
   };
   const askHelp = () => openHelp.mutate({ type: 'BUYER_SUPPORT', context: { type: 'CHAT_ROOM', id: room.roomId } }, {
     onSuccess: (help) => navigate(`${basePath}/${help.roomId}`),
+    onError: (e) => toast(failMessage(e)),
   });
 
   return (
@@ -67,7 +68,7 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
           )}
           {side === 'ADMIN' && room.status && (
             <button className="btn btn-line btn-xs" disabled={changeStatus.isPending}
-              onClick={() => changeStatus.mutate({ roomId: room.roomId, status: room.status === 'OPEN' ? 'RESOLVED' : 'OPEN' })}>
+              onClick={() => changeStatus.mutate({ roomId: room.roomId, status: room.status === 'OPEN' ? 'RESOLVED' : 'OPEN' }, { onError: (e) => toast(failMessage(e)) })}>
               {room.status === 'OPEN' ? '상담 종료' : '다시 열기'}
             </button>
           )}

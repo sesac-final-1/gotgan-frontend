@@ -45,11 +45,6 @@ export const fetchSellerSettlements = async () => {
   };
 };
 
-// 판매자 대시보드(박지연)용 — 이번 주(집계 전) 구매확정분의 정산 예정액. 같은 API 의 요약에서
-export const fetchSellerPending = async () => ({
-  payout: (await axiosInstance.get('/api/seller/settlements')).data.data.summary.pendingPayoutAmt,
-});
-
 // GET /api/seller/settlements/{id} — 건별 상품주문(이월 표시) · 상태 이력. 관리자 상세와 같은 모양
 export const toSettlementDetail = (d) => ({
   ...toSellerSettlement(d.settlement),

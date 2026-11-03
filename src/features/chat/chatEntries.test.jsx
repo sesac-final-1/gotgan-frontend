@@ -5,6 +5,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import MyOrderDetail from '@/features/order/components/MyOrderDetail';
 import ReportModal from '@/features/report/components/ReportModal';
+import { useToastStore } from '@/shared/stores/toastStore';
 
 // 다른 화면의 채팅 진입 버튼 — 어떤 방 · 문맥 카드로 여는지 (chat.md "문맥 카드")
 const ROOM = { roomId: 21, type: 'BUYER_SUPPORT', status: 'OPEN', counterpart: { name: '곳간 운영팀', role: 'ADMIN' }, lastMessage: null, unreadCount: 0 };
@@ -59,6 +60,17 @@ describe('주문 상세 진입 버튼', () => {
     fireEvent.click(await screen.findByText('결제 · 환불 문의'));
     await waitFor(() => expect(post).toHaveBeenCalledWith('/api/chats/rooms',
       { type: 'BUYER_SUPPORT', context: { type: 'ORDER', id: 20261027000001 } }));
+  });
+});
+
+describe('채팅 열기 실패', () => {
+  it('서버가 거절하면(정지 스토어 409 등) 이동하지 않고 서버 메시지를 토스트로', async () => {
+    post.mockRejectedValueOnce({ response: { status: 409, data: { code: 'CHAT_STORE_INACTIVE', message: '운영하지 않는 스토어라 새 대화를 열 수 없어요.' } } });
+    renderAt('/mypage/orders/20261027-000001', '/mypage/orders/:id', <MyOrderDetail />);
+    fireEvent.click(await screen.findByText('판매자 문의'));
+
+    await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('운영하지 않는 스토어라 새 대화를 열 수 없어요.'));
+    expect(screen.queryByText('구매자 채팅방')).not.toBeInTheDocument();
   });
 });
 
