@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { axiosInstance } from '@/shared/api/axiosInstance';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import ShopStoreHome from '@/features/store/components/ShopStoreHome';
 import ShopStoreList from '@/features/store/components/ShopStoreList';
 
@@ -56,6 +57,28 @@ describe('스토어 홈 /store/:id — GET /api/stores/{id}', () => {
     expect(screen.getByText('우체국택배 · 3,000원')).toBeInTheDocument(); // 무료배송 기준 없음 → "(0원 이상 무료)" 안 붙음
     expect(screen.getByText('귤 농사')).toBeInTheDocument(); // 소개 HTML 이 글자로 찍히지 않고 정화돼서
     expect(document.querySelector('[onerror]')).toBeNull();
+  });
+
+  it('문의하기 — 그 스토어 스토어 톡을 열고 스토어 카드, 내 채팅방으로 이동', async () => {
+    useAuthStore.setState({ accessToken: 't', user: { userId: 10, name: '김서연', roles: ['BUYER'] }, isAuthReady: true });
+    mockApi();
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { roomId: 21, type: 'STORE_INQUIRY', counterpart: { name: '산골농부 박씨네', role: 'SELLER' }, lastMessage: null, unreadCount: 0 } } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/store/1']}>
+          <Routes>
+            <Route path="/store/:id" element={<ShopStoreHome />} />
+            <Route path="/mypage/chats/:roomId" element={<p>구매자 채팅방</p>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: '문의하기' }));
+    expect(await screen.findByText('구매자 채팅방')).toBeInTheDocument();
+    expect(post).toHaveBeenCalledWith('/api/chats/rooms', { type: 'STORE_INQUIRY', storeId: 1, context: { type: 'STORE', id: 1 } });
+    useAuthStore.setState({ accessToken: null, user: null });
   });
 
   it('없는 스토어(404) · 정지 스토어 안내', async () => {

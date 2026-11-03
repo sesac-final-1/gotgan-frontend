@@ -9,7 +9,7 @@ import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery'
 import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
 import ProductCard from '@/features/product/components/ProductCard';
 import { Stars, Empty } from '@/shared/components/ui';
-import { toast } from '@/shared/stores/toastStore';
+import OpenChatButton from '@/features/chat/components/OpenChatButton';
 import { safeHtml } from '@/shared/utils/safeHtml';
 import { shippingText } from '@/features/store/storeText';
 import { cx, comma, ymd } from '@/shared/utils/format';
@@ -67,7 +67,10 @@ function StoreBody({ s }) {
             </div>
           </div>
           <div className="flex md:flex-col gap-2 md:w-40">
-            <button onClick={() => toast('판매자 톡 연결 (목업)')} className="btn btn-line flex-1"><MessageSquare size={15} /> 문의하기</button>
+            <OpenChatButton className="btn btn-line flex-1" basePath="/mypage/chats"
+              request={{ type: 'STORE_INQUIRY', storeId: s.id, context: { type: 'STORE', id: s.id } }}>
+              <MessageSquare size={15} /> 문의하기
+            </OpenChatButton>
           </div>
         </div>
 
