@@ -97,7 +97,7 @@ describe('MyOrders — 기간 탭', () => {
     const recent = { ...DETAIL, orderNo: '20261101-000001', orderedAt: '2026-11-01T10:00:00' };
     const old = { ...DETAIL, orderNo: '20260701-000001', orderedAt: '2026-07-01T10:00:00', items: [{ ...ITEM, orderItemId: 457, productName: '지난 사과' }] };
     vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({
-      data: { data: url === '/api/orders' ? { statusCounts: {}, orders: [recent, old] } : url === '/api/claims' ? { content: [] } : [] },
+      data: { data: url === '/api/orders' ? { statusCounts: {}, orders: [recent, old] } : [] }, // 클레임 · 리뷰 작성 가능 목록은 배열
     }));
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={queryClient}><MemoryRouter><MyOrders /></MemoryRouter></QueryClientProvider>);
@@ -109,7 +109,7 @@ describe('MyOrders — 기간 탭', () => {
     cleanup();
 
     vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({
-      data: { data: url === '/api/orders' ? { statusCounts: {}, orders: [old] } : url === '/api/claims' ? { content: [] } : [] },
+      data: { data: url === '/api/orders' ? { statusCounts: {}, orders: [old] } : [] },
     }));
     render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><MyOrders /></MemoryRouter></QueryClientProvider>);
     fireEvent.click(await screen.findByRole('button', { name: '1개월' }));
