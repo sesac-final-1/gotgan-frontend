@@ -29,7 +29,7 @@ export default function ShopOrderComplete() {
       <div className="mt-10 border-t border-ink text-left text-[14px]">
         {[
           ['주문번호', <span className="num">{orderNo}</span>],
-          ['결제수단', st.method || '신용/체크카드'],
+          // 결제수단은 결제창에서 바뀔 수 있어(카드 창에서 간편결제 등) 주문 상세의 서버 값으로 본다
           // 리다이렉트로 돌아오면 사용 포인트 · 배송지를 모름 — 주문 상세에서 확인
           st.point != null && ['사용 포인트', <span className="num">{comma(st.point)}P</span>],
           ['실결제금액', <b className="num">{won(pay)}</b>],
