@@ -10,7 +10,7 @@ import { useConfirmPurchaseMutation, useWithdrawClaimMutation } from '@/features
 import { useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
 import MyReviewModal from '@/features/review/components/MyReviewModal';
 import { canWithdraw } from '@/features/order/utils/claimView';
-import { flowCounts, lineStatusLabel, toDate } from '@/features/order/utils/orderView';
+import { PERIODS, flowCounts, lineStatusLabel, ordersInPeriod, toDate } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
 import { cx, won, ymd } from '@/shared/utils/format';
 
@@ -72,7 +72,8 @@ export default function MyOrders() {
   const { data: writableList = [] } = useWritableReviewsQuery();
   const writable = Object.fromEntries(writableList.map((w) => [w.lineId, w]));
   const [reviewTarget, setReviewTarget] = useState(null); // { line } — 작성 모달 (작성하면 작성 가능 목록에서 빠져 버튼이 사라진다)
-  const orders = data?.orders ?? [];
+  const allOrders = data?.orders ?? [];
+  const orders = ordersInPeriod(allOrders, period);
   const counts = flowCounts(data?.statusCounts);
   return (
     <div>
@@ -87,11 +88,11 @@ export default function MyOrders() {
         ))}
       </div>
       <div className="flex gap-1 mt-6 mb-4">
-        {['1개월', '3개월', '6개월', '전체'].map((p) => <button key={p} onClick={() => setPeriod(p)} className={cx('h-8 px-3 text-[13px] border', period === p ? 'border-ink bg-ink text-white' : 'border-line-2 text-ink-2')}>{p}</button>)}
+        {Object.keys(PERIODS).map((p) => <button key={p} onClick={() => setPeriod(p)} className={cx('h-8 px-3 text-[13px] border', period === p ? 'border-ink bg-ink text-white' : 'border-line-2 text-ink-2')}>{p}</button>)}
       </div>
       {isLoading && <p className="text-mute py-10 text-center">불러오는 중…</p>}
       {isError && <p className="text-mute py-10 text-center">주문 내역을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>}
-      {!isLoading && !isError && !orders.length && <p className="text-mute py-10 text-center">주문 내역이 없어요</p>}
+      {!isLoading && !isError && !orders.length && <p className="text-mute py-10 text-center">{allOrders.length ? `최근 ${period} 주문 내역이 없어요` : '주문 내역이 없어요'}</p>}
       <div className="space-y-5">
         {orders.map((o) => (
           <div key={o.orderNo} className="border border-line">
