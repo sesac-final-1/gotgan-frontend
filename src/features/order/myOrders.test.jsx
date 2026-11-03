@@ -9,9 +9,10 @@ import { fetchClaimPreview, fetchMyOrder, fetchMyOrders, requestClaim } from '@/
 import { useMyOrderQuery } from '@/features/order/hooks/useMyOrderQuery';
 import { useClaimPreviewQuery, useConfirmPurchaseMutation, useRequestClaimMutation } from '@/features/order/hooks/useClaimMutations';
 import {
-  claimDoneMessage, claimTypesOf, flowCounts, isSellerFault, lineStatusLabel, openClaimCount, orderNoOf, payMethodLabel, toDate, trackingOf,
+  claimDoneMessage, claimTypesOf, flowCounts, isSellerFault, lineStatusLabel, openClaimCount, orderNoOf, ordersInPeriod, payMethodLabel, toDate, trackingOf,
 } from '@/features/order/utils/orderView';
 import MyClaimRequest from '@/features/order/components/MyClaimRequest';
+import MyOrders from '@/features/order/components/MyOrders';
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -36,6 +37,19 @@ describe('orderView — 응답 → 화면 표시', () => {
     expect(lineStatusLabel({ status: 'FAILED' }, { status: 'ORDERED' })).toBe('결제실패');
     expect(lineStatusLabel({ status: 'PAID' }, { status: 'SHIPPING' })).toBe('배송중');
     expect(lineStatusLabel({ status: 'PAID' }, { status: 'NEW_STATUS' })).toBe('NEW_STATUS');
+  });
+
+  it('기간 탭 — N달 전 같은 날 0시부터, 전체 · 모르는 값은 그대로', () => {
+    const now = new Date('2026-11-03T15:00:00');
+    const at = (orderedAt) => ({ orderNo: orderedAt, orderedAt });
+    const orders = [at('2026-11-01T10:00:00'), at('2026-10-03T00:00:00'), at('2026-10-02T23:59:59'), at('2026-06-01T09:00:00'), at('2026-04-30T09:00:00')];
+    const nos = (period) => ordersInPeriod(orders, period, now).map((o) => o.orderNo);
+
+    expect(nos('1개월')).toEqual(['2026-11-01T10:00:00', '2026-10-03T00:00:00']);
+    expect(nos('3개월')).toHaveLength(3);
+    expect(nos('6개월')).toHaveLength(4);
+    expect(nos('전체')).toHaveLength(5);
+    expect(ordersInPeriod(orders, '?', now)).toBe(orders);
   });
 
   it('진행 단계 · 진행 중 클레임 개수 — 없는 키는 0', () => {
@@ -73,6 +87,34 @@ describe('orderView — 응답 → 화면 표시', () => {
     expect(claimDoneMessage({ type: 'CANCEL', status: 'APPROVED' })).toContain('처리하고 있어요');
     expect(claimDoneMessage({ type: 'RETURN', status: 'REQUESTED' })).toContain('반품');
     expect(claimDoneMessage({ type: 'EXCHANGE', status: 'REQUESTED' })).toContain('교환');
+  });
+});
+
+describe('MyOrders — 기간 탭', () => {
+  it('기본 3개월, 탭을 누르면 그 기간 주문만 · 없으면 기간 안내', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-03T15:00:00'));
+    const recent = { ...DETAIL, orderNo: '20261101-000001', orderedAt: '2026-11-01T10:00:00' };
+    const old = { ...DETAIL, orderNo: '20260701-000001', orderedAt: '2026-07-01T10:00:00', items: [{ ...ITEM, orderItemId: 457, productName: '지난 사과' }] };
+    vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({
+      data: { data: url === '/api/orders' ? { statusCounts: {}, orders: [recent, old] } : [] }, // 클레임 · 리뷰 작성 가능 목록은 배열
+    }));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><MemoryRouter><MyOrders /></MemoryRouter></QueryClientProvider>);
+
+    expect(await screen.findByText('주문번호 20261101-000001')).toBeInTheDocument();
+    expect(screen.queryByText('주문번호 20260701-000001')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '6개월' }));
+    expect(screen.getByText('주문번호 20260701-000001')).toBeInTheDocument();
+    cleanup();
+
+    vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({
+      data: { data: url === '/api/orders' ? { statusCounts: {}, orders: [old] } : [] },
+    }));
+    render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><MyOrders /></MemoryRouter></QueryClientProvider>);
+    fireEvent.click(await screen.findByRole('button', { name: '1개월' }));
+    expect(await screen.findByText('최근 1개월 주문 내역이 없어요')).toBeInTheDocument();
+    vi.useRealTimers();
   });
 });
 

@@ -7,6 +7,15 @@ export const toDate = (s) => (s ? new Date(s) : null);
 // 결제 대기 · 실패 주문의 상품주문은 ORDERED(주문완료)로 남는다 → 주문 상태(결제대기 · 결제실패)로 보여 준다
 export const lineStatusLabel = (order, item) => ORDER_STATUS_LABEL[order.status] ?? ITEM_STATUS_LABEL[item.status] ?? item.status;
 
+// 주문 목록 기간 탭 — 서버는 전체를 주고 화면이 주문일로 거른다. N개월 = 오늘에서 N달 전 같은 날 0시부터
+export const PERIODS = { '1개월': 1, '3개월': 3, '6개월': 6, 전체: null };
+export function ordersInPeriod(orders, period, now = new Date()) {
+  const months = PERIODS[period];
+  if (!months) return orders;
+  const from = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+  return orders.filter((o) => toDate(o.orderedAt) >= from);
+}
+
 // 상단 진행 단계 개수 — statusCounts(모든 상태 키)에서 FLOW 순서대로 [라벨, 개수]
 export const flowCounts = (statusCounts = {}) => FLOW_STATUS.map((s, i) => [FLOW[i], statusCounts[s] ?? 0]);
 
