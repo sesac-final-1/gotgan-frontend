@@ -5,7 +5,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import { queryKeys } from '@/shared/api/queryKeys';
 import { useToastStore } from '@/shared/stores/toastStore';
 import {
-  createReview, deleteReview, fetchMyReviews, fetchWritableReviews, presignReviewImages, updateReview, uploadReviewImages,
+  createReview, deleteReview, fetchMyReviews, fetchProductRatings, fetchWritableReviews, presignReviewImages, updateReview, uploadReviewImages,
 } from '@/features/review/api/reviewApi';
 import MyReviews from '@/features/review/components/MyReviews';
 
@@ -98,6 +98,19 @@ describe('리뷰 API', () => {
     expect(post).toHaveBeenCalledTimes(1);
   });
 
+  it('상품 평점 — 100개가 넘으면 100개씩 나눠 묻고 순서대로 합침, 없으면 부르지 않음', async () => {
+    const ids = Array.from({ length: 150 }, (_, i) => i + 1);
+    const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (_url, { params }) => ({
+      data: { data: params.ids.split(',').map((id) => ({ productId: Number(id) })) },
+    }));
+
+    await expect(fetchProductRatings(ids)).resolves.toEqual(ids.map((productId) => ({ productId })));
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(get).toHaveBeenNthCalledWith(2, '/api/reviews/ratings/products', { params: { ids: ids.slice(100).join(',') } });
+    await expect(fetchProductRatings([])).resolves.toEqual([]);
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
   it('사진 — S3 업로드가 실패하면 오류', async () => {
     vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [{ key: 'reviews/4/1.jpg', uploadUrl: 'https://s3/1' }] } });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false });
@@ -122,6 +135,16 @@ describe('MyReviews', () => {
     expect(await screen.findByText('작성 가능한 리뷰가 없어요')).toBeInTheDocument();
     await openMine();
     expect(screen.getByText('아직 쓴 리뷰가 없어요')).toBeInTheDocument();
+  });
+
+  it('조회 실패는 "비었음"이 아니라 실패 안내', async () => {
+    vi.spyOn(axiosInstance, 'get').mockRejectedValue(apiError(500, 'X', '오류'));
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><MyReviews /></QueryClientProvider>);
+
+    expect(screen.getByText('불러오는 중…')).toBeInTheDocument();
+    expect(await screen.findByText(/리뷰를 불러오지 못했어요/)).toBeInTheDocument();
+    expect(screen.queryByText('작성 가능한 리뷰가 없어요')).not.toBeInTheDocument();
   });
 
   it('내가 쓴 리뷰 — 사이즈 체감 · 사진 · 답글, 블라인드는 안내 · 수정 버튼 숨김', async () => {
