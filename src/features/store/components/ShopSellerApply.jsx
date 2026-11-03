@@ -14,11 +14,18 @@ import { queryKeys } from '@/shared/api/queryKeys';
 import { Checkbox, Empty } from '@/shared/components/ui';
 import { PostcodeSearch } from '@/shared/components/common/PostcodeSearch';
 import { toast } from '@/shared/stores/toastStore';
-import { cx, ymd, ymdhm } from '@/shared/utils/format';
+import { cx, pct, ymd, ymdhm } from '@/shared/utils/format';
+import { COMMISSION_RATES, PAYMENT_FEE_LABEL } from '@/features/support/data/policy';
 
 /* 흐름: GET /api/seller/apply/me → 없으면 신청 폼, 있으면 상태 화면(심사대기 · 보완요청 · 반려 · 승인). 반려는 재신청 가능일이 지나면 폼으로
    제출: 서류 presign → S3 PUT → POST /api/seller/apply → me 다시 조회 → 심사대기 화면. 화면은 빈칸 · 개수 · 약관 · 형식 4칸만 보고 나머지는 서버 400 메시지로
    보완요청이면 "보완 제출하기" → ShopSellerResubmit(2-3절) */
+// 판매수수료 범위 — 수수료 안내(/fees)와 같은 표에서 계산(예: 6%–11%)
+const RATES = COMMISSION_RATES.map((c) => c.rate);
+const COMMISSION_RANGE = `${pct(Math.min(...RATES))}–${pct(Math.max(...RATES))}`;
+// 수수료 안내는 새 탭으로 — 같은 탭이면 작성 중인 신청서가 사라진다
+const FeesLink = () => <Link to="/fees" target="_blank" rel="noopener noreferrer" className="underline">수수료 안내</Link>;
+
 const STEPS = ['판매자 정보', '스토어 · 상품', '서류 제출', '정산 · 약관'];
 const ACTOR_LABEL = { APPLICANT: '신청자', ADMIN: '곳간 운영팀', SYSTEM: '시스템' };
 
@@ -165,9 +172,8 @@ function ApplyForm() {
           <div className="mt-8 bg-cream p-5 text-[13px] leading-relaxed">
             <b>입점 혜택</b>
             <ul className="mt-2 space-y-1 text-ink-2">
-              <li>· 첫 3개월 판매수수료 50% 지원</li>
+              <li>· 판매수수료 상위 카테고리별 {COMMISSION_RANGE} · 결제수수료 {PAYMENT_FEE_LABEL} (<FeesLink />)</li>
               <li>· 주 1회 정산 (구매확정 기준)</li>
-              <li>· 신규 스토어 메인 노출 2주</li>
             </ul>
           </div>
         </div>
@@ -256,7 +262,7 @@ function ApplyForm() {
               <div className="px-4 h-11 flex items-center bg-cream font-semibold text-[14px] border-b border-line">정산 정책 요약</div>
               <table className="w-full text-[13px]">
                 <tbody>
-                  {[['판매수수료', '상위 카테고리별 요율 (첫 3개월 50%)'], ['결제수수료', '2.2% (PG사 수수료)'], ['정산 기준', '구매확정일 (배송완료 7일 후 자동 확정)'], ['정산 주기', '주 1회 · 월~일 확정분을 다음 주 목요일 지급'], ['지급 보류', '클레임 미처리, 스토어 정지 시 해당 건 지급 보류']].map(([k, v]) => (
+                  {[['판매수수료', <>상위 카테고리별 {COMMISSION_RANGE} (<FeesLink />)</>], ['결제수수료', `${PAYMENT_FEE_LABEL} (PG사 수수료)`], ['정산 기준', '구매확정일 (배송완료 7일 후 자동 확정)'], ['정산 주기', '주 1회 · 월~일 확정분을 다음 주 목요일 지급'], ['지급 보류', '클레임 미처리, 스토어 정지 시 해당 건 지급 보류']].map(([k, v]) => (
                     <tr key={k} className="border-b border-line last:border-0"><th className="w-28 text-left font-medium text-ink-2 px-4 py-2.5">{k}</th><td className="px-4 py-2.5">{v}</td></tr>
                   ))}
                 </tbody>
