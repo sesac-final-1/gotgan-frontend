@@ -154,7 +154,7 @@ export default function SellerReviewList() {
           <button disabled={!flagReason.trim() || report.isPending} onClick={submitFlag} className="btn btn-ink btn-sm">요청</button>
         </>}>
         <p className="text-[13px] text-ink-2">판매자는 리뷰를 삭제하거나 가릴 수 없습니다. 욕설 · 광고 · 허위 사실 등 정책 위반이 의심되면 사유를 적어 관리자에게 검토를 요청하세요.</p>
-        <textarea rows={3} value={flagReason} onChange={(e) => setFlagReason(e.target.value)} className="field text-[13px] mt-3" placeholder="예: 상품과 무관한 광고성 내용" />
+        <textarea rows={3} maxLength={500} value={flagReason} onChange={(e) => setFlagReason(e.target.value)} className="field text-[13px] mt-3" placeholder="예: 상품과 무관한 광고성 내용" />
         {flagError && <p className="mt-2 text-[12px] text-rust">{flagError}</p>}
       </Modal>
     </div>
