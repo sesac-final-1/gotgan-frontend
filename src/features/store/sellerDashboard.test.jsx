@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { axiosInstance } from '@/shared/api/axiosInstance';
@@ -90,5 +90,26 @@ describe('판매자 대시보드 — GET /api/seller/dashboard + 주문 · 리�
     mockApi({ store: { ...MY_STORE, status: 'SUSPENDED', statusReason: '서류 확인 필요' } });
     renderDashboard();
     expect(await screen.findByText(/스토어가 정지 중이에요 — 상품이 쇼핑몰에 노출되지 않습니다 \(사유: 서류 확인 필요\)/)).toBeInTheDocument();
+  });
+
+  it('스토어나 통계 조회가 실패하면 \'불러오는 중\' 대신 다시 시도 안내, 누르면 실패한 것만 다시 요청', async () => {
+    const get = mockApi();
+    let failDash = true;
+    const base = get.getMockImplementation();
+    get.mockImplementation(async (url, config) => {
+      if (url === '/api/seller/dashboard' && failDash) throw new Error('500');
+      return base(url, config);
+    });
+    renderDashboard();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('대시보드를 불러오지 못했어요');
+    expect(screen.queryByText('불러오는 중…')).not.toBeInTheDocument();
+
+    failDash = false;
+    const before = get.mock.calls.filter(([u]) => u === '/api/seller/store').length;
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+
+    expect(await screen.findByText('박영철 대표님, 좋은 하루예요')).toBeInTheDocument();
+    expect(get.mock.calls.filter(([u]) => u === '/api/seller/store')).toHaveLength(before);
   });
 });
