@@ -4,6 +4,7 @@ import { fetchCategories, fetchProducts, fetchProduct, toCategory, toProductCard
   fetchSellerProduct, saveSellerProduct, uploadProductImages, updateSellerProductStocks } from '@/features/product/api/productApi';
 import { salePrice } from '@/shared/utils/format';
 import { cleanParams } from '@/features/product/api/productApi';
+import { fileOf } from '@/test/fileOf';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -198,7 +199,7 @@ describe('판매자 상품 상세 · 등록 · 수정', () => {
 
 describe('uploadProductImages — 발급 → S3 PUT → 키', () => {
   afterEach(() => vi.unstubAllGlobals());
-  const file = (name, type) => new File(['x'], name, { type });
+  const file = (name, type) => fileOf(name, type);
 
   it('파일 형식 · 크기로 발급받고, 같은 Content-Type 으로 PUT 한 뒤 키를 순서대로', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [
@@ -208,7 +209,7 @@ describe('uploadProductImages — 발급 → S3 PUT → 키', () => {
     const files = [file('a.jpg', 'image/jpeg'), file('b.png', 'image/png')];
 
     expect(await uploadProductImages(files)).toEqual(['products/1/a.jpg', 'products/1/b.png']);
-    expect(post).toHaveBeenCalledWith('/api/seller/products/images/presign', { files: [{ contentType: 'image/jpeg', size: 1 }, { contentType: 'image/png', size: 1 }] });
+    expect(post).toHaveBeenCalledWith('/api/seller/products/images/presign', { files: [{ contentType: 'image/jpeg', size: 16 }, { contentType: 'image/png', size: 16 }] });
     expect(fetchMock).toHaveBeenCalledWith('https://s3/b', { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: files[1] });
   });
 

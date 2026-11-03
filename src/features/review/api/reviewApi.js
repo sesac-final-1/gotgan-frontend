@@ -1,6 +1,7 @@
 // review 도메인 API — 담당 이경석
 // 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절) — 계약: backend docs/api/review.md
 import { axiosInstance } from '@/shared/api/axiosInstance';
+import { withRealType } from '@/shared/utils/fileType';
 
 // ── 판매자 리뷰 관리 (review.md 6 · 7절) — 스토어는 게이트웨이가 넣는 X-Store-Id
 
@@ -119,8 +120,9 @@ export const presignReviewImages = async (files) =>
 
 // 사진을 S3 에 올리고 키를 돌려준다 — presigned PUT 은 우리 API 가 아니라 axiosInstance(토큰 헤더) 대신 fetch.
 // Content-Type 이 서명에 들어가 있어 발급 때와 같아야 한다 (다르면 S3 403)
-export async function uploadReviewImages(files) {
-  if (files.length === 0) return [];
+export async function uploadReviewImages(picked) {
+  if (picked.length === 0) return [];
+  const files = await Promise.all(picked.map(withRealType)); // 확장자가 아닌 실제 형식으로 발급 (upload-guard 와 맞춤)
   const issued = await presignReviewImages(files);
   await Promise.all(issued.map(async ({ uploadUrl }, i) => {
     const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': files[i].type }, body: files[i] });

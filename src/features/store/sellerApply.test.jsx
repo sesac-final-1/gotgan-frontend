@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { useToastStore } from '@/shared/stores/toastStore';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import ShopSellerApply from '@/features/store/components/ShopSellerApply';
+import { fileOf } from '@/test/fileOf';
 
 // 입점 신청 화면 — 내 신청 상태(store.md 2-2절)에 따라 폼 · 심사대기 · 보완요청 · 반려 · 승인, 제출은 서류 업로드 → POST /api/seller/apply (2 · 2-1절)
 let queryClient;
@@ -45,7 +46,7 @@ function renderApply() {
   );
 }
 
-const file = (name, type) => new File(['x'], name, { type });
+const file = (name, type) => fileOf(name, type);
 /** Field 의 <label> 텍스트로 입력칸 찾기 — label 은 htmlFor 없이 같은 div 안에 있다 */
 const field = (label) => screen.getAllByText(label, { exact: false }).find((el) => el.tagName === 'LABEL').closest('div').querySelector('input, select, textarea');
 const type = (label, value) => fireEvent.change(field(label), { target: { value } });

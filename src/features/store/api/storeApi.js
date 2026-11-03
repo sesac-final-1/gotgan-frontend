@@ -1,6 +1,7 @@
 // store 도메인 API — 담당 박지연. 공개 API(목록 · 스토어 홈)는 실제 호출, 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절)
 // 계약: backend docs/api/store.md 14절. 스토어 · 카테고리 id 는 숫자다 (목업 's1' · 'fashion' 아님)
 import { axiosInstance } from '@/shared/api/axiosInstance';
+import { withRealType } from '@/shared/utils/fileType';
 
 // 화면 표시 문구 — admin/constants 에 같은 표가 있지만 store 가 admin 을 참조하지 않도록 여기 둔다
 const GRADE_LABEL = { SPROUT: '새싹', POWER: '파워', BIG_POWER: '빅파워' };
@@ -66,7 +67,8 @@ export const updateMyStore = async (request) => toMyStore((await axiosInstance.p
 export const STORE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const STORE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
-export async function uploadStoreImage(file) {
+export async function uploadStoreImage(picked) {
+  const file = await withRealType(picked); // 확장자가 아닌 실제 형식으로 발급 (upload-guard 와 맞춤)
   const { key, uploadUrl } = (await axiosInstance.post('/api/seller/store/image/presign', { contentType: file.type, size: file.size })).data.data;
   const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
   if (!res.ok) throw new Error('이미지를 올리지 못했어요. 다시 시도해 주세요.');

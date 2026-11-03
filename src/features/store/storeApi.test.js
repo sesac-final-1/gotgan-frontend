@@ -1,5 +1,6 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { fetchStores, fetchStore, toStoreCard, toStoreHome, fetchMyStore, toMyStore, updateMyStore, uploadStoreImage, closeMyStore, fetchStoreRating, fetchSellerDashboard, toSellerDashboard } from '@/features/store/api/storeApi';
+import { fileOf } from '@/test/fileOf';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -92,10 +93,10 @@ describe('내 스토어 수정 · 대표 이미지 · 폐점', () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { key: 'stores/1/a.webp', uploadUrl: 'https://s3/a' } } });
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', fetchMock);
-    const file = new File(['xy'], 'a.webp', { type: 'image/webp' });
+    const file = fileOf('a.webp', 'image/webp');
 
     expect(await uploadStoreImage(file)).toBe('stores/1/a.webp');
-    expect(post).toHaveBeenCalledWith('/api/seller/store/image/presign', { contentType: 'image/webp', size: 2 });
+    expect(post).toHaveBeenCalledWith('/api/seller/store/image/presign', { contentType: 'image/webp', size: 16 });
     expect(fetchMock).toHaveBeenCalledWith('https://s3/a', { method: 'PUT', headers: { 'Content-Type': 'image/webp' }, body: file });
 
     fetchMock.mockResolvedValue({ ok: false });
