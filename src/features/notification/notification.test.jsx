@@ -81,6 +81,19 @@ describe('알림 벨', () => {
     await waitFor(() => expect(axiosInstance.get).toHaveBeenCalledWith('/api/notifications/unread-count'));
   });
 
+  it('판매자 새 주문 알림(ORDER_NEW)이 오면 판매자 주문 목록 · 대시보드를 다시 불러온다 (O-13)', async () => {
+    renderBell();
+    await screen.findByRole('button', { name: '알림 1개' });
+    const [, options] = fetchEventSource.mock.calls[0];
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+    act(() => options.onmessage({ event: 'notification', data: JSON.stringify({ ...ITEMS[0], id: 'a4', type: 'ORDER_NEW', title: '새 주문이 들어왔어요', link: '/seller/orders' }) }));
+
+    expect(useToastStore.getState().current?.msg).toBe('새 주문이 들어왔어요');
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['order', 'seller'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['store', 'seller', 'dashboard'] });
+  });
+
   it('로그인하지 않으면 조회 · 연결하지 않음', async () => {
     useAuthStore.setState({ accessToken: null, user: null });
     renderBell();
