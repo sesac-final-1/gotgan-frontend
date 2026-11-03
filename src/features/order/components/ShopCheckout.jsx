@@ -34,7 +34,7 @@ function Section({ n, title, children, right }) {
 }
 
 export default function ShopCheckout() {
-  const { cart, isLoading } = useCart();
+  const { cart, isLoading, isError } = useCart();
   const queryClient = useQueryClient();
   const { data: myAddresses = [] } = useMyAddressesQuery();
   const { data: points } = useMyPointsQuery();
@@ -83,6 +83,7 @@ export default function ShopCheckout() {
   };
 
   if (isLoading) return <p className="text-mute py-20 text-center">불러오는 중…</p>;
+  if (isError) return <p className="text-rust py-20 text-center">장바구니를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>;
   if (!lines.length) return <Empty title="주문할 상품이 없어요" action={<Link to="/cart" className="btn btn-ink">장바구니로</Link>} />;
 
   return (

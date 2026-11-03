@@ -15,12 +15,21 @@ const dDay = (expiresAt) => Math.max(0, Math.floor((expiresAt - Date.now()) / DA
 
 const Thumbnail = ({ src }) => (src ? <img src={src} alt="" className="w-16 h-20 object-cover" /> : <span className="w-16 h-20 bg-sand shrink-0" />);
 
+// 목록 대신 보일 문구 — 불러오는 중 · 실패는 "비었음"과 구분, 받은 목록이 비면 empty
+const listNotice = (query, empty) => {
+  if (query.isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
+  if (query.isError) return <p className="text-rust py-10 text-center">리뷰를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>;
+  return query.data?.length === 0 ? empty : null;
+};
+
 export default function MyReviews() {
   const [tab, setTab] = useState('todo');
   const [target, setTarget] = useState(null); // { line } 작성 · { review } 수정
   const [deleting, setDeleting] = useState(null);
-  const { data: todo = [] } = useWritableReviewsQuery();
-  const { data: mine = [] } = useMyReviewsQuery();
+  const todoQuery = useWritableReviewsQuery();
+  const mineQuery = useMyReviewsQuery();
+  const todo = todoQuery.data ?? [];
+  const mine = mineQuery.data ?? [];
   const remove = useDeleteReviewMutation();
 
   const confirmDelete = () => remove.mutate(deleting.id, {
@@ -38,7 +47,7 @@ export default function MyReviews() {
       {tab === 'todo' ? (
         <div className="space-y-3">
           <p className="text-[13px] text-mute mb-2">구매확정된 상품주문 1건당 1개 · 확정 후 30일 이내 · 별점과 사진(최대 {MAX_IMAGES}장)을 남길 수 있어요</p>
-          {todo.length === 0 && <Empty title="작성 가능한 리뷰가 없어요" desc="구매확정한 상품의 리뷰를 여기서 쓸 수 있어요" />}
+          {listNotice(todoQuery, <Empty title="작성 가능한 리뷰가 없어요" desc="구매확정한 상품의 리뷰를 여기서 쓸 수 있어요" />)}
           {todo.map((l) => (
             <div key={l.lineId} className="flex items-center gap-4 border border-line p-4">
               <Thumbnail src={l.thumbnail} />
@@ -53,7 +62,7 @@ export default function MyReviews() {
         </div>
       ) : (
         <ul>
-          {mine.length === 0 && <Empty title="아직 쓴 리뷰가 없어요" />}
+          {listNotice(mineQuery, <Empty title="아직 쓴 리뷰가 없어요" />)}
           {mine.map((r) => (
             <li key={r.id} className="py-5 border-b border-line flex gap-4">
               <Thumbnail src={r.thumbnail} />

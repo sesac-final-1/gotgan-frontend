@@ -62,9 +62,7 @@ export default function SellerOrderDetail() {
               {o.status === 'PAYMENT_DONE' && <button disabled={busy} onClick={confirm} className="btn btn-ink btn-sm">발주확인</button>}
               {o.status === 'PREPARING' && !shipForm && <button onClick={() => setShipForm({ courier: defaultCourier, trackingNo: '' })} className="btn btn-ink btn-sm">송장 입력</button>}
               {o.status === 'SHIPPING' && <button disabled={busy} onClick={deliver} className="btn btn-ink btn-sm">배송완료 처리</button>}
-              {['PAYMENT_DONE', 'PREPARING'].includes(o.status) && <button className="btn btn-line btn-sm">판매취소</button>}
-              {o.status === 'SHIPPING' && <button className="btn btn-line btn-sm">송장 수정</button>}
-              <button className="btn btn-line btn-sm">구매자에게 메시지</button>
+              {/* TODO(이경석): 판매취소 · 송장 수정 · 구매자에게 메시지 — 서버 API 가 생기면 추가 */}
             </div>
             {shipForm && (
               <div className="px-5 pb-5 flex flex-wrap items-center gap-2 text-[13px]">
@@ -76,7 +74,7 @@ export default function SellerOrderDetail() {
             )}
           </div>
           <div className="panel">
-            <div className="panel-head"><span className="panel-title">배송지 정보</span><button className="btn btn-line btn-xs">배송지 수정</button></div>
+            <div className="panel-head"><span className="panel-title">배송지 정보</span></div>
             <div className="p-5"><KV rows={[['수령인', o.receiverName], ['연락처', o.receiverPhone], ['주소', `(${o.zipcode}) ${o.address1} ${o.address2 ?? ''}`], ['배송메모', o.deliveryMemo || '-'], ['택배사', o.courier || '-'], ['송장번호', o.trackingNo ? <span className="num">{o.trackingNo}</span> : '미등록']]} /></div>
           </div>
           <div className="panel">
@@ -95,13 +93,11 @@ export default function SellerOrderDetail() {
             <div className="p-5 text-[13px]"><b>{o.buyerName}</b></div>
           </div>
           <div className="panel">
-            <div className="panel-head"><span className="panel-title">정산 예정</span></div>
+            <div className="panel-head"><span className="panel-title">정산</span></div>
+            {/* 수수료율은 카테고리별(settlement) — 주문 응답에 없어 정산 금액은 정산서에서 */}
             <div className="p-5 text-[13px] space-y-2 num">
               <div className="flex justify-between"><span className="text-ink-2 font-sans">결제금액</span>{won(o.itemAmt)}</div>
-              <div className="flex justify-between"><span className="text-ink-2 font-sans">판매수수료 (11%)</span>−{won(o.itemAmt * 0.11)}</div>
-              <div className="flex justify-between"><span className="text-ink-2 font-sans">결제수수료 (2.2%)</span>−{won(o.itemAmt * 0.022)}</div>
-              <div className="flex justify-between border-t border-line pt-2 font-bold text-[14px]"><span className="font-sans">정산 예정액</span>{won(o.itemAmt * (1 - 0.132))}</div>
-              <p className="text-[11.5px] text-mute font-sans">구매확정 후 다음 주 목요일 지급</p>
+              <p className="text-[11.5px] text-mute font-sans">판매수수료는 카테고리별 요율로 빠지고, 구매확정 후 다음 주 목요일 지급돼요. 금액은 <Link to="/seller/settlements" className="underline">정산 내역</Link>에서 확인하세요.</p>
             </div>
           </div>
         </div>

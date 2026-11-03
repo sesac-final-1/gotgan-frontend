@@ -65,7 +65,6 @@ export default function MyOrderDetail() {
             <div className="flex justify-between py-2.5 text-[13px]"><span className="text-mute">{o.items.every((l) => l.status === 'CONFIRMED') ? '적립 포인트' : '적립 예정 포인트 (구매확정 시 적립)'}</span><span className="num font-semibold text-moss">+{comma(o.earnedPoint)}P</span></div>
           </div>
           <div className="flex gap-2 mt-2">
-            <button className="btn btn-line btn-sm">영수증 / 거래명세서</button>
             {/* 주문 카드 id = 주문번호의 숫자 (20261027-000001 → 20261027000001, chat.md 문맥 카드) */}
             <OpenChatButton basePath="/mypage/chats" request={{ type: 'BUYER_SUPPORT', context: { type: 'ORDER', id: Number(o.orderNo.replace('-', '')) } }}>
               결제 · 환불 문의

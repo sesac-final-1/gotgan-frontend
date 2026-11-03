@@ -58,8 +58,15 @@ export const fetchProductReviewSummary = async (productId) =>
   (await axiosInstance.get('/api/reviews/summary', { params: { productId } })).data.data;
 
 // GET /api/reviews/ratings/products?ids= — 여러 상품 평점(review.md 10절). 요청 순서대로 · 리뷰 없으면 0 · 0, 1~100개
-export const fetchProductRatings = async (ids) => (ids.length === 0 ? []
-  : (await axiosInstance.get('/api/reviews/ratings/products', { params: { ids: ids.join(',') } })).data.data);
+// 100개가 넘으면(판매자 상품 전체) 100개씩 나눠 묻고 순서대로 합친다
+const RATING_IDS_MAX = 100;
+export const fetchProductRatings = async (ids) => {
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += RATING_IDS_MAX) chunks.push(ids.slice(i, i + RATING_IDS_MAX));
+  const pages = await Promise.all(chunks.map(async (chunk) =>
+    (await axiosInstance.get('/api/reviews/ratings/products', { params: { ids: chunk.join(',') } })).data.data));
+  return pages.flat();
+};
 
 // ── 마이페이지 리뷰 관리 (review.md 1 ~ 5 · 12절)
 
