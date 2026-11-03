@@ -1,11 +1,6 @@
 // 상품 문의 API — 담당 이경석. 계약: backend docs/api/review.md 13 ~ 20절
 // 응답은 화면 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절)
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { mockProductInquiryPage } from '@/mocks/productInquiries';
-
-// TODO(박지연 · 이경석): 상품 상세가 목업 상품(id 'p101')을 쓰는 동안만 목업 문의로 — 실제 API 는 숫자 productId 만 받는다.
-// 상품 상세를 실제 상품 API 로 바꾸면 이 분기와 mocks/productInquiries.js 를 삭제
-const isMockProduct = (productId) => !/^\d+$/.test(String(productId));
 
 const toDate = (iso) => (iso ? new Date(iso) : null);
 const mapPage = (page, map) => ({ ...page, content: page.content.map(map) });
@@ -22,9 +17,8 @@ export const toProductInquiry = (i) => ({
   date: new Date(i.createdAt),
 });
 
-export const fetchProductInquiries = async (params) => mapPage(isMockProduct(params.productId)
-  ? await mockProductInquiryPage(params)
-  : (await axiosInstance.get('/api/inquiries', { params })).data.data, toProductInquiry);
+export const fetchProductInquiries = async (params) =>
+  mapPage((await axiosInstance.get('/api/inquiries', { params })).data.data, toProductInquiry);
 
 // GET /api/inquiries/me — 내 문의(비밀글 · 답변 포함), 상품명 · 사진은 등록 시점 값
 export const toMyInquiry = (i) => ({

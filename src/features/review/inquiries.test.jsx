@@ -5,7 +5,6 @@ import { AxiosError } from 'axios';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { useToastStore } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { qnas as mockQnas } from '@/mocks/fixtures/reviews';
 import {
   answerInquiry, createInquiry, deleteInquiry, fetchMyInquiries, fetchProductInquiries, fetchSellerInquiries,
   fetchSellerInquirySummary, updateInquiry,
@@ -110,19 +109,6 @@ describe('상품 문의 API', () => {
     expect(put).toHaveBeenCalledWith('/api/seller/inquiries/31/answer', { content: '답변' });
     await deleteInquiry(12);
     expect(del).toHaveBeenCalledWith('/api/inquiries/12');
-  });
-
-  it('목업 상품 id — API 를 부르지 않고 목업 문의를 같은 모양으로 (비밀글 가림 · 최신순 · 페이지)', async () => {
-    const get = vi.spyOn(axiosInstance, 'get');
-    const all = mockQnas.filter((q) => q.productId === 'p101');
-
-    const result = await fetchProductInquiries({ productId: 'p101', page: 0, size: 2 });
-    expect(result.totalElements).toBe(all.length);
-    expect(result.content).toHaveLength(2);
-    expect(result.content.map((q) => q.date.getTime())).toEqual([...result.content.map((q) => q.date.getTime())].sort((a, b) => b - a));
-    const secret = (await fetchProductInquiries({ productId: 'p101' })).content.find((q) => q.secret);
-    expect(secret).toMatchObject({ content: null, answer: null, writer: '구매자', mine: false });
-    expect(get).not.toHaveBeenCalled();
   });
 });
 

@@ -1,12 +1,6 @@
 // review 도메인 API — 담당 이경석
 // 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절) — 계약: backend docs/api/review.md
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { mockResolve } from '@/mocks/mockApi';
-import { reviews, qnas } from '@/mocks/fixtures/reviews';
-import { mockProductReviewPage, mockProductReviewSummary } from '@/mocks/productReviews';
-
-// TODO(이경석): 목업 — 판매자 대시보드 · 스토어 홈 · 메인 · 관리자 화면이 아직 씀. 각 화면 연동이 끝나면 삭제
-export const fetchReviews = () => mockResolve(reviews);
 
 // ── 판매자 리뷰 관리 (review.md 6 · 7절) — 스토어는 게이트웨이가 넣는 X-Store-Id
 
@@ -40,10 +34,6 @@ export const replyToReview = async (id, content) => (await axiosInstance.put(`/a
 
 // ── 상품 상세 공개 리뷰 (review.md 9절) — 블라인드 · 삭제 제외
 
-// TODO(박지연 · 이경석): 상품 상세가 목업 상품(id 'p101')을 쓰는 동안만 목업 리뷰로 — 실제 API 는 숫자 productId 만 받는다.
-// 상품 상세를 실제 상품 API 로 바꾸면 이 분기와 mocks/productReviews.js 를 삭제
-const isMockProduct = (productId) => !/^\d+$/.test(String(productId));
-
 // GET /api/reviews?productId&rating&photoOnly&sort&page&size — sort: LATEST · RATING_HIGH · RATING_LOW
 export const toProductReview = (r) => ({
   id: r.reviewId,
@@ -59,23 +49,17 @@ export const toProductReview = (r) => ({
 });
 
 export const fetchProductReviews = async (params) => {
-  const page = isMockProduct(params.productId)
-    ? await mockProductReviewPage(params)
-    : (await axiosInstance.get('/api/reviews', { params })).data.data;
+  const page = (await axiosInstance.get('/api/reviews', { params })).data.data;
   return { ...page, content: page.content.map(toProductReview) };
 };
 
 // GET /api/reviews/summary?productId — 평균 · 리뷰 수 · 별점 분포(5→1) · 사이즈 체감 분포(작아요 · 정사이즈 · 커요)
-export const fetchProductReviewSummary = async (productId) => (isMockProduct(productId)
-  ? mockProductReviewSummary(productId)
-  : (await axiosInstance.get('/api/reviews/summary', { params: { productId } })).data.data);
+export const fetchProductReviewSummary = async (productId) =>
+  (await axiosInstance.get('/api/reviews/summary', { params: { productId } })).data.data;
 
 // GET /api/reviews/ratings/products?ids= — 여러 상품 평점(review.md 10절). 요청 순서대로 · 리뷰 없으면 0 · 0, 1~100개
 export const fetchProductRatings = async (ids) => (ids.length === 0 ? []
   : (await axiosInstance.get('/api/reviews/ratings/products', { params: { ids: ids.join(',') } })).data.data);
-
-// TODO(이경석): GET /api/products/{id}/inquiries · /api/inquiries/me · /api/seller/inquiries
-export const fetchQnas = () => mockResolve(qnas);
 
 // ── 마이페이지 리뷰 관리 (review.md 1 ~ 5 · 12절)
 

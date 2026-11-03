@@ -66,15 +66,11 @@ export const queryKeys = {
     sellerItems: (params) => ['order', 'seller', 'items', params ?? {}], // 서버 페이징 대상 (컨벤션 4-7)
     sellerItem: (orderItemId) => ['order', 'seller', 'item', String(orderItemId)],
     sellerClaims: (params) => ['order', 'seller', 'claims', params ?? {}], // seller() 아래 — 서버 페이징
-    sellerItemsMock: () => ['order', 'seller-mock'], // 임시 — 대시보드 최근 주문 (대시보드 연동 때 삭제)
-    sellerBuyers: () => ['order', 'seller', 'buyers'], // 임시 — 응답에 작성자 · 구매자 요약이 들어오면 삭제
   },
 
   // ── review (이경석)
   review: {
     all: ['review'],
-    list: () => ['review', 'list'],
-    qnas: () => ['review', 'qnas'],
     my: () => ['review', 'my'], // 마이페이지 — 작성 · 수정 · 삭제 뒤 내가 쓴 리뷰 · 작성 가능 목록을 함께 무효화
     myList: () => ['review', 'my', 'list'],
     writable: () => ['review', 'my', 'writable'],

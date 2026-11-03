@@ -1,8 +1,5 @@
 // order 도메인 API — 담당 이경석
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { mockResolve } from '@/mocks/mockApi';
-import { sellerOrders } from '@/mocks/fixtures/orders';
-import { users } from '@/mocks/fixtures/people';
 
 // GET /api/carts — 장바구니 (스토어별 묶음 · 배송비 · 무료배송까지 남은 금액, 가격 · 품절은 product 재확인)
 // → { stores[{ storeId, storeName, productAmt, shippingFee, freeThreshold, amountToFree, items[] }], unavailable[], cartCount, checkedCount,
@@ -81,9 +78,3 @@ export const rejectClaim = async (claimId, reason) => (await axiosInstance.patch
 export const collectClaim = async (claimId) => (await axiosInstance.patch(`/api/seller/claims/${claimId}/collect`)).data.data;
 // { courier, trackingNo } — trackingNo 를 비우면(null) 서버가 mock 송장번호. 재배송의 배송완료는 주문 관리의 배송완료(또는 자동)
 export const reshipClaim = async (claimId, request) => (await axiosInstance.patch(`/api/seller/claims/${claimId}/reship`, request)).data.data;
-
-// TODO(이경석): 임시 — 판매자 대시보드 최근 주문은 아직 목업 (대시보드 연동 때 삭제)
-export const fetchSellerOrderItemsMock = () => mockResolve(sellerOrders);
-
-// TODO(이경석): 임시 — 판매자 화면의 구매자 · 작성자 표시용. 실제로는 /api/seller/reviews · 문의 · 주문상세 응답에 작성자명(마스킹) · 구매자 요약을 담고, 이 함수와 useSellerBuyersQuery 는 삭제
-export const fetchSellerBuyers = () => mockResolve(users);
