@@ -72,8 +72,10 @@ function buildColumns({ sel, toggle, onStock, onCopy }) {
 }
 
 // 판매자 상품은 데모 규모라 전체 1회 로드 후 화면에서 탭 · 검색 · 정렬 · 페이징 (컨벤션 4-7)
+const NO_PRODUCTS = []; // 받기 전 기본값도 고정 참조 — 렌더마다 새 [] 면 useRatedProducts 가 매번 새 목록을 만든다
+
 export default function SellerProductList() {
-  const { data: products = [], isLoading, isError } = useSellerProductsQuery();
+  const { data: products = NO_PRODUCTS, isLoading, isError } = useSellerProductsQuery();
   const rows = useRatedProducts(products);
   const updateStatus = useUpdateSellerProductStatusMutation();
   const deleteProducts = useDeleteSellerProductsMutation();

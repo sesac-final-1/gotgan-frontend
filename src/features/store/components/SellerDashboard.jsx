@@ -18,14 +18,24 @@ const RECENT_REVIEWS = { tab: 'ALL', page: 0, size: 3 };
 const Unavailable = () => <p className="text-mute text-[13px] text-center py-6">일시적으로 불러올 수 없어요</p>;
 
 export default function SellerDashboard() {
-  const { data: store } = useMyStoreQuery();
-  const { data: dash } = useSellerDashboardQuery();
+  const { data: store, isError: storeError, refetch: refetchStore } = useMyStoreQuery();
+  const { data: dash, isError: dashError, refetch: refetchDash } = useSellerDashboardQuery();
   // 할 일 숫자 · 최근 주문은 판매자 주문 API 하나로 — 주문 관리 화면 탭 숫자와 같은 출처
   const { data: orders } = useSellerOrderItemsQuery(RECENT_ORDERS);
   const { data: reviewSummary } = useSellerReviewSummaryQuery();
   const { data: reviews } = useSellerReviewsQuery(RECENT_REVIEWS);
   const { data: inquiry } = useSellerInquirySummaryQuery();
 
+  // 스토어 · 통계 없이는 화면을 못 그림 — 받은 값이 없는데 실패했으면 '불러오는 중' 대신 다시 시도 안내
+  if ((!store && storeError) || (!dash && dashError)) {
+    const retry = () => { if (!store) refetchStore(); if (!dash) refetchDash(); };
+    return (
+      <div role="alert" className="py-10 text-center">
+        <p className="text-mute">대시보드를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>
+        <button type="button" onClick={retry} className="btn btn-line btn-sm mt-3">다시 시도</button>
+      </div>
+    );
+  }
   if (!store || !dash) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
 
   const counts = orders?.statusCounts ?? {};
