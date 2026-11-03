@@ -6,6 +6,7 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
+import { ListStatus } from '@/features/product/components/ListStatus';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import ProductCard from '@/features/product/components/ProductCard';
 import { Checkbox, Empty } from '@/shared/components/ui';
@@ -36,11 +37,12 @@ export default function ShopProductList() {
   const [excludeSoldOut, setExcludeSoldOut] = useState(false);
   const [mobileFilter, setMobileFilter] = useState(false);
 
-  const { data } = useProductSearchQuery({
+  const search = useProductSearchQuery({
     categoryId: sub || cat || undefined, q: q || undefined, sort: SORT_API[sort],
     minPrice: price?.[0] || undefined, maxPrice: price?.[1], excludeSoldOut: excludeSoldOut || undefined,
     page, size: PAGE_SIZE,
   });
+  const { data } = search;
   const list = useRatedProducts(data?.content ?? EMPTY);
   const total = data?.totalElements ?? 0;
 
@@ -101,7 +103,7 @@ export default function ShopProductList() {
         <aside className="hidden lg:block w-[190px] shrink-0">{Filters}</aside>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div className="text-[13px] text-ink-2">총 <b className="num text-ink">{total}</b>개
+            <div className="text-[13px] text-ink-2">총 <b className="num text-ink">{data ? total : '-'}</b>개
               {price && (
                 <span className="ml-3 inline-flex flex-wrap gap-1.5 align-middle">
                   <button onClick={() => { setPrice(null); resetPage(); }} className="inline-flex items-center gap-1 h-6 px-2 bg-sand text-[12px]">{price[2]}<X size={12} /></button>
@@ -117,7 +119,7 @@ export default function ShopProductList() {
               </select>
             </div>
           </div>
-          {list.length ? (
+          {!data ? <ListStatus query={search} failText="상품을 불러오지 못했어요." /> : list.length ? (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10">
               {list.map((p) => <ProductCard key={p.id} p={p} store={storeById[p.storeId]} />)}
             </div>

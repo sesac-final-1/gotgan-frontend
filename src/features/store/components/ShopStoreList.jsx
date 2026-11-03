@@ -4,12 +4,16 @@ import { Link } from 'react-router';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
+import { ListStatus } from '@/features/product/components/ListStatus';
 import { toMap } from '@/shared/utils/collection';
 import { safeHtml } from '@/shared/utils/safeHtml';
 import { cx } from '@/shared/utils/format';
 
+const NO_STORES = [];
+
 export default function ShopStoreList() {
-  const { data: stores = [] } = useStoresQuery();
+  const storesQuery = useStoresQuery();
+  const { data: stores = NO_STORES } = storesQuery;
   const { data: categories = [] } = useCategoriesQuery();
   const [cat, setCat] = useState('all');
   const catById = useMemo(() => toMap(categories), [categories]);
@@ -24,9 +28,11 @@ export default function ShopStoreList() {
           <button key={k} onClick={() => setCat(k)} className={cx('h-8 px-3.5 text-[13px] border shrink-0', cat === k ? 'bg-ink text-white border-ink' : 'border-line-2 hover:border-ink')}>{l}</button>
         ))}
       </div>
-      <div className="grid md:grid-cols-2 gap-6">
-        {list.map((s) => <StoreCard key={s.id} s={s} catName={catById[s.cat]?.name} />)}
-      </div>
+      {!storesQuery.data ? <ListStatus query={storesQuery} failText="가게 목록을 불러오지 못했어요." /> : list.length ? (
+        <div className="grid md:grid-cols-2 gap-6">
+          {list.map((s) => <StoreCard key={s.id} s={s} catName={catById[s.cat]?.name} />)}
+        </div>
+      ) : <p className="py-16 text-center text-sm text-mute">이 카테고리에는 아직 가게가 없어요.</p>}
     </div>
   );
 }

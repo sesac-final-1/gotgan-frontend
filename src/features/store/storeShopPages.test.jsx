@@ -104,4 +104,20 @@ describe('스토어 목록 /stores', () => {
     await waitFor(() => expect(get).toHaveBeenCalledWith('/api/products', { params: { storeId: 1, sort: 'NEW', size: 3 } }));
     await waitFor(() => expect(link.querySelectorAll('img[src^="https://img/"]')).toHaveLength(2)); // 상품 사진만 (소개 HTML 의 이미지 제외)
   });
+
+  it('목록 조회 실패는 다시 시도 안내, 운영 중 가게가 없으면 빈 안내', async () => {
+    const get = mockApi();
+    const base = get.getMockImplementation();
+    let fail = true;
+    get.mockImplementation(async (url, opts) => {
+      if (url === '/api/stores' && fail) throw new Error('502');
+      return base(url, opts);
+    });
+    renderAt('/stores', <ShopStoreList />, '/stores');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('가게 목록을 불러오지 못했어요');
+    fail = false;
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect(await screen.findByText('이 카테고리에는 아직 가게가 없어요.')).toBeInTheDocument(); // stores: []
+  });
 });
