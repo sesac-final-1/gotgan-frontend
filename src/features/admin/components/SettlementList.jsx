@@ -47,7 +47,7 @@ function buildColumns({ sel, toggle, setHold, setDetailId }) {
       cell: ({ row }) => (
         <span className="inline-flex gap-1">
           <button onClick={() => setDetailId(row.original.id)} className="btn btn-line btn-xs">상세</button>
-          {row.original.status === '지급보류' && <button onClick={() => setHold(row.original)} className="btn btn-line btn-xs">사유</button>}
+          {row.original.status === '지급보류' && <button onClick={() => setHold(row.original)} className="btn btn-line btn-xs">사유 · 해제</button>}
         </span>
       ),
     },
@@ -150,7 +150,7 @@ export default function SettlementList() {
         )}>
         {detail ? <SettlementDetailBody d={detail} /> : <p className="text-mute py-6 text-center">불러오는 중…</p>}
       </Modal>
-      <Modal open={!!hold} onClose={() => setHold(null)} title="지급 보류 사유" width={440}
+      <Modal open={!!hold} onClose={() => setHold(null)} title="지급 보류 사유 · 해제" width={440}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setHold(null)}>닫기</button><button className="btn btn-ink btn-sm" disabled={release.isPending} onClick={handleReleaseHold}>보류 해제</button></>}>
         <p className="text-[14px]">{hold?.holdReason}</p>
       </Modal>

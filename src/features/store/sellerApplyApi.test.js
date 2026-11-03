@@ -1,5 +1,6 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { fetchMyApplication, toMyApplication, uploadApplyDocuments, applySeller, resubmitApplication } from '@/features/store/api/sellerApplyApi';
+import { fileOf } from '@/test/fileOf';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -14,7 +15,7 @@ const ME = {
   ],
 };
 
-const file = (name, type, size = 1000) => new File([new Uint8Array(size)], name, { type });
+const file = (name, type, size = 1000) => fileOf(name, type, size);
 
 describe('fetchMyApplication — GET /api/seller/apply/me', () => {
   it('신청한 적 없으면 null, 있으면 시각은 Date · 빈 사유 · 요청 서류는 배열', async () => {

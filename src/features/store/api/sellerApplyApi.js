@@ -1,6 +1,7 @@
 // 입점 신청 API — 담당 박지연. 계약: backend docs/api/store.md 2절(신청) · 2-1절(서류 업로드 주소) · 2-2절(내 신청 상태) · 2-3절(보완 재제출)
 // 새 화면이라 목업 이름이 없어 필드는 API 이름 그대로, 시각만 Date 로 바꾼다
 import { axiosInstance } from '@/shared/api/axiosInstance';
+import { withRealType } from '@/shared/utils/fileType';
 
 const date = (s) => (s ? new Date(s) : null);
 
@@ -27,8 +28,9 @@ export const presignApplyDocuments = async (docs) =>
 
 // 서류를 S3 에 올리고 신청 본문의 documents[] 를 돌려준다 — presigned PUT 은 우리 API 가 아니라 axiosInstance(토큰 헤더) 대신 fetch.
 // Content-Type 이 서명에 들어가 있어 발급 때와 같아야 한다 (다르면 S3 403). 리뷰 사진 업로드와 같은 방식
-export async function uploadApplyDocuments(docs) {
-  if (docs.length === 0) return [];
+export async function uploadApplyDocuments(picked) {
+  if (picked.length === 0) return [];
+  const docs = await Promise.all(picked.map(async (d) => ({ ...d, file: await withRealType(d.file) }))); // 실제 형식으로 발급
   const issued = await presignApplyDocuments(docs);
   await Promise.all(issued.map(async ({ uploadUrl }, i) => {
     const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': docs[i].file.type }, body: docs[i].file });

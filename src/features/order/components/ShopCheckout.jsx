@@ -79,7 +79,7 @@ export default function ShopCheckout() {
     if (r.status === 'REDIRECTED') return; // 결제사 페이지로 이동 — 돌아오면 주문 완료 화면이 결제 확인
     if (r.status !== 'PAID') { toast(r.message); return; }
     void queryClient.invalidateQueries({ queryKey: queryKeys.order.cart() }); // 서버가 결제 확정 때 주문한 옵션을 장바구니에서 지웠다
-    void nav('/order/complete', { state: { orderNo: r.orderNo, pay: r.payAmt, method, point, earn, address: `${addr.addr} ${addr.detail ?? ''}`.trim() } });
+    void nav('/order/complete', { state: { orderNo: r.orderNo, pay: r.payAmt, point, earn, address: `${addr.addr} ${addr.detail ?? ''}`.trim() } });
   };
 
   if (isLoading) return <p className="text-mute py-20 text-center">불러오는 중…</p>;
@@ -154,12 +154,7 @@ export default function ShopCheckout() {
                 <button key={label} onClick={() => setMethod(label)} className={cx('h-12 border text-[14px]', method === label ? 'border-ink border-2 font-bold' : 'border-line-2 hover:border-ink')}>{label}</button>
               ))}
             </div>
-            {method === '신용/체크카드' && (
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                <select className="field"><option>카드사 선택</option><option>현대카드</option><option>신한카드</option><option>삼성카드</option><option>KB국민카드</option></select>
-                <select className="field"><option>일시불</option><option>2개월 무이자</option><option>3개월 무이자</option></select>
-              </div>
-            )}
+            <p className="text-[12px] text-mute mt-2">카드사 · 할부는 결제창에서 고릅니다</p>
           </Section>
 
           <section className="border-t border-ink pt-5 text-[13px] space-y-2">

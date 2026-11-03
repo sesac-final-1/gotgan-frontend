@@ -33,8 +33,9 @@ export default function ShopProductList() {
   const cat = sp.get('cat'), sub = sp.get('sub'), q = sp.get('q') || '';
   const sort = SORT_API[sp.get('sort')] ? sp.get('sort') : 'new';
   const page = Math.max(0, Number(sp.get('page')) || 0);
-  const [price, setPrice] = useState(null);
-  const [excludeSoldOut, setExcludeSoldOut] = useState(false);
+  // 가격 구간(PRICES 순번) · 품절 제외도 주소에 — 새로고침 · 공유해도 그대로
+  const price = PRICES[sp.get('price')] ?? null;
+  const excludeSoldOut = sp.get('soldout') === 'exclude';
   const [mobileFilter, setMobileFilter] = useState(false);
 
   const search = useProductSearchQuery({
@@ -50,7 +51,6 @@ export default function ShopProductList() {
   const catById = useMemo(() => toMap(categories), [categories]);
   // 조건이 바뀌면 첫 페이지로
   const set = (k, v) => { const n = new URLSearchParams(sp); v ? n.set(k, v) : n.delete(k); if (k === 'cat') n.delete('sub'); if (k !== 'page') n.delete('page'); setSp(n); };
-  const resetPage = () => set('page', null);
 
   const c = cat && catById[cat];
   const subName = c && sub ? c.children.find((x) => String(x.id) === sub)?.name : null;
@@ -77,10 +77,10 @@ export default function ShopProductList() {
       <div>
         <div className="font-bold mb-3">가격</div>
         <div className="space-y-2">
-          {PRICES.map((pr) => <Checkbox key={pr[2]} checked={price === pr} onChange={() => { setPrice(price === pr ? null : pr); resetPage(); }} label={pr[2]} />)}
+          {PRICES.map((pr) => <Checkbox key={pr[2]} checked={price === pr} onChange={() => set('price', price === pr ? null : String(PRICES.indexOf(pr)))} label={pr[2]} />)}
         </div>
       </div>
-      <Checkbox checked={excludeSoldOut} onChange={(v) => { setExcludeSoldOut(v); resetPage(); }} label="품절 상품 제외" />
+      <Checkbox checked={excludeSoldOut} onChange={(v) => set('soldout', v ? 'exclude' : null)} label="품절 상품 제외" />
     </div>
   );
 
@@ -106,7 +106,7 @@ export default function ShopProductList() {
             <div className="text-[13px] text-ink-2">총 <b className="num text-ink">{data ? total : '-'}</b>개
               {price && (
                 <span className="ml-3 inline-flex flex-wrap gap-1.5 align-middle">
-                  <button onClick={() => { setPrice(null); resetPage(); }} className="inline-flex items-center gap-1 h-6 px-2 bg-sand text-[12px]">{price[2]}<X size={12} /></button>
+                  <button onClick={() => set('price', null)} className="inline-flex items-center gap-1 h-6 px-2 bg-sand text-[12px]">{price[2]}<X size={12} /></button>
                 </span>
               )}
             </div>

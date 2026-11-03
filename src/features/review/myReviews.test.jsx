@@ -8,6 +8,7 @@ import {
   createReview, deleteReview, fetchMyReviews, fetchProductRatings, fetchWritableReviews, presignReviewImages, updateReview, uploadReviewImages,
 } from '@/features/review/api/reviewApi';
 import MyReviews from '@/features/review/components/MyReviews';
+import { fileOf } from '@/test/fileOf';
 
 const NOW = new Date('2026-10-28T10:00:00+09:00');
 const WRITABLE = {
@@ -24,7 +25,7 @@ const BLINDED = { ...MINE, reviewId: 32, orderItemId: 13, productName: '린넨 �
 const CONTENT = '평소 M 입는데 M 주문했고 어깨가 살짝 내려오는 오버핏이에요.';
 const apiError = (status, code, message) =>
   new AxiosError(message, 'ERR', {}, null, { status, data: { code, message, data: null }, statusText: '', headers: {}, config: {} });
-const jpg = (name = 'a.jpg', size = 1000) => new File([new Uint8Array(size)], name, { type: 'image/jpeg' });
+const jpg = (name = 'a.jpg', size = 1000) => fileOf(name, 'image/jpeg', size);
 
 let queryClient;
 beforeEach(() => {
@@ -88,11 +89,11 @@ describe('리뷰 API', () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [
       { key: 'reviews/4/1.jpg', uploadUrl: 'https://s3/1' }, { key: 'reviews/4/2.png', uploadUrl: 'https://s3/2' }] } });
     const put = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true });
-    const png = new File(['x'], 'b.png', { type: 'image/png' });
+    const png = fileOf('b.png', 'image/png');
 
     await expect(uploadReviewImages([jpg(), png])).resolves.toEqual(['reviews/4/1.jpg', 'reviews/4/2.png']);
     expect(post).toHaveBeenCalledWith('/api/reviews/images/presign',
-      { files: [{ contentType: 'image/jpeg', size: 1000 }, { contentType: 'image/png', size: 1 }] });
+      { files: [{ contentType: 'image/jpeg', size: 1000 }, { contentType: 'image/png', size: 16 }] });
     expect(put).toHaveBeenCalledWith('https://s3/2', { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: png });
     await expect(uploadReviewImages([])).resolves.toEqual([]);
     expect(post).toHaveBeenCalledTimes(1);

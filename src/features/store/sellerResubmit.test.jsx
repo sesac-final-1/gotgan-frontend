@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { useToastStore } from '@/shared/stores/toastStore';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import ShopSellerApply from '@/features/store/components/ShopSellerApply';
+import { fileOf } from '@/test/fileOf';
 
 // 보완 재제출 — 보완요청 화면의 "보완 제출하기" → 제출 내용(submitted, backend #200)으로 채운 폼 → 바뀐 칸만 PATCH (store.md 2-3절)
 let queryClient;
@@ -47,7 +48,7 @@ async function openResubmit() {
 
 const input = (label) => screen.getAllByText(label, { exact: false }).find((el) => el.tagName === 'LABEL').closest('div').querySelector('input, select, textarea');
 const type = (label, value) => fireEvent.change(input(label), { target: { value } });
-const pdf = (name) => new File(['x'], name, { type: 'application/pdf' });
+const pdf = (name) => fileOf(name, 'application/pdf');
 const lastToast = () => useToastStore.getState().current?.msg;
 
 describe('보완 재제출', () => {

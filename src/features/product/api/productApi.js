@@ -1,6 +1,7 @@
 // product 도메인 API — 담당 박지연. 공개 API(카테고리 · 목록 · 상세)는 실제 호출, 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절)
 // 계약: backend docs/api/product.md 8 · 9 · 10절. 상품 · 스토어 · 카테고리 id 는 숫자다 (목업 'p601' · 's6' · 'fashion' 아님)
 import { axiosInstance } from '@/shared/api/axiosInstance';
+import { withRealType } from '@/shared/utils/fileType';
 
 // GET /api/categories — [{ id, name, nameEn, children[{ id, name, nameEn }] }] 사용 중인 것만 · sortOrder 순. 수수료율은 없음(settlement 소관, 관리자 화면만 admin 이 합침)
 export const toCategory = (c) => ({
@@ -171,8 +172,9 @@ export const updateSellerProductStocks = async ({ productId, items }) =>
 export const PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']; // upload-guard 허용 형식과 같음
 export const PRODUCT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
-export async function uploadProductImages(files) {
-  if (files.length === 0) return [];
+export async function uploadProductImages(picked) {
+  if (picked.length === 0) return [];
+  const files = await Promise.all(picked.map(withRealType)); // 확장자가 아닌 실제 형식으로 발급 (upload-guard 와 맞춤)
   const issued = (await axiosInstance.post('/api/seller/products/images/presign', {
     files: files.map((f) => ({ contentType: f.type, size: f.size })),
   })).data.data;
