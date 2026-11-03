@@ -101,10 +101,11 @@ describe('상품 상세 리뷰 영역', () => {
     await waitFor(() => expect(lastListParams(get)).toMatchObject({ photoOnly: true, sort: 'RATING_LOW' }));
   });
 
-  it('빈 목록 · 조건 빈 목록 · 오류 안내, 패션이 아니면 사이즈 대신 구매자 한마디', async () => {
+  it('빈 목록 · 조건 빈 목록 · 오류 안내, 패션이 아니면 사이즈 칸 없음(고정 문구도 없음)', async () => {
     renderReviews({ list: [], photo: [], p: { id: '101', cat: 'food' } });
     expect(await screen.findByText('아직 작성된 리뷰가 없어요')).toBeInTheDocument();
-    expect(screen.getByText('구매자 한마디')).toBeInTheDocument();
+    expect(screen.queryByText('사이즈')).toBeNull();
+    expect(screen.queryByText('구매자 한마디')).toBeNull();
     expect(screen.queryByText('포토 리뷰')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^5점/ }));
     expect(await screen.findByText('조건에 맞는 리뷰가 없어요')).toBeInTheDocument();
@@ -129,6 +130,13 @@ describe('상품 리뷰 신고 (REV-12)', () => {
     fireEvent.click(screen.getByRole('button', { name: '신고하기' }));
     await waitFor(() => expect(post).toHaveBeenCalledWith('/api/reports', expect.objectContaining({ targetType: 'REVIEW', targetId: 31 })));
     expect(await screen.findByText('신고를 접수했어요. 운영팀이 확인 후 조치합니다.')).toBeInTheDocument(); // 접수 완료 화면까지
+  });
+
+  it('내 리뷰(mine)에는 신고 버튼이 없다 — 본인 신고는 서버도 REPORT_SELF 로 막음', async () => {
+    useAuthStore.setState({ accessToken: 't', user: { userId: 4, name: '구매자', roles: ['BUYER'] } });
+    renderReviews({ list: [{ ...REVIEW, mine: true }, PLAIN] });
+    expect(await screen.findByText('곳간러버')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '신고' })).toHaveLength(1);
   });
 
   it('비로그인 · 판매자에게는 신고 버튼이 없다', async () => {

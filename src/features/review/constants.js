@@ -3,6 +3,8 @@
 // 사이즈 체감 — 서버 enum ↔ 화면 문구
 export const FIT_LABELS = { SMALL: '작아요', TRUE_TO_SIZE: '정사이즈', LARGE: '커요' };
 export const FITS = Object.keys(FIT_LABELS);
+// 사이즈 체감을 묻고 보여 주는 상위 카테고리 (의류 · 신발 · 가방)
+export const FIT_CATEGORIES = ['패션의류', '신발·가방'];
 
 export const CONTENT_MIN = 20;
 export const CONTENT_MAX = 2000;

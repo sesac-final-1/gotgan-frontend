@@ -6,7 +6,8 @@ import { Modal } from '@/shared/components/ui';
 import { toast } from '@/shared/stores/toastStore';
 import { cx } from '@/shared/utils/format';
 import { useCreateReviewMutation, useUpdateReviewMutation } from '@/features/review/hooks/useReviewMutations';
-import { CONTENT_MAX, CONTENT_MIN, FIT_LABELS, FITS, IMAGE_TYPES, MAX_IMAGE_SIZE, MAX_IMAGES } from '@/features/review/constants';
+import { useProductQuery } from '@/features/product/hooks/useProductQuery';
+import { CONTENT_MAX, CONTENT_MIN, FIT_CATEGORIES, FIT_LABELS, FITS, IMAGE_TYPES, MAX_IMAGE_SIZE, MAX_IMAGES } from '@/features/review/constants';
 
 const STAR_TEXT = ['', '별로예요', '그저 그래요', '괜찮아요', '좋아요', '최고예요'];
 const FALLBACK_MESSAGE = '잠시 후 다시 시도해 주세요.';
@@ -30,6 +31,9 @@ function ReviewForm({ target, onClose }) {
   const create = useCreateReviewMutation();
   const update = useUpdateReviewMutation();
   const saving = create.isPending || update.isPending;
+  // 사이즈 질문 — 상품의 상위 카테고리가 의류 · 신발 · 가방일 때만 (이미 사이즈를 고른 리뷰를 고칠 때는 그대로 보여 준다)
+  const { data: product } = useProductQuery(item.productId);
+  const askFit = FIT_CATEGORIES.includes(product?.catName) || Boolean(editing?.fit);
 
   const previews = useMemo(() => newFiles.map((f) => URL.createObjectURL(f)), [newFiles]);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
@@ -81,15 +85,15 @@ function ReviewForm({ target, onClose }) {
         </div>
         <div className="text-[12px] text-mute mt-1">{STAR_TEXT[hover || star]}</div>
       </div>
-      <div className="mb-4">
-        <div className="label">사이즈는 어땠나요? <span className="text-mute font-normal">(선택 — 의류 · 신발 · 가방)</span></div>
+      {askFit && <div className="mb-4">
+        <div className="label">사이즈는 어땠나요? <span className="text-mute font-normal">(선택)</span></div>
         <div className="grid grid-cols-3 gap-2">
           {FITS.map((f) => (
             <button key={f} onClick={() => setFit(fit === f ? null : f)}
               className={cx('h-10 border text-sm', fit === f ? 'border-ink border-2 font-bold' : 'border-line-2')}>{FIT_LABELS[f]}</button>
           ))}
         </div>
-      </div>
+      </div>}
       <label className="label" htmlFor="review-body">리뷰 내용</label>
       <textarea id="review-body" rows={5} className="field" value={body} onChange={(e) => setBody(e.target.value)}
         placeholder={`최소 ${CONTENT_MIN}자 이상 작성해주세요. 다른 구매자에게 큰 도움이 됩니다.`} />

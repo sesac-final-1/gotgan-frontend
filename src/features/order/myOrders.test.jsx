@@ -7,7 +7,7 @@ import { queryKeys } from '@/shared/api/queryKeys';
 import { useToastStore } from '@/shared/stores/toastStore';
 import { fetchClaimPreview, fetchMyOrder, fetchMyOrders, requestClaim } from '@/features/order/api/orderApi';
 import { useMyOrderQuery } from '@/features/order/hooks/useMyOrderQuery';
-import { useClaimPreviewQuery, useRequestClaimMutation } from '@/features/order/hooks/useClaimMutations';
+import { useClaimPreviewQuery, useConfirmPurchaseMutation, useRequestClaimMutation } from '@/features/order/hooks/useClaimMutations';
 import {
   claimDoneMessage, claimTypesOf, flowCounts, isSellerFault, lineStatusLabel, openClaimCount, orderNoOf, payMethodLabel, toDate, trackingOf,
 } from '@/features/order/utils/orderView';
@@ -120,6 +120,20 @@ describe('훅', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.order.my() });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.user.points() });
   });
+
+  it('useConfirmPurchaseMutation — 내 주문은 바로, 포인트(user) · 리뷰 자격은 이벤트가 늦게 오므로 잠깐 뒤 다시', async () => {
+    vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { orderItemId: 456, status: 'CONFIRMED' } } });
+    const { client, Wrapper } = createWrapper();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const { result } = renderHook(() => useConfirmPurchaseMutation(), { wrapper: Wrapper });
+
+    await act(async () => { await result.current.mutateAsync({ orderNo: '20261026-000001', orderItemId: 456 }); });
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.order.my() });
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: queryKeys.user.all });
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.user.all }), { timeout: 2500 });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.review.my() });
+  });
 });
 
 describe('MyClaimRequest — 결제완료 즉시 취소', () => {
@@ -135,6 +149,7 @@ describe('MyClaimRequest — 결제완료 즉시 취소', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
+    return client;
   }
 
   it('사유를 고르면 서버 환불 예정액을 보여 주고, 신청하면 POST 후 주문 목록으로', async () => {
@@ -167,6 +182,34 @@ describe('MyClaimRequest — 결제완료 즉시 취소', () => {
     fireEvent.click(await screen.findByRole('button', { name: '단순 변심' }));
     expect(await screen.findByText('이미 처리 중인 요청이 있습니다.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '취소 신청하기' })).toBeDisabled();
+  });
+
+  it('배송비 환불 없음 사유 — 같은 스토어 상품이 남았을 때만 그 문구, 아니면 배송비를 내지 않은 주문', async () => {
+    const other = { ...ITEM, orderItemId: 457, itemNo: '20261026-000001-02', storeId: 2, storeName: '로스터리 하루' };
+    let detail = { ...DETAIL, totalShippingFee: 0, items: [ITEM, other] };
+    vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data: url.endsWith('/preview') ? { ...PREVIEW, shippingFee: 0 } : detail } }));
+    renderAt('/mypage/claim/20261026-000001-01');
+    fireEvent.click(await screen.findByRole('button', { name: '단순 변심' }));
+    expect(await screen.findByText('없음 (배송비를 내지 않은 주문이에요)')).toBeInTheDocument();
+    cleanup();
+
+    detail = { ...detail, items: [ITEM, { ...other, storeId: 1 }] };
+    renderAt('/mypage/claim/20261026-000001-01');
+    fireEvent.click(await screen.findByRole('button', { name: '단순 변심' }));
+    expect(await screen.findByText('없음 (같은 스토어 상품이 남아 있어요)')).toBeInTheDocument();
+  });
+
+  it('반품 철회 직후 — 옛 캐시(반품요청)로 먼저 그려졌다가 배송완료로 바뀌면 반품 사유 · 버튼이 나온다 (QA Q-경-8)', async () => {
+    let status = 'RETURN_REQUESTED';
+    vi.spyOn(axiosInstance, 'get').mockImplementation(async () => ({ data: { data: { ...DETAIL, items: [{ ...ITEM, status }] } } }));
+    const client = renderAt('/mypage/claim/20261026-000001-01?type=RETURN');
+    expect(await screen.findByText('지금은 취소 · 반품 · 교환을 신청할 수 없는 상품이에요.')).toBeInTheDocument();
+
+    status = 'DELIVERED';
+    await act(async () => { await client.invalidateQueries(); });
+    expect(await screen.findByRole('button', { name: '반품 신청하기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '단순 변심' })).toBeInTheDocument();
+    expect(screen.queryByText(/undefined/)).toBeNull();
   });
 
   it('결제 대기 · 배송준비 상품주문은 신청 불가 안내, 없는 상품주문은 찾을 수 없음', async () => {
