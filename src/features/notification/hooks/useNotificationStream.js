@@ -28,6 +28,10 @@ export function useNotificationStream() {
         toast(n.title);
         void queryClient.invalidateQueries({ queryKey: queryKeys.notification.all });
         if (n.type === 'CHAT_MESSAGE') void queryClient.invalidateQueries({ queryKey: queryKeys.chat.all }); // 보고 있지 않은 방의 새 메시지 — 목록 · 배지 숫자
+        if (n.type === 'ORDER_NEW') { // 판매자 새 주문(O-13) — 주문 관리 목록 · 대시보드 숫자를 바로 다시 불러옴
+          void queryClient.invalidateQueries({ queryKey: queryKeys.order.seller() });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.store.sellerDashboard() });
+        }
       },
       onerror: (err) => {
         if (/알림 연결 실패 4\d\d/.test(err?.message)) throw err; // 인증 · 권한 오류는 재시도하지 않음
