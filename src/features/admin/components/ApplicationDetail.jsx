@@ -5,7 +5,7 @@ import { PageHead, StatusPill, Modal, KV, Checkbox } from '@/shared/components/u
 import { useApplicationQuery } from '@/features/admin/hooks/useApplicationQuery';
 import { useAdminCategoriesQuery } from '@/features/admin/hooks/useAdminCategoriesQuery';
 import { useDecideApplicationMutation } from '@/features/admin/hooks/useDecideApplicationMutation';
-import { DOC_TYPES, APPLICATION_STATUS_LABEL } from '@/features/admin/constants';
+import { DOC_TYPES, APPLICATION_STATUS_LABEL, STORE_STATUS_LABEL } from '@/features/admin/constants';
 import { PAYMENT_FEE } from '@/features/settlement/constants';
 import { toast } from '@/shared/stores/toastStore';
 import { won, ymdhm, pct, cx } from '@/shared/utils/format';
@@ -116,7 +116,7 @@ function DetailBody({ a }) {
                 <div className="font-semibold">같은 사업자번호</div>
                 {dupCount === 0 && <div className="text-mute">다른 신청 · 스토어 없음</div>}
                 {a.sameBizRegNo.applications.map((x) => <div key={`a${x.applicationId}`} className="num">{x.applicationNo} · {x.storeName} · {APPLICATION_STATUS_LABEL[x.status] ?? x.status}</div>)}
-                {a.sameBizRegNo.stores.map((x) => <div key={`s${x.storeId}`}>스토어 {x.storeName} · {x.status}</div>)}
+                {a.sameBizRegNo.stores.map((x) => <div key={`s${x.storeId}`}>스토어 {x.storeName} · {STORE_STATUS_LABEL[x.status] ?? x.status}</div>)}
               </div>
             </div>
           </div>

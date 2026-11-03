@@ -26,7 +26,6 @@ import { useSellerProductQuery } from '@/features/product/hooks/useSellerProduct
 import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation, useSaveSellerProductMutation, useUpdateSellerProductStocksMutation, useCopySellerProductMutation } from '@/features/product/hooks/useSellerProductMutations';
 import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
 import { useSellerReviewSummaryQuery, useSellerReviewsQuery } from '@/features/review/hooks/useSellerReviews';
-import { useSellerPendingQuery } from '@/features/settlement/hooks/useSellerPendingQuery';
 import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSellerSettlementsQuery';
 import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
 import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettlementQuery';
@@ -455,7 +454,6 @@ describe('판매자 정산 · 관리자 정산 상세 · 지금 집계 (settleme
       const data = await load(useSellerSettlementsQuery);
       expect(data.summary).toMatchObject({ pendingPayout: 12000, paidRecent8Weeks: 52664, nextPayout: { payout: 61744 }, rates: [{ name: '식품', rate: 0.07 }] });
       expect(data.rows[0]).toMatchObject({ id: 2, week: '2026-W42', orders: 2, carriedOver: 1, payout: 52664, status: '지급완료', bank: '곳간은행 100-01 (박씨)' });
-      expect(await load(useSellerPendingQuery)).toEqual({ payout: 12000 });
     } finally {
       get.mockRestore();
     }

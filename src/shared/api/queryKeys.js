@@ -92,7 +92,6 @@ export const queryKeys = {
     all: ['settlement'],
     seller: () => ['settlement', 'seller'],
     sellerDetail: (id) => ['settlement', 'seller', 'detail', id],
-    sellerPending: () => ['settlement', 'seller', 'pending'],
   },
 
   // ── notification (구지훈) — 알림 센터 /api/notifications/** (admin-service)

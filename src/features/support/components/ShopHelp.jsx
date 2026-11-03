@@ -54,7 +54,7 @@ export default function ShopHelp() {
           <div className="mt-1.5 font-bold text-[16px]">상품문의는 판매자에게</div>
           <p className="mt-2 text-[13px] text-ink-2 leading-relaxed">상품 · 배송 · 재입고 문의는 상품 상세의 Q&amp;A 탭에서 남기면 판매자가 직접 답변해요.</p>
           <div className="mt-4 flex gap-2">
-            <Link to="/products/p101#qna" className="btn btn-ink btn-sm">상품 Q&amp;A 예시</Link>
+            <Link to="/products/101#qna" className="btn btn-ink btn-sm">상품 Q&amp;A 예시</Link>
             <Link to="/mypage/qna" className="btn btn-line btn-sm">내 상품 문의</Link>
           </div>
         </div>

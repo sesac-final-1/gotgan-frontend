@@ -48,3 +48,6 @@ export function roomNotice(room, side) {
   if (room?.status === 'RESOLVED') return side === 'ADMIN' ? '종료된 상담이에요. 다시 열거나 답장하면 이어집니다.' : '종료된 상담이에요. 메시지를 보내면 다시 열려요.';
   return null;
 }
+
+// 방 열기 · 상태 변경 실패 안내 — 서버 오류 봉투의 message(예: 정지 스토어 409, 내 스토어 400), 없으면 공통 문구
+export const failMessage = (e) => e?.response?.data?.message ?? '채팅을 열지 못했어요. 잠시 후 다시 시도해 주세요.';

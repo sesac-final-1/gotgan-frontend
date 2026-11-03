@@ -1,7 +1,7 @@
 // 정산 관리 — 담당 구지훈
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Download, MessagesSquare } from 'lucide-react';
+import { MessagesSquare } from 'lucide-react';
 import { PageHead, StatusPill, Modal, Kpi, Checkbox } from '@/shared/components/ui';
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
@@ -114,8 +114,7 @@ export default function SettlementList() {
 
   return (
     <div>
-      <PageHead title="정산 관리" desc="구매확정일 기준 주간 정산 · 지급액 = 구매확정 매출 − 판매수수료(카테고리별) − 결제수수료(2.2%) · 환불은 구매확정 전에 끝나 정산에 들어오지 않음"
-        right={<button className="btn btn-line btn-sm"><Download size={14} /> 정산 명세 엑셀</button>} />
+      <PageHead title="정산 관리" desc="구매확정일 기준 주간 정산 · 지급액 = 구매확정 매출 − 판매수수료(카테고리별) − 결제수수료(2.2%) · 환불은 구매확정 전에 끝나 정산에 들어오지 않음" />
       <div className="panel p-4 flex flex-wrap items-center gap-3">
         <span className="text-[13px] font-semibold">정산 주차</span>
         <select value={week} onChange={(e) => { setWeek(e.target.value); setSel(new Set()); }} className="field field-sm h-9 w-auto">
@@ -126,8 +125,8 @@ export default function SettlementList() {
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
         <Kpi label="구매확정 매출" value={shortWon(tot('gross'))} unit="원" />
-        <Kpi label="판매수수료 (플랫폼 수익)" value={comma(tot('commission') / 10000)} unit="만원" />
-        <Kpi label="결제수수료 (PG)" value={comma(tot('pgFee') / 10000)} unit="만원" />
+        <Kpi label="판매수수료 (플랫폼 수익)" value={shortWon(tot('commission'))} unit="원" />
+        <Kpi label="결제수수료 (PG)" value={shortWon(tot('pgFee'))} unit="원" />
         <Kpi label="판매자 지급 총액" value={shortWon(tot('payout'))} unit="원" sub={`${list.length}개 스토어`} />
       </div>
       <div className="panel mt-4">
