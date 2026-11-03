@@ -23,7 +23,7 @@ export default function MyClaimRequest() {
 }
 
 // 환불 예정액 — 서버 계산 (취소: 스토어 마지막 상품주문이면 배송비 환불, 반품: 구매자 사유면 왕복 배송비 차감, 교환: 금액 0)
-function PreviewBox({ type, reasonCode, preview }) {
+function PreviewBox({ type, reasonCode, preview, sameStoreLeft }) {
   const row = (k, v, cls = '') => <div className={cx('flex justify-between', cls)}><span className="text-ink-2">{k}</span><span className="num">{v}</span></div>;
   if (!reasonCode) return <div className="bg-cream p-5 text-[13px] text-mute">사유를 고르면 환불 예정 금액을 알려 드려요.</div>;
   if (preview.isError) return <div className="bg-cream p-5 text-[13px] text-rust">{preview.error.response?.data?.message ?? '환불 예정 금액을 불러오지 못했어요.'}</div>;
@@ -36,7 +36,7 @@ function PreviewBox({ type, reasonCode, preview }) {
         ? row('교환 배송비', '판매자 부담 · 같은 옵션으로 다시 보내 드려요')
         : <>
           {type === 'CANCEL'
-            ? row('배송비 환불', p.shippingFee ? `+${won(p.shippingFee)}` : '없음 (같은 스토어 상품이 남아 있어요)')
+            ? row('배송비 환불', p.shippingFee ? `+${won(p.shippingFee)}` : sameStoreLeft ? '없음 (같은 스토어 상품이 남아 있어요)' : '없음 (배송비를 내지 않은 주문이에요)')
             : row('반품 배송비 차감', p.shippingFee ? `−${won(Math.abs(p.shippingFee))}` : '판매자 부담')}
           {row('사용 포인트 환원', p.restorePoint ? `+${comma(p.restorePoint)}P` : '0P', 'text-moss')}
           {p.reclaimPoint > 0 && row('적립 포인트 회수', `−${comma(p.reclaimPoint)}P`, 'text-rust')}
@@ -50,7 +50,11 @@ function RequestBody({ o, l }) {
   const [sp] = useSearchParams();
   const nav = useNavigate();
   const types = o.status === 'PAID' ? claimTypesOf(l.status) : [];
-  const [type, setType] = useState(types.includes(sp.get('type')) ? sp.get('type') : types[0]);
+  // 고른 유형이 지금 신청할 수 없는 유형이면 첫 유형 — 철회 직후 옛 캐시(반품요청)로 먼저 그려졌다가 새 상태로 바뀌어도 비지 않게
+  const [picked, setType] = useState(sp.get('type'));
+  const type = types.includes(picked) ? picked : types[0];
+  // 서버와 같은 기준 — 같은 스토어에 취소되지 않은 다른 상품주문이 있으면 배송비를 돌려주지 않는다 (ClaimTxService.lastOfStore)
+  const sameStoreLeft = o.items.some((x) => x.storeId === l.storeId && x.orderItemId !== l.orderItemId && !['CANCEL_REQUESTED', 'CANCELLED'].includes(x.status));
   const [reasonCode, setReasonCode] = useState('');
   const [detail, setDetail] = useState('');
   const preview = useClaimPreviewQuery(o.orderNo, { orderItemId: l.orderItemId, type, reasonCode });
@@ -109,7 +113,7 @@ function RequestBody({ o, l }) {
               <div className="grid grid-cols-2 gap-2"><button className="h-11 border-2 border-ink text-sm font-semibold">판매자 지정 택배 회수</button><button className="h-11 border border-line-2 text-sm">직접 발송</button></div>
             </div>
           )}
-          <PreviewBox type={type} reasonCode={reasonCode} preview={preview} />
+          <PreviewBox type={type} reasonCode={reasonCode} preview={preview} sameStoreLeft={sameStoreLeft} />
           <p className="text-[12px] text-mute -mt-3">{type === 'CANCEL' ? '결제완료 상태는 판매자 확인 없이 바로 취소되고 결제수단으로 환불돼요.' : type === 'RETURN' ? '판매자가 회수 상품을 확인한 후 환불됩니다. (영업일 1~3일)' : '교환은 결제 · 재고 변동 없이 회수 확인 후 같은 옵션으로 재배송됩니다.'}</p>
           <div className="flex gap-2 justify-end">
             <button onClick={() => nav(-1)} className="btn btn-line">이전으로</button>

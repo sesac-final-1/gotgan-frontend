@@ -9,6 +9,10 @@ import {
 } from '@/features/review/api/reviewApi';
 import MyReviews from '@/features/review/components/MyReviews';
 
+// 리뷰 쓰기 창이 상품 상위 카테고리로 사이즈 질문을 정한다 — 상품 상세 조회는 목
+const product = vi.hoisted(() => ({ catName: '패션의류' }));
+vi.mock('@/features/product/hooks/useProductQuery', () => ({ useProductQuery: () => ({ data: product }) }));
+
 const NOW = new Date('2026-10-28T10:00:00+09:00');
 const WRITABLE = {
   orderItemId: 11, productId: 101, productName: '린넨 오버핏 셔츠', optionName: '오트밀 / M', thumbnailUrl: 'https://cdn/p.jpg',
@@ -40,6 +44,7 @@ afterEach(async () => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   useToastStore.setState({ current: null });
+  product.catName = '패션의류';
 });
 
 // GET — 작성 가능 · 내 리뷰를 URL 로 나눠 돌려준다 (다시 불러올 때 next 로 바꿈)
@@ -226,6 +231,14 @@ describe('MyReviewModal', () => {
     fireEvent.click(within(modal).getByRole('button', { name: '등록하기' }));
 
     await waitFor(() => expect(post).toHaveBeenCalledWith('/api/reviews', expect.objectContaining({ fit: null, imageKeys: ['reviews/4/n.jpg'] })));
+  });
+
+  it('작성 — 의류 · 신발 · 가방이 아닌 상품(식품)은 사이즈를 묻지 않는다', async () => {
+    product.catName = '식품';
+    renderMyReviews();
+    const modal = await openWrite();
+    expect(within(modal).queryByText('사이즈는 어땠나요?')).toBeNull();
+    expect(within(modal).queryByRole('button', { name: '정사이즈' })).toBeNull();
   });
 
   it('사진 — 형식 · 10MB · 3장 초과는 막고, 3장이면 추가 칸이 사라진다', async () => {

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { X, Camera } from 'lucide-react';
 import { useProductReviewSummaryQuery, useProductReviewsQuery } from '@/features/review/hooks/useProductReviews';
-import { FIT_LABELS } from '@/features/review/constants';
+import { FIT_CATEGORIES, FIT_LABELS } from '@/features/review/constants';
 import { Stars, Checkbox } from '@/shared/components/ui';
 import { BlockPager } from '@/shared/components/common/BlockPager';
 import { cx, comma, ymd } from '@/shared/utils/format';
@@ -28,7 +28,7 @@ export default function ShopProductReviews({ p, store }) {
   const photos = photoPage?.content ?? [];
   const avg = summary?.averageRating ?? 0;
   const total = summary?.reviewCount ?? 0;
-  const fits = ['패션의류', '신발·가방'].includes(p.catName) ? summary?.fits ?? [] : null; // 사이즈 체감은 의류 · 신발 상위 카테고리만
+  const fits = FIT_CATEGORIES.includes(p.catName) ? summary?.fits ?? [] : null; // 사이즈 체감은 의류 · 신발 상위 카테고리만
 
   const canReport = useAuthStore((s) => !!s.user?.roles?.includes('BUYER')); // 리뷰 신고는 구매자(REV-12) — 판매자는 판매자센터의 '관리자 검토 요청'
   const [reportTarget, setReportTarget] = useState(null);
@@ -44,7 +44,7 @@ export default function ShopProductReviews({ p, store }) {
         <h3 className="text-[20px] font-bold">리뷰 <span className="num">{comma(total)}</span></h3>
         <span className="text-[12px] text-mute">구매확정 후 작성된 리뷰만 노출됩니다</span>
       </div>
-      <div className="grid sm:grid-cols-[200px_1fr_1fr] gap-8 py-8 border-b border-line">
+      <div className={cx('grid gap-8 py-8 border-b border-line', fits ? 'sm:grid-cols-[200px_1fr_1fr]' : 'sm:grid-cols-[200px_1fr]')}>
         <div className="text-center sm:border-r border-line sm:pr-8">
           <div className="text-[46px] font-bold leading-none num">{avg.toFixed(1)}</div>
           <Stars value={avg} size={16} className="mt-2" />
@@ -60,7 +60,7 @@ export default function ShopProductReviews({ p, store }) {
             </li>
           ))}
         </ul>
-        {fits ? (
+        {fits && (
           <div className="text-[12.5px]">
             <div className="font-semibold mb-2">사이즈</div>
             {fits.map(({ fit, count }) => {
@@ -74,11 +74,6 @@ export default function ShopProductReviews({ p, store }) {
                 </div>
               );
             })}
-          </div>
-        ) : (
-          <div className="text-[12.5px] space-y-2">
-            <div className="font-semibold">구매자 한마디</div>
-            <div className="flex flex-wrap gap-1.5">{['포장이 꼼꼼해요', '재구매 의사 있어요', '선물용 추천', '배송 빨라요'].map((k) => <span key={k} className="px-2 py-1 bg-cream">{k}</span>)}</div>
           </div>
         )}
       </div>
@@ -114,7 +109,7 @@ export default function ShopProductReviews({ p, store }) {
           <li key={r.id} className="py-6 border-b border-line">
             <div className="flex items-start justify-between gap-3">
               <div className="text-[13px] font-semibold">{r.writer}</div>
-              {canReport && <button onClick={() => setReportTarget({ type: 'REVIEW', id: r.id, label: '리뷰' })} className="text-[11.5px] text-mute hover:text-ink shrink-0">신고</button>}
+              {canReport && !r.mine && <button onClick={() => setReportTarget({ type: 'REVIEW', id: r.id, label: '리뷰' })} className="text-[11.5px] text-mute hover:text-ink shrink-0">신고</button>}
             </div>
             <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-mute"><Stars value={r.rating} size={11} /> {ymd(r.date)}</div>
             <div className="mt-3 text-[12px] text-mute">{r.option && <>옵션: {r.option}</>}{r.fit && <>{r.option && ' · '}사이즈 <b className="text-ink-2">{FIT_LABELS[r.fit]}</b></>}</div>

@@ -26,7 +26,7 @@ export function useRequestClaimMutation() {
   });
 }
 
-// 구매확정 · 클레임 철회 — 담당 이경석. 내 주문 · 상세 · 클레임 내역(모두 order.my() 아래)을 다시 불러온다
+// 클레임 철회 — 담당 이경석. 내 주문 · 상세 · 클레임 내역(모두 order.my() 아래)을 다시 불러온다
 function useMyOrderMutation(mutationFn) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -35,5 +35,19 @@ function useMyOrderMutation(mutationFn) {
   });
 }
 
-export const useConfirmPurchaseMutation = () => useMyOrderMutation(({ orderNo, orderItemId }) => confirmPurchase(orderNo, orderItemId));
+// 구매확정 — 적립 포인트(user) · 리뷰 자격(review)은 이벤트로 1초쯤 늦게 생기므로 잠깐 뒤 두 번 더 불러온다
+const EVENT_LAG_MS = [1500, 4000];
+export function useConfirmPurchaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderNo, orderItemId }) => confirmPurchase(orderNo, orderItemId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.order.my() });
+      EVENT_LAG_MS.forEach((ms) => setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.user.all });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.review.my() });
+      }, ms));
+    },
+  });
+}
 export const useWithdrawClaimMutation = () => useMyOrderMutation((claimId) => withdrawClaim(claimId));

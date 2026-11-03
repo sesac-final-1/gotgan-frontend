@@ -65,7 +65,6 @@ export default function SellerOrderList() {
   const [failures, setFailures] = useState({}); // 직전 처리에서 실패한 행 → 사유
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [inputs, setInputs] = useState({}); // 송장 모달: orderItemId → { courier, trackingNo }
-  const [range, setRange] = useState('1개월');
   const { data: store } = useMyStoreQuery();
   const defaultCourier = store?.courier || COURIERS[0];
 
@@ -126,18 +125,13 @@ export default function SellerOrderList() {
     void run(deliverMutation, ids, '배송완료 처리');
   };
   const setInput = (id, field, value) => setInputs((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-  // TODO(이경석): 판매취소 · 발송지연 안내 · 송장 출력 · 엑셀 다운로드 — 서버 API 가 생기면 버튼 추가 (지금은 가짜 성공을 보이지 않게 뺌)
+  // TODO(이경석): 판매취소 · 발송지연 안내 · 송장 출력 · 엑셀 다운로드 · 조회기간 — 서버 API 가 생기면 추가 (지금은 가짜 동작을 보이지 않게 뺌)
 
   return (
     <div>
       <PageHead title="주문 관리" desc="결제완료 → 발주확인(배송준비) → 송장등록(배송중) → 배송완료 → 구매확정(자동 7일)" />
 
       <div className="panel p-4 space-y-3">
-        <div className="flex flex-wrap gap-3 items-center">
-          <span className="text-[13px] font-semibold w-14">조회기간</span>
-          <div className="flex">{['오늘', '1주일', '1개월', '3개월'].map((r, i) => <button key={r} onClick={() => setRange(r)} className={cx('h-9 px-3 text-[13px] border border-line-2', i && '-ml-px', range === r && 'bg-ink text-white border-ink relative')}>{r}</button>)}</div>
-          <input type="date" defaultValue="2026-09-01" className="field field-sm w-36 h-9" /> ~ <input type="date" defaultValue="2026-10-01" className="field field-sm w-36 h-9" />
-        </div>
         <div className="flex flex-wrap gap-3 items-center">
           <span className="text-[13px] font-semibold w-14">검색</span>
           <SearchInput value={search} onChange={setSearch} placeholder="상품주문번호 · 구매자 · 수령인 · 상품명 · 송장번호" className="sm:w-96" />

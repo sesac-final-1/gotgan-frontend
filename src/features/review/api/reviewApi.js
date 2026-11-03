@@ -38,6 +38,7 @@ export const replyToReview = async (id, content) => (await axiosInstance.put(`/a
 export const toProductReview = (r) => ({
   id: r.reviewId,
   writer: r.writerDisplayName, // 닉네임, 없으면 마스킹 실명 — 그대로 표시
+  mine: r.mine, // 내가 쓴 리뷰 — 신고 버튼을 숨긴다 (비로그인은 false)
   rating: r.rating,
   title: r.title ?? '',
   body: r.content,
