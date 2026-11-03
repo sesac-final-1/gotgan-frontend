@@ -78,7 +78,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
         <div className="max-w-[1280px] mx-auto px-4 md:px-6 h-16 flex items-center gap-4 md:gap-10">
           <button className="md:hidden -ml-1 p-1" onClick={() => setMenu(true)} aria-label="메뉴"><Menu size={22} strokeWidth={1.6} /></button>
           <Link to="/"><Wordmark /></Link>
-          <nav className="hidden md:flex items-center gap-6 text-[15px] font-semibold">
+          <nav className="hidden md:flex shrink-0 items-center gap-6 text-[15px] font-semibold whitespace-nowrap">
             <div className="relative group">
               <button className="h-16 flex items-center gap-1.5"><Menu size={17} strokeWidth={1.8} />카테고리</button>
               <div className="absolute left-0 top-full hidden group-hover:block bg-white border border-line shadow-[0_12px_30px_-12px_rgba(0,0,0,.18)] w-[560px] p-6">
@@ -98,11 +98,11 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
               <NavLink key={n.label} to={n.to} className="hover:text-point">{n.label}</NavLink>
             ))}
           </nav>
-          <form className="ml-auto hidden sm:flex items-center border-b-2 border-ink w-full max-w-[300px]" onSubmit={(e) => { e.preventDefault(); void nav(`/products?q=${encodeURIComponent(q)}`); }}>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="리넨 셔츠, 햇감귤, 머그컵" className="flex-1 h-9 text-sm outline-none bg-transparent placeholder:text-mute" />
+          <form className="ml-auto hidden sm:flex min-w-0 items-center border-b-2 border-ink w-full max-w-[300px]" onSubmit={(e) => { e.preventDefault(); void nav(`/products?q=${encodeURIComponent(q)}`); }}>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="리넨 셔츠, 햇감귤, 머그컵" className="flex-1 min-w-0 h-9 text-sm outline-none bg-transparent placeholder:text-mute" />
             <button type="submit" aria-label="검색"><Search size={19} strokeWidth={1.8} /></button>
           </form>
-          <div className="ml-auto sm:ml-0 flex items-center gap-3">
+          <div className="ml-auto sm:ml-0 flex shrink-0 items-center gap-3">
             <Link to="/products?q=" className="sm:hidden" aria-label="검색"><Search size={22} strokeWidth={1.6} /></Link>
             {user && bell}
             <Link to="/mypage" aria-label="마이페이지"><User size={22} strokeWidth={1.6} /></Link>
