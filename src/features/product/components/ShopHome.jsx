@@ -6,6 +6,7 @@ import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useRatedProducts } from '@/features/product/hooks/useRatedProducts';
+import { ListStatus } from '@/features/product/components/ListStatus';
 import { useStoresQuery } from '@/features/store/hooks/useStoresQuery';
 import ProductCard from '@/features/product/components/ProductCard';
 import { SectionHead } from '@/shared/components/ui';
@@ -60,8 +61,10 @@ export default function ShopHome() {
   const newCat = pickedCat ?? categories[0]?.id; // 처음엔 첫 번째 상위 카테고리
 
   // 목록 API 는 노출 가능한 상품만 준다(판매중지 · 스토어 정지 제외)
-  const { data: freshPage } = useProductSearchQuery({ sort: 'NEW', size: 24 });
-  const { data: catPage } = useProductSearchQuery({ categoryId: newCat, sort: 'NEW', size: 8 });
+  const freshQuery = useProductSearchQuery({ sort: 'NEW', size: 24 });
+  const catQuery = useProductSearchQuery({ categoryId: newCat, sort: 'NEW', size: 8 });
+  const { data: freshPage } = freshQuery;
+  const { data: catPage } = catQuery;
   const fresh = useRatedProducts(useMemo(() => (freshPage?.content ?? []).slice(0, 8), [freshPage]));
   const catNew = useRatedProducts(catPage?.content ?? EMPTY);
   const products = freshPage?.content ?? EMPTY; // 카테고리 칸 대표 사진용
@@ -102,7 +105,7 @@ export default function ShopHome() {
             <button key={c.id} onClick={() => setPickedCat(c.id)} className={cx('h-9 px-4 text-[13px] border shrink-0', newCat === c.id ? 'bg-ink text-white border-ink font-semibold' : 'border-line-2 text-ink-2 hover:border-ink')}>{c.name}</button>
           ))}
         </div>
-        {catNew.length ? (
+        {!catPage ? <ListStatus query={catQuery} failText="신상품을 불러오지 못했어요." /> : catNew.length ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-9">
             {catNew.map((p) => <ProductCard key={p.id} p={p} store={storeById[p.storeId]} />)}
           </div>
@@ -140,9 +143,11 @@ export default function ShopHome() {
       {/* 신상 */}
       <section className="max-w-[1280px] mx-auto px-4 md:px-6 mt-20">
         <SectionHead eyebrow="New in" title="이번 주 새로 들어온 상품" right={<Link to="/products?sort=new" className="text-[13px] text-ink-2 flex items-center gap-1 hover:text-ink">더보기 <ArrowRight size={14} /></Link>} />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-9">
-          {fresh.map((p) => <ProductCard key={p.id} p={p} store={storeById[p.storeId]} />)}
-        </div>
+        {freshPage ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-9">
+            {fresh.map((p) => <ProductCard key={p.id} p={p} store={storeById[p.storeId]} />)}
+          </div>
+        ) : <ListStatus query={freshQuery} failText="새로 들어온 상품을 불러오지 못했어요." />}
       </section>
 
       {/* 입점 CTA */}

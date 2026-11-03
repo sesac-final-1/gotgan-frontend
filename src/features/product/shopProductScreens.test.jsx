@@ -136,6 +136,34 @@ describe('상품 목록 — 서버 페이징 · 필터', () => {
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('cat=3&sub=302'));
     expect(screen.getByText(/패션의류 \/ 니트/)).toBeInTheDocument();
   });
+
+  it('조회 실패는 빈 결과 안내가 아니라 다시 시도 — 누르면 다시 받아 목록', async () => {
+    let fail = true;
+    mockApi({ products: () => { if (fail) throw new Error('502'); return page([card(3, '리넨 셔츠')]); } });
+    renderAt('/products', <ShopProductList />, '/products');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('상품을 불러오지 못했어요');
+    expect(screen.queryByText('조건에 맞는 상품이 없어요')).not.toBeInTheDocument();
+    expect(screen.getByText('-')).toBeInTheDocument(); // 총 개수도 0 이 아니라 모름
+
+    fail = false;
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect(await screen.findByText('리넨 셔츠')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('받기 전에는 빈 결과 안내 대신 불러오는 중', async () => {
+    let release;
+    mockApi({ products: () => page([]) });
+    const get = axiosInstance.get.getMockImplementation();
+    axiosInstance.get.mockImplementation((url, opts) => (url === '/api/products' ? new Promise((r) => { release = () => r(get(url, opts)); }) : get(url, opts)));
+    renderAt('/products', <ShopProductList />, '/products');
+
+    expect(await screen.findByText('불러오는 중…')).toBeInTheDocument();
+    expect(screen.queryByText('조건에 맞는 상품이 없어요')).not.toBeInTheDocument();
+    release();
+    expect(await screen.findByText('조건에 맞는 상품이 없어요')).toBeInTheDocument();
+  });
 });
 
 describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
@@ -262,6 +290,15 @@ describe('메인 — 카테고리별 신상품 (PRD-14)', () => {
     mockApi({ products: (params) => page(params.categoryId ? [] : [card(7, '새로 온 머그')]) });
     renderAt('/', <ShopHome />, '/');
     expect(await screen.findByText('이 카테고리에 새로 들어온 상품이 아직 없어요.')).toBeInTheDocument();
+  });
+
+  it('카테고리 신상품 · 새로 들어온 상품 조회가 실패하면 빈 안내 대신 칸마다 다시 시도', async () => {
+    mockApi({ products: () => { throw new Error('502'); } });
+    renderAt('/', <ShopHome />, '/');
+
+    expect(await screen.findByText(/신상품을 불러오지 못했어요/)).toBeInTheDocument();
+    expect(await screen.findByText(/새로 들어온 상품을 불러오지 못했어요/)).toBeInTheDocument();
+    expect(screen.queryByText('이 카테고리에 새로 들어온 상품이 아직 없어요.')).not.toBeInTheDocument();
   });
 });
 
