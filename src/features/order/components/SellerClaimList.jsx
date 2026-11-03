@@ -1,6 +1,6 @@
 // 판매자 취소 · 반품 · 교환 — 담당 이경석 (GET /api/seller/claims — 서버 페이징 · 단계 · 유형 탭, CLM-05)
 // 반품: 승인(수거 요청) → 수거 완료(환불) / 교환: 승인 → 수거 완료 → 재배송 송장 → 주문 관리에서 배송완료(또는 자동)하면 교환완료
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { PageHead, Segments, StatusPill, Modal, KV } from '@/shared/components/ui';
@@ -18,6 +18,10 @@ const TYPES = { 전체: null, 취소: 'CANCEL', 반품: 'RETURN', 교환: 'EXCHA
 const COURIERS = ['CJ대한통운', '롯데택배', '한진택배', '우체국택배', '로젠택배'];
 const REJECT_REASONS = ['상품 사용 흔적 확인', '반품 기한 경과', '구성품 누락', '기타'];
 const PAGE_SIZE = 20;
+
+// 반품 수거 완료 뒤 환불이 막히면 COLLECTED 로 응답 — 자동으로 마저 진행
+const collected = (c) => (c.type === 'EXCHANGE' ? '수거 완료 — 재배송 송장을 입력해 주세요'
+  : c.status === 'COMPLETED' ? `반품 완료 — ${won(c.refundAmt)} 환불했어요` : '수거 완료 — 환불을 처리하고 있어요');
 
 function buildColumns({ act, setDetail, setReject }) {
   return [
@@ -75,9 +79,10 @@ export default function SellerClaimList() {
   const reshipMutation = useReshipClaimMutation();
   const busy = approve.isPending || collect.isPending || rejectMutation.isPending || reshipMutation.isPending;
 
-  const run = async (mutation, payload, done) => {
+  // mutateAsync 는 참조가 바뀌지 않는다 — 표 columns 가 렌더마다 새로 만들어지지 않게 act 를 useCallback 으로 (컨벤션 4-7)
+  const run = useCallback(async (mutateAsync, payload, done) => {
     try {
-      const c = await mutation.mutateAsync(payload);
+      const c = await mutateAsync(payload);
       toast(done(c));
       setDetail(null);
       return true;
@@ -85,26 +90,26 @@ export default function SellerClaimList() {
       toast(err.response?.data?.message ?? '처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
       return false;
     }
-  };
-  // 반품 수거 완료 뒤 환불이 막히면 COLLECTED 로 응답 — 자동으로 마저 진행
-  const collected = (c) => (c.type === 'EXCHANGE' ? '수거 완료 — 재배송 송장을 입력해 주세요'
-    : c.status === 'COMPLETED' ? `반품 완료 — ${won(c.refundAmt)} 환불했어요` : '수거 완료 — 환불을 처리하고 있어요');
-  const act = (c, action) => {
-    if (action === 'approve') void run(approve, c.claimId, () => '승인했어요. 상품을 회수해 주세요');
-    if (action === 'collect') void run(collect, c.claimId, collected);
-    if (action === 'reship') { setReshipForm({ courier: store?.courier || COURIERS[0], trackingNo: '' }); setReship(c); }
-  };
+  }, []);
+  const approveAsync = approve.mutateAsync;
+  const collectAsync = collect.mutateAsync;
+  const defaultCourier = store?.courier || COURIERS[0];
+  const act = useCallback((c, action) => {
+    if (action === 'approve') void run(approveAsync, c.claimId, () => '승인했어요. 상품을 회수해 주세요');
+    if (action === 'collect') void run(collectAsync, c.claimId, collected);
+    if (action === 'reship') { setReshipForm({ courier: defaultCourier, trackingNo: '' }); setReship(c); }
+  }, [run, approveAsync, collectAsync, defaultCourier]);
   const submitReject = async () => {
     const reason = rejectForm.text.trim() ? `${rejectForm.reason} — ${rejectForm.text.trim()}` : rejectForm.reason;
-    if (await run(rejectMutation, { claimId: reject.claimId, reason }, () => '거부 사유가 구매자에게 전달되었어요')) setReject(null);
+    if (await run(rejectMutation.mutateAsync, { claimId: reject.claimId, reason }, () => '거부 사유가 구매자에게 전달되었어요')) setReject(null);
   };
   const submitReship = async () => {
     const payload = { claimId: reship.claimId, courier: reshipForm.courier, trackingNo: reshipForm.trackingNo.trim() || null };
-    if (await run(reshipMutation, payload, () => '재배송 송장을 등록했어요. 배송완료되면 교환이 끝나요')) setReship(null);
+    if (await run(reshipMutation.mutateAsync, payload, () => '재배송 송장을 등록했어요. 배송완료되면 교환이 끝나요')) setReship(null);
   };
 
-  const rows = data?.items.content ?? [];
-  const columns = buildColumns({ act, setDetail, setReject });
+  const rows = useMemo(() => data?.items.content ?? [], [data]);
+  const columns = useMemo(() => buildColumns({ act, setDetail, setReject }), [act]);
   const table = useReactTable({
     data: rows, columns, getCoreRowModel: getCoreRowModel(),
     manualPagination: true, pageCount: data?.items.totalPages ?? 0,
