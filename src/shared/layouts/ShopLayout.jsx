@@ -18,6 +18,13 @@ const NAV = [
   { to: '/stores', label: '스토어' },
 ];
 
+// 푸터 — 실제 화면이 있는 것만 링크. 1:1 문의는 고객센터('운영팀과 채팅') · 상품 상세('판매자에게 문의')가 대신한다
+const FOOTER_LINKS = [
+  ['쇼핑', [['카테고리', '/products'], ['신상', '/products?sort=new'], ['스토어 둘러보기', '/stores']]],
+  ['고객지원', [['공지사항', '/notice'], ['자주 묻는 질문', '/faq'], ['고객센터', '/help']]],
+  ['판매자', [['입점 신청', '/seller/apply'], ['판매자센터', '/seller'], ['수수료 안내', '/fees'], ['판매자 이용약관', '/terms/seller']]],
+];
+
 // 쇼핑몰 레이아웃 — 데이터(카테고리 · 장바구니 수 · 로그인 사용자)는 props 로 받는다 (shared 는 features 에 의존하지 않음, 연결은 pages/shop/ShopRoot.jsx)
 export default function ShopLayout({ categories = [], cartCount = 0, user = null, bell = null, onLogout }) {
   const [q, setQ] = useState('');
@@ -34,10 +41,10 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
         <div className="marquee flex whitespace-nowrap gap-12 pl-12">
           {[0, 1].map((k) => (
             <span key={k} className="flex gap-12">
-              <span>결제할 때마다 실결제금액의 5% 포인트 적립</span><span className="text-point">●</span>
-              <span>서귀포 노지 햇감귤 첫 수확 — 산지직송</span><span className="text-point">●</span>
-              <span>10월 리빙 기획전 · 최대 30% 할인</span><span className="text-point">●</span>
-              <span>작은 가게 사장님, 곳간에 입점하세요 → 수수료 첫 3개월 50%</span><span className="text-point">●</span>
+              <span>실결제금액의 5% 포인트 적립 — 구매확정 때 지급</span><span className="text-point">●</span>
+              <span>여러 스토어 상품도 한 번에 결제 · 배송완료 7일 뒤 자동 구매확정</span><span className="text-point">●</span>
+              <span>누적 구매확정 30만원 SILVER · 80만원 GOLD</span><span className="text-point">●</span>
+              <span>작은 가게 사장님, 곳간에 입점하세요 → 판매대금은 매주 목요일 정산</span><span className="text-point">●</span>
             </span>
           ))}
         </div>
@@ -140,14 +147,10 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
             <div className="mt-5 text-[22px] font-bold num">1588-0000</div>
             <p className="text-xs text-mute mt-1">평일 10:00 – 17:00 (점심 12:00 – 13:00)</p>
           </div>
-          {[
-            ['쇼핑', ['카테고리', '랭킹', '신상', '스토어 둘러보기']],
-            ['고객지원', ['공지사항', '자주 묻는 질문', '1:1 문의', '배송·반품 안내']],
-            ['판매자', ['입점 신청', '판매자센터', '수수료 안내', '판매자 이용약관']],
-          ].map(([t, items]) => (
+          {FOOTER_LINKS.map(([t, items]) => (
             <div key={t}>
               <div className="eyebrow text-ink mb-3">{t}</div>
-              <ul className="space-y-2 text-[13px] text-ink-2">{items.map((i) => <li key={i}><a className="hover:underline cursor-pointer">{i}</a></li>)}</ul>
+              <ul className="space-y-2 text-[13px] text-ink-2">{items.map(([label, to]) => <li key={label}><Link to={to} className="hover:underline">{label}</Link></li>)}</ul>
             </div>
           ))}
         </div>
@@ -155,7 +158,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
           <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-6 text-[11.5px] text-mute leading-relaxed">
             <p>(주)곳간 · 대표 홍길동 · 사업자등록번호 000-00-00000 · 통신판매업신고 2026-서울성동-0000 · 서울특별시 성동구 성수이로 00, 0층</p>
             <p className="mt-1">곳간은 통신판매중개자로서 통신판매의 당사자가 아니며, 입점 판매자가 등록한 상품정보 및 거래에 대한 책임은 각 판매자에게 있습니다.</p>
-            <p className="mt-3 text-ink-2">※ 본 사이트는 팀 프로젝트용 목업이며 실제 거래가 이루어지지 않습니다. 이미지 출처: Unsplash</p>
+            <p className="mt-3 text-ink-2">※ 본 사이트는 팀 프로젝트 시연용 사이트이며 실제 거래가 이루어지지 않습니다. 이미지 출처: Unsplash</p>
           </div>
         </div>
       </footer>
