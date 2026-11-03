@@ -17,16 +17,13 @@ import { usePaySettlementsMutation, useHoldSettlementsMutation, useReleaseSettle
 import { isoWeek, recentWeeks } from '@/features/admin/constants';
 import { useSaveCategoryMutation, useReserveCommissionMutation } from '@/features/admin/hooks/useCategoryMutations';
 import { useMyOrdersQuery } from '@/features/order/hooks/useMyOrdersQuery';
-import { useSellerBuyersQuery } from '@/features/order/hooks/useSellerBuyersQuery';
-import { useSellerOrderItemsMockQuery, useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
+import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
 import { useProductSearchQuery } from '@/features/product/hooks/useProductSearchQuery';
 import { useProductQuery } from '@/features/product/hooks/useProductQuery';
 import { useSellerProductsQuery } from '@/features/product/hooks/useSellerProductsQuery';
 import { useSellerProductQuery } from '@/features/product/hooks/useSellerProductQuery';
 import { useUpdateSellerProductStatusMutation, useDeleteSellerProductsMutation, useSaveSellerProductMutation, useUpdateSellerProductStocksMutation, useCopySellerProductMutation } from '@/features/product/hooks/useSellerProductMutations';
-import { useQnasQuery } from '@/features/review/hooks/useQnasQuery';
-import { useReviewsQuery } from '@/features/review/hooks/useReviewsQuery';
 import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQuery';
 import { useSellerReviewSummaryQuery, useSellerReviewsQuery } from '@/features/review/hooks/useSellerReviews';
 import { useSellerPendingQuery } from '@/features/settlement/hooks/useSellerPendingQuery';
@@ -46,11 +43,6 @@ import { useMeQuery } from '@/features/user/hooks/useMeQuery';
 import { useMyAddressesQuery } from '@/features/user/hooks/useMyAddressesQuery';
 import { useMyPointsQuery } from '@/features/user/hooks/useMyPointsQuery';
 
-// 조회 훅 — 목업 api 를 거쳐 데이터가 도착하는지 (API 교체 후에도 같은 테스트로 MSW 응답 확인 가능)
-const LIST_HOOKS = {
-  useSellerBuyersQuery,
-  useSellerOrderItemsMockQuery, useQnasQuery, useReviewsQuery,
-};
 // 실제 API 로 바꾼 훅 — 응답을 흉내 내 화면 필드로 오는지 (변환 세부는 features/user/userApi.test.js)
 const API_HOOKS = {
   useApplicationsQuery: [[{ applicationId: 27, applicationNo: 'AP-2610-027', storeName: '곳간상회', ownerName: '홍길동', bizType: 'INDIVIDUAL',
@@ -108,12 +100,6 @@ async function load(hook, ...args) {
 }
 
 describe('조회 훅', () => {
-  it.each(Object.entries(LIST_HOOKS))('%s → 비어 있지 않은 배열', async (_, hook) => {
-    const data = await load(hook);
-    expect(Array.isArray(data)).toBe(true);
-    expect(data.length).toBeGreaterThan(0);
-  });
-
   it.each(Object.entries(API_HOOKS))('%s → API 응답을 화면 필드로', async (name, [response, expected]) => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: response } });
     try {
@@ -216,13 +202,6 @@ describe('조회 훅', () => {
     } finally {
       patch.mockRestore();
     }
-  });
-
-  it('목업 응답은 매번 새 객체 (같은 참조면 변경 후 화면이 갱신되지 않음)', async () => {
-    const a = await load(useQnasQuery);
-    const b = await load(useQnasQuery);
-    expect(a).toEqual(b);
-    expect(a).not.toBe(b);
   });
 });
 

@@ -2,7 +2,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { reviews as mockReviews } from '@/mocks/fixtures/reviews';
 import { fetchProductReviewSummary, fetchProductReviews } from '@/features/review/api/reviewApi';
 import ShopProductReviews from '@/features/review/components/ShopProductReviews';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -64,29 +63,6 @@ describe('상품 리뷰 API', () => {
 
     await expect(fetchProductReviewSummary(101)).resolves.toEqual(SUMMARY);
     expect(get).toHaveBeenNthCalledWith(2, '/api/reviews/summary', { params: { productId: 101 } });
-  });
-
-  it('목업 상품 id — API 를 부르지 않고 목업 리뷰를 같은 모양으로 (블라인드 제외 · 필터 · 정렬 · 페이지)', async () => {
-    const get = vi.spyOn(axiosInstance, 'get');
-    const visible = mockReviews.filter((r) => r.productId === 'p101' && !r.blinded);
-
-    const all = await fetchProductReviews({ productId: 'p101', page: 0, size: 3 });
-    expect(all.totalElements).toBe(visible.length);
-    expect(all.content).toHaveLength(3);
-    expect(all.content[0]).toMatchObject({ writer: '구매자', photos: expect.any(Array) });
-    expect(all.content[0].date).toBeInstanceOf(Date);
-    expect(['SMALL', 'TRUE_TO_SIZE', 'LARGE']).toContain(all.content[0].fit);
-
-    const low = await fetchProductReviews({ productId: 'p101', sort: 'RATING_LOW', page: 0, size: 50 });
-    expect(low.content.map((r) => r.rating)).toEqual([...low.content.map((r) => r.rating)].sort((a, b) => a - b));
-    const photo = await fetchProductReviews({ productId: 'p101', photoOnly: true, rating: 5 });
-    expect(photo.content.every((r) => r.photos.length > 0 && r.rating === 5)).toBe(true);
-
-    const summary = await fetchProductReviewSummary('p101');
-    expect(summary.reviewCount).toBe(visible.length);
-    expect(summary.distribution.map((d) => d.rating)).toEqual([5, 4, 3, 2, 1]);
-    expect(summary.fits.map((f) => f.fit)).toEqual(['SMALL', 'TRUE_TO_SIZE', 'LARGE']);
-    expect(get).not.toHaveBeenCalled();
   });
 });
 
