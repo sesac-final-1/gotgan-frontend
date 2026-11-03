@@ -28,6 +28,7 @@ import { useMyReviewsQuery, useWritableReviewsQuery } from '@/features/review/ho
 import { useSellerReviewSummaryQuery, useSellerReviewsQuery } from '@/features/review/hooks/useSellerReviews';
 import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSellerSettlementsQuery';
 import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
+import { useSettlementReportMutation } from '@/features/settlement/hooks/useSettlementReportMutation';
 import { useAdminSettlementQuery } from '@/features/admin/hooks/useAdminSettlementQuery';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useStoreRatingQuery } from '@/features/store/hooks/useStoreRatingQuery';
@@ -239,6 +240,24 @@ describe('입점 심사 (store 계약 — 상세 · 승인 · 반려 · 보완�
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'applications'] });
     } finally {
       patch.mockRestore();
+    }
+  });
+});
+
+describe('정산 명세서 링크', () => {
+  it('누를 때마다 /report 로 새 presigned 링크를 받는다 (캐시 없음)', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { url: 'https://s3/report.csv?sig', expiresAt: '2026-11-03T10:10:00+09:00' } } });
+    try {
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useSettlementReportMutation(), { wrapper: Wrapper });
+      let url;
+      await act(async () => { url = await result.current.mutateAsync(5); });
+      await act(async () => { await result.current.mutateAsync(5); });
+      expect(url).toBe('https://s3/report.csv?sig');
+      expect(get).toHaveBeenCalledTimes(2);
+      expect(get).toHaveBeenCalledWith('/api/seller/settlements/5/report');
+    } finally {
+      get.mockRestore();
     }
   });
 });
