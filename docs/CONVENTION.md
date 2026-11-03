@@ -135,13 +135,13 @@
 | 서버 상태 | TanStack Query v5 | API 데이터는 전부 여기서 (4-6) |
 | 클라이언트 상태 | Zustand | `authStore` — accessToken · user · isAuthReady / UI 상태 |
 | 표 | TanStack Table v8 | 4-7 |
-| 폼 | react-hook-form + zod | 스키마는 `features/{domain}/schemas.js` |
+| 폼 | 컴포넌트 상태(`useState`) + zod | 스키마는 `features/{domain}/schemas.js` — react-hook-form 은 쓰지 않음(11/3 현행화) |
 | HTTP | Axios | `withCredentials: true` 고정 · 상대경로 `/api/...` |
 | 스타일 | Tailwind CSS v4 | 디자인 토큰은 `styles/index.css`의 `@theme` (목업 토큰) |
 | UI 컴포넌트 | 목업 공통 컴포넌트 | `shared/components/ui/` — shadcn 등 새 UI 키트 도입 안 함 |
 | 차트 · 토스트 | 목업 SVG 차트 · 목업 ToastHost | 새 라이브러리 도입 시 팀 합의 |
 | 결제 | `@portone/browser-sdk` | `features/order`에서만 |
-| 목킹 | MSW | `src/mocks/` |
+| 테스트 목킹 | `vi.spyOn(axiosInstance, …)` | 모든 화면이 실제 API 라 `src/mocks/` 는 11/3 삭제(frontend #80) — MSW 는 쓰지 않음 |
 | 테스트 | Vitest + React Testing Library | 대상: 유틸 · zod 스키마 · 핵심 훅 |
 
 ### 4-2. 프로젝트 구조
@@ -180,7 +180,6 @@ gotgan-frontend/src/
 │   ├── components/common/        #   RequireRole · ConfirmModal · EmptyState · SortableHeader
 │   ├── layouts/                  #   ShopLayout · MyPageLayout · ConsoleLayout
 │   ├── hooks/  stores/  utils/
-├── mocks/                        # MSW handlers · fixtures
 └── styles/index.css              # Tailwind 진입 · @theme 디자인 토큰
 ```
 
