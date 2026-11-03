@@ -174,7 +174,6 @@ function ApplyForm() {
             <ul className="mt-2 space-y-1 text-ink-2">
               <li>· 판매수수료 상위 카테고리별 {COMMISSION_RANGE} · 결제수수료 {PAYMENT_FEE_LABEL} (<FeesLink />)</li>
               <li>· 주 1회 정산 (구매확정 기준)</li>
-              <li>· 신규 스토어 메인 노출 2주</li>
             </ul>
           </div>
         </div>

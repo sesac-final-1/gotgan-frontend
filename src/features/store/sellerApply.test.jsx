@@ -57,13 +57,14 @@ describe('내 신청 상태', () => {
     expect(await screen.findByRole('heading', { name: '판매자 정보' })).toBeInTheDocument();
   });
 
-  it('입점 혜택의 수수료는 실제 정책(카테고리별 6%–11% · 결제 2.2%), 수수료 안내는 새 탭', async () => {
+  it('입점 혜택은 실제 정책만 — 수수료는 카테고리별 6%–11% · 결제 2.2%, 메인 노출 약속 없음, 수수료 안내는 새 탭', async () => {
     stubGet(null);
     renderApply();
     await screen.findByRole('heading', { name: '판매자 정보' });
 
     expect(screen.getByText(/판매수수료 상위 카테고리별 6%–11% · 결제수수료 2\.2%/)).toBeInTheDocument();
     expect(screen.queryByText(/50%/)).not.toBeInTheDocument(); // 없는 정책 "첫 3개월 50%"
+    expect(screen.queryByText(/메인 노출/)).not.toBeInTheDocument(); // 없는 기능 "신규 스토어 메인 노출 2주"
     const link = screen.getByRole('link', { name: '수수료 안내' });
     expect(link).toHaveAttribute('href', '/fees');
     expect(link).toHaveAttribute('target', '_blank'); // 같은 탭이면 작성 중인 신청서가 사라짐
