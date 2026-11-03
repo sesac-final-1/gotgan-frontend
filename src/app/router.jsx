@@ -28,6 +28,7 @@ const SHOP = {
   '': 'shop/HomePage', products: 'shop/ProductListPage', 'products/:id': 'shop/ProductDetailPage', stores: 'shop/StoreListPage',
   'store/:id': 'shop/StoreHomePage', login: 'shop/LoginPage', signup: 'shop/SignupPage', 'auth/callback': 'shop/AuthCallbackPage',
   help: 'shop/HelpPage',
+  notice: 'shop/NoticePage', faq: 'shop/FaqPage', fees: 'shop/FeesPage', 'terms/seller': 'shop/SellerTermsPage', // 푸터 정책 화면 (정적)
 };
 const SHOP_BUYER = {
   cart: 'shop/CartPage', checkout: 'shop/CheckoutPage', 'order/complete': 'shop/OrderCompletePage', 'seller/apply': 'shop/SellerApplyPage',
