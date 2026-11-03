@@ -18,7 +18,7 @@ describe('팔레트 · 택배사 목록', () => {
 
 describe('initialSettings', () => {
   it('숫자는 문자열 칸으로, 무료배송 없음(0)은 빈칸', () => {
-    expect(initialSettings(STORE)).toEqual({ intro: '<p>귤 농사</p>', imageKey: null, cover: null, color: '#d0701f', csPhone: '064-0000-0006',
+    expect(initialSettings(STORE)).toEqual({ intro: '귤 농사', imageKey: null, cover: null, color: '#d0701f', csPhone: '064-0000-0006',
       shippingFee: '3000', freeOver: '30000', courier: '우체국택배', dispatchNote: '수확일 기준 당일 발송' });
     expect(initialSettings({ ...STORE, freeOver: 0 }).freeOver).toBe('');
   });
@@ -38,6 +38,7 @@ describe('validateSettings', () => {
     [{ freeOver: '0' }, '무료배송 기준금액은 1 ~ 10,000,000원이에요 (없으면 비워 두세요)'],
     [{ freeOver: '10000001' }, '무료배송 기준금액은 1 ~ 10,000,000원이에요 (없으면 비워 두세요)'],
     [{ intro: 'x'.repeat(5001) }, '소개는 5,000자까지 쓸 수 있어요'],
+    [{ intro: 'x'.repeat(4994) }, '소개는 5,000자까지 쓸 수 있어요'], // 저장되는 HTML(<p></p> 7자 포함) 기준
     [{ courier: 'x'.repeat(31) }, '택배사는 30자까지예요'],
     [{ dispatchNote: 'x'.repeat(101) }, '출고 안내 문구는 100자까지예요'],
   ])('%o → %s', (patch, message) => {
