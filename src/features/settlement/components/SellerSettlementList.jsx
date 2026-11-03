@@ -7,7 +7,7 @@ import { SearchInput } from '@/shared/components/common/SearchInput';
 import { useClientTable } from '@/shared/hooks/useClientTable';
 import { useSellerSettlementsQuery } from '@/features/settlement/hooks/useSellerSettlementsQuery';
 import { useSellerSettlementQuery } from '@/features/settlement/hooks/useSellerSettlementQuery';
-import { fetchSettlementReportUrl } from '@/features/settlement/api/settlementApi';
+import { useSettlementReportMutation } from '@/features/settlement/hooks/useSettlementReportMutation';
 import SettlementDetailBody from '@/features/settlement/components/SettlementDetailBody';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 import { PAYMENT_FEE } from '@/features/settlement/constants';
@@ -41,16 +41,13 @@ function buildColumns(setDetailId) {
   ];
 }
 
-// 명세서는 지급 완료 건만 — 누를 때마다 10분짜리 링크를 받아 새 탭으로 (지급 전 · 생성 전이면 서버 메시지)
-async function openReport(id) {
-  try {
-    window.open(await fetchSettlementReportUrl(id), '_blank', 'noopener');
-  } catch (err) {
-    toast(err.response?.data?.message ?? '명세서를 열지 못했어요. 잠시 후 다시 시도해 주세요.');
-  }
-}
-
 export default function SellerSettlementList() {
+  // 명세서는 지급 완료 건만 — 누를 때마다 10분짜리 링크를 받아 새 탭으로 (지급 전 · 생성 전이면 서버 메시지)
+  const report = useSettlementReportMutation();
+  const openReport = (id) => report.mutate(id, {
+    onSuccess: (url) => window.open(url, '_blank', 'noopener'),
+    onError: (err) => toast(err.response?.data?.message ?? '명세서를 열지 못했어요. 잠시 후 다시 시도해 주세요.'),
+  });
   const { data, isLoading, isError } = useSellerSettlementsQuery();
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const summary = data?.summary;
@@ -80,7 +77,7 @@ export default function SellerSettlementList() {
           <OpenChatButton basePath="/seller/chats" request={{ type: 'SELLER_SUPPORT', context: { type: 'SETTLEMENT', id: detail.id } }}>
             <MessagesSquare size={14} /> 이 정산 문의
           </OpenChatButton>
-          {detail.status === '지급완료' && <button className="btn btn-line btn-sm" onClick={() => void openReport(detail.id)}><Download size={14} /> 정산 명세서 (CSV)</button>}
+          {detail.status === '지급완료' && <button className="btn btn-line btn-sm" disabled={report.isPending} onClick={() => openReport(detail.id)}><Download size={14} /> 정산 명세서 (CSV)</button>}
         </>}>
         {detail ? <SettlementDetailBody d={detail} /> : <p className="text-mute py-6 text-center">불러오는 중…</p>}
       </Modal>
