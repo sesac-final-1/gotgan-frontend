@@ -113,7 +113,7 @@ function DetailBody({ s }) {
           <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.storeId), context: { type: 'STORE', id: Number(s.storeId) } }}>판매자와 상담</OpenChatButton>{s.status !== '폐점' && <button onClick={() => { setStatus(s.status); setModal(true); }} className="btn btn-ink btn-sm">상태 변경</button>}</>} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <Kpi label="8주 거래액" value={shortWon(recent?.totals.salesAmt ?? 0)} unit="원" sub={`정산서 ${comma(recent?.totals.count ?? 0)}건 · 이번 주 포함`} />
-        <Kpi label="8주 수수료 수익" value={comma(Math.floor((recent?.totals.commissionAmt ?? 0) / 10000))} unit="만원" sub="정산서 기준 · 상위 카테고리별 판매수수료" />
+        <Kpi label="8주 수수료 수익" value={shortWon(recent?.totals.commissionAmt ?? 0)} unit="원" sub="정산서 기준 · 상위 카테고리별 판매수수료" />
         <Kpi label="평균 평점" value={s.reviewCount ? s.avg.toFixed(2) : '-'} sub={`리뷰 ${comma(s.reviewCount)}건`} />
         <Kpi label="판매중 상품" value={comma(onSale)} unit="개" sub={`등록 ${comma(prods.length)}개 · 삭제 제외`} />
       </div>

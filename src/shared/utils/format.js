@@ -15,8 +15,9 @@ export const salePrice = (p) => Math.round((p.price * (1 - (p.discount || 0))) /
 export const maskName = (name) => (name.length <= 2 ? name[0] + '*' : name[0] + '*'.repeat(name.length - 2) + name.at(-1));
 
 const pad = (n) => String(n).padStart(2, '0');
-export const ymd = (d) => `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
-export const ymdhm = (d) => `${ymd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+// 날짜가 없으면(한 번도 로그인하지 않은 회원의 최근 접속 등) '-' — 표 한 칸 때문에 화면 전체가 깨지지 않게
+export const ymd = (d) => (d ? `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}` : '-');
+export const ymdhm = (d) => (d ? `${ymd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}` : '-');
 export const md = (d) => `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
 
 export const cx = (...a) => a.filter(Boolean).join(' ');

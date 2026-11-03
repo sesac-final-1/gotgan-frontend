@@ -118,6 +118,8 @@ export default function CategoryCommission() {
       .filter((c) => rates[c.categoryId] !== undefined && rates[c.categoryId] !== rateText(c))
       .map((c) => ({ categoryId: c.categoryId, rate: Number(rates[c.categoryId]) }));
     if (!changed.length) { toast('바뀐 수수료가 없어요'); return; }
+    // 빈칸은 Number('') = 0 이라 0% 로 저장되던 것 — 서버는 0% 를 정상 값으로 받는다
+    if (changed.some((c) => rates[c.categoryId].trim() === '')) { toast('수수료율을 입력해 주세요 (0% 로 두려면 0)'); return; }
     reserveCommission.mutate(changed, {
       onSuccess: () => { setRates({}); toast('다음 주 월요일부터 적용되도록 예약했어요'); },
       onError: fail,
@@ -126,6 +128,7 @@ export default function CategoryCommission() {
   const handleSave = () => {
     const isNew = edit.mode === 'new';
     const top = !edit.parentId;
+    if (isNew && top && String(edit.rate ?? '').trim() === '') { toast('상위 카테고리는 판매수수료율이 필요해요'); return; }
     const request = isNew
       ? { parentId: top ? null : Number(edit.parentId), name: edit.name, sortOrder: edit.sortOrder ? Number(edit.sortOrder) : null, ...(top ? { commissionRate: Number(edit.rate) } : {}) }
       : { name: edit.name, nameEn: edit.nameEn || null, sortOrder: Number(edit.sortOrder), active: edit.active };

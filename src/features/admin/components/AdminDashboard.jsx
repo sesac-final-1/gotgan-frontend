@@ -58,7 +58,7 @@ export default function AdminDashboard() {
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
         <Kpi label="누적 거래액 (GMV)" value={order ? shortWon(order.totalTradeAmt) : '–'} unit="원" sub={order ? `결제 완료 주문 ${comma(order.orderCount)}건` : '주문 통계를 불러오지 못했어요'} />
-        <Kpi label="이번 달 수수료 수익" value={settlement ? comma(settlement.commissionRevenueThisMonth / 10000) : '–'} unit="만원" sub="판매수수료 (결제수수료 제외)" />
+        <Kpi label="이번 달 수수료 수익" value={settlement ? shortWon(settlement.commissionRevenueThisMonth) : '–'} unit="원" sub="판매수수료 (결제수수료 제외)" />
         <Kpi label="지급 예정 · 보류" value={settlement ? shortWon(settlement.scheduledAmt) : '–'} unit="원" sub={settlement ? `보류 ${won(settlement.heldAmt)} · 이번 달 지급 ${shortWon(settlement.paidThisMonthAmt)}원` : '정산 통계를 불러오지 못했어요'} />
         <Kpi label="운영 스토어 / 회원" value={`${stores.filter((s) => s.status === '운영중').length}`} unit={`곳 · ${comma(users.length)}명`}
           sub={product ? `판매중 상품 ${comma(product.onSaleCount)} · 품절 ${comma(product.soldOutCount)} · 강제중지 ${comma(product.blockedCount)}` : '상품 통계를 불러오지 못했어요'} />

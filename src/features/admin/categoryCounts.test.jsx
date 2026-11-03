@@ -1,7 +1,8 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import CategoryCommission from '@/features/admin/components/CategoryCommission';
+import { useToastStore } from '@/shared/stores/toastStore';
 
 // 카테고리 수수료 화면 — 상품 수는 product 카테고리 트리의 productCount(10/29 박지연님께 요청), 없으면 '-'. 스토어 수 칸은 없음
 let queryClient;
@@ -34,5 +35,17 @@ describe('카테고리 수수료 — 상품 수', () => {
     renderWith([{ id: 1, name: '식품', nameEn: 'Food', sortOrder: 1, active: true, children: [{ id: 101, name: '과일' }] }]);
     expect(await screen.findByText('식품')).toBeInTheDocument();
     expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('카테고리 수수료 — 빈칸 저장 막기', () => {
+  it('수수료율 칸을 비우고 변경 예약하면 0% 로 보내지 않고 안내만', async () => {
+    renderWith([{ id: 1, name: '식품', nameEn: 'Food', sortOrder: 1, active: true, children: [] }]);
+    const put = vi.spyOn(axiosInstance, 'put');
+    fireEvent.change(await screen.findByDisplayValue('7'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: '수수료 변경 예약' }));
+
+    expect(useToastStore.getState().current?.msg).toMatch(/수수료율을 입력/);
+    expect(put).not.toHaveBeenCalled();
   });
 });

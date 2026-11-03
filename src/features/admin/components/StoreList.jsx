@@ -1,7 +1,6 @@
 // 스토어 관리 — 담당 구지훈
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Download } from 'lucide-react';
 import { PageHead, Segments, StatusPill } from '@/shared/components/ui';
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
@@ -44,7 +43,7 @@ export default function StoreList() {
 
   return (
     <div>
-      <PageHead title="스토어 관리" desc="입점 승인된 스토어 목록 · 등급은 최근 3개월 거래액과 페널티 점수로 매월 1일 갱신" right={<button className="btn btn-line btn-sm"><Download size={14} /> 엑셀</button>} />
+      <PageHead title="스토어 관리" desc="입점 승인된 스토어 목록 · 등급은 최근 3개월 거래액과 페널티 점수로 매월 1일 갱신" />
       <div className="flex flex-wrap gap-3 items-center">
         <Segments items={TABS} value={tab} onChange={setTab} counts={counts} />
         <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="스토어명 · 대표자 · 사업자번호" className="ml-auto" />
