@@ -102,6 +102,8 @@ describe('SellerOrderList — 서버 페이징 목록 · 일괄 처리', () => {
     expect(await screen.findByText('처리 실패: 지금 주문 상태에서는 처리할 수 없습니다.')).toBeInTheDocument();
     expect(patch).toHaveBeenCalledWith('/api/seller/order-items/confirm', { orderItemIds: [456, 457] });
     expect(useToastStore.getState().current.msg).toBe('1건 발주확인 완료 · 1건 실패 (표에서 사유 확인)');
+    // 서버 API 가 없는 버튼은 가짜 성공 토스트 대신 빠져 있다
+    ['판매취소', '발송지연 안내', /송장 출력/, /엑셀 다운로드/].forEach((name) => expect(screen.queryByRole('button', { name })).not.toBeInTheDocument());
 
     fireEvent.click(screen.getByRole('button', { name: /^배송준비/ }));
     await waitFor(() => expect(get).toHaveBeenCalledWith('/api/seller/order-items', { params: { status: 'PREPARING', q: undefined, page: 0, size: 20 } }));
@@ -154,6 +156,16 @@ describe('SellerOrderDetail — 상태별 단건 처리', () => {
     expect(patch).toHaveBeenCalledWith('/api/seller/order-items/confirm', { orderItemIds: [456] });
     expect(screen.getByText('수령인456')).toBeInTheDocument();
     expect(screen.getByText('주문이 접수되었습니다')).toBeInTheDocument();
+  });
+
+  it('동작 없는 버튼 · 고정 수수료 정산액은 보이지 않음 — 정산은 정산 내역으로', async () => {
+    vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: row(456, 'PAYMENT_DONE') } });
+    renderAt('/seller/orders/456', <SellerOrderDetail />, '/seller/orders/:lineId');
+
+    await screen.findByRole('button', { name: '발주확인' });
+    ['판매취소', '구매자에게 메시지', '배송지 수정'].forEach((name) => expect(screen.queryByRole('button', { name })).not.toBeInTheDocument());
+    expect(screen.queryByText(/판매수수료 \(11%\)|정산 예정액/)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '정산 내역' })).toHaveAttribute('href', '/seller/settlements');
   });
 
   it('배송준비 → 송장 입력 폼으로 발송처리, 배송중 → 배송완료 처리', async () => {

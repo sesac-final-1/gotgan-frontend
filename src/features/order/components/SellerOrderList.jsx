@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Download, Printer } from 'lucide-react';
 import { PageHead, Segments, StatusPill, Checkbox, Modal } from '@/shared/components/ui';
 import { DataTable } from '@/shared/components/common/DataTable';
 import { SearchInput } from '@/shared/components/common/SearchInput';
@@ -127,15 +126,11 @@ export default function SellerOrderList() {
     void run(deliverMutation, ids, '배송완료 처리');
   };
   const setInput = (id, field, value) => setInputs((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-  // TODO(이경석): useCancelOrderItemsMutation (판매자 취소 — 서버 API 없음)
-  const cancel = () => toast('주문 취소 처리 (구매자 환불)');
-  // TODO(이경석): useNotifyShippingDelayMutation (서버 API 없음)
-  const notifyDelay = () => toast('발송지연 안내가 구매자에게 발송되었어요');
+  // TODO(이경석): 판매취소 · 발송지연 안내 · 송장 출력 · 엑셀 다운로드 — 서버 API 가 생기면 버튼 추가 (지금은 가짜 성공을 보이지 않게 뺌)
 
   return (
     <div>
-      <PageHead title="주문 관리" desc="결제완료 → 발주확인(배송준비) → 송장등록(배송중) → 배송완료 → 구매확정(자동 7일)"
-        right={<button className="btn btn-line btn-sm"><Download size={14} /> 엑셀 다운로드</button>} />
+      <PageHead title="주문 관리" desc="결제완료 → 발주확인(배송준비) → 송장등록(배송중) → 배송완료 → 구매확정(자동 7일)" />
 
       <div className="panel p-4 space-y-3">
         <div className="flex flex-wrap gap-3 items-center">
@@ -158,9 +153,6 @@ export default function SellerOrderList() {
           <button disabled={!sel.size || busy} onClick={confirm} className="btn btn-ink btn-xs">발주확인</button>
           <button disabled={!sel.size || busy} onClick={openInvoice} className="btn btn-line btn-xs">송장 입력 · 발송처리</button>
           <button disabled={!sel.size || busy} onClick={deliver} className="btn btn-line btn-xs">배송완료 처리</button>
-          <button disabled={!sel.size} onClick={cancel} className="btn btn-line btn-xs">판매취소</button>
-          <button disabled={!sel.size} onClick={notifyDelay} className="btn btn-line btn-xs">발송지연 안내</button>
-          <button disabled={!sel.size} className="btn btn-ghost btn-xs ml-auto"><Printer size={13} /> 송장 출력</button>
         </div>
       </div>
       <DataTable table={table} loading={isLoading} error={isError} />

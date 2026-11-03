@@ -8,6 +8,7 @@ export function useSellerOrderItemsQuery(params) {
     queryKey: queryKeys.order.sellerItems(params),
     queryFn: () => fetchSellerOrderItems(params),
     placeholderData: keepPreviousData, // 페이지 · 탭을 바꾸는 동안 이전 표를 유지
+    refetchInterval: 30_000, // 새 주문은 판매자에게 실시간 알림이 없어 30초마다 다시 (컨벤션 4-6)
   });
 }
 

@@ -2,13 +2,12 @@
 // 상품주문은 주문 상세(GET /api/orders/{orderNo}), 환불 예정액은 claims/preview, 신청은 POST claims
 import { useState } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router';
-import { Upload } from 'lucide-react';
 import { StatusPill } from '@/shared/components/ui';
 import { MyPageHead } from '@/shared/layouts/MyPageLayout';
 import { useMyOrderQuery } from '@/features/order/hooks/useMyOrderQuery';
 import { useClaimPreviewQuery, useRequestClaimMutation } from '@/features/order/hooks/useClaimMutations';
 import { CLAIM_REASONS, CLAIM_TYPE_LABEL } from '@/features/order/constants';
-import { claimDoneMessage, claimTypesOf, isSellerFault, lineStatusLabel, orderNoOf } from '@/features/order/utils/orderView';
+import { claimDoneMessage, claimTypesOf, lineStatusLabel, orderNoOf } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
 import { cx, won, comma } from '@/shared/utils/format';
 
@@ -104,12 +103,7 @@ function RequestBody({ o, l }) {
             </div>
           </div>
           <div><label className="label">상세 사유</label><textarea rows={4} value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={500} className="field" placeholder="판매자에게 전달할 내용을 적어주세요" /></div>
-          {type !== 'CANCEL' && (
-            <div>
-              <label className="label">사진 첨부 {isSellerFault(reasonCode) && <span className="text-point">(필수)</span>}</label>
-              <button className="w-20 h-20 border border-dashed border-line-2 text-mute flex flex-col items-center justify-center gap-1 text-[11px]"><Upload size={18} />추가</button>
-            </div>
-          )}
+          {/* TODO(이경석): 사진 첨부 — 클레임 신청 API 에 이미지가 생기면 추가 */}
           {type !== 'CANCEL' && (
             <div><label className="label">회수 방법</label>
               <div className="grid grid-cols-2 gap-2"><button className="h-11 border-2 border-ink text-sm font-semibold">판매자 지정 택배 회수</button><button className="h-11 border border-line-2 text-sm">직접 발송</button></div>
