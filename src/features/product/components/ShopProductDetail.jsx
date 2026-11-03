@@ -38,13 +38,14 @@ export default function ShopProductDetail() {
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
   if (isError || !p) return <div className="p-20 text-center">상품을 찾을 수 없습니다. <Link to="/" className="underline">홈으로</Link></div>;
   // key: 다른 상품으로 이동하면 이미지 · 옵션 선택 · 리뷰 필터 상태 초기화
-  return <DetailBody key={p.id} p={p} store={store?.status === '운영중' ? store : undefined} />;
+  return <DetailBody key={p.id} p={p} store={store?.status === '운영중' ? store : undefined} closedName={store && store.status !== '운영중' ? store.name : undefined} />;
 }
 
 const STORE_FALLBACK = { name: '판매 스토어' };
 
-function DetailBody({ p, store: storeInfo }) {
-  const store = storeInfo ?? { ...STORE_FALLBACK, id: p.storeId };
+// closedName: 정지 · 폐점 스토어 이름(스토어 응답은 이름 · 상태만) — 운영 중이 아니면 문의 버튼 · 배송 정책을 숨긴다
+function DetailBody({ p, store: storeInfo, closedName }) {
+  const store = storeInfo ?? { ...STORE_FALLBACK, ...(closedName && { name: closedName }), id: p.storeId };
   const nav = useNavigate();
   const loc = useLocation();
   const { addToCart } = useCart();
@@ -124,10 +125,12 @@ function DetailBody({ p, store: storeInfo }) {
             <span className="w-5 h-5 text-[10px] text-white flex items-center justify-center bg-ink" style={{ background: store.color }}>{store.name[0]}</span>
             {store.name} <ChevronRight size={14} />
           </Link>
-          <OpenChatButton className="btn btn-line btn-xs ml-2" basePath="/mypage/chats"
-            request={{ type: 'STORE_INQUIRY', storeId: p.storeId, context: { type: 'PRODUCT', id: p.id } }}>
-            판매자에게 문의
-          </OpenChatButton>
+          {storeInfo && (
+            <OpenChatButton className="btn btn-line btn-xs ml-2" basePath="/mypage/chats"
+              request={{ type: 'STORE_INQUIRY', storeId: p.storeId, context: { type: 'PRODUCT', id: p.id } }}>
+              판매자에게 문의
+            </OpenChatButton>
+          )}
           <h1 className="mt-2 text-[22px] font-bold leading-snug tracking-tight">{p.name}</h1>
           <button onClick={() => go('reviews')} className="mt-2 flex items-center gap-2 text-[13px]">
             <Stars value={rating} size={13} /> <b>{rating.toFixed(1)}</b> <span className="text-mute underline">리뷰 {comma(reviewCount)}개</span>
@@ -144,7 +147,7 @@ function DetailBody({ p, store: storeInfo }) {
                 <div className="text-moss mt-0.5 font-medium">{store.dispatch}</div>
               </dd>
             ) : (
-              <dd className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> 스토어 배송 정책 — 장바구니에서 배송비 계산</dd>
+              <dd className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {closedName ? '지금은 판매하지 않는 스토어예요' : '스토어 배송 정책 — 장바구니에서 배송비 계산'}</dd>
             )}
           </dl>
 
@@ -237,13 +240,13 @@ function DetailBody({ p, store: storeInfo }) {
               <tbody>
                 {[
                   ...(storeInfo ? [
-                    ['배송 방법', `${store.courier} 택배`],
-                    ['배송비', store.shipFee ? `${won(store.shipFee)} (${won(store.freeOver)} 이상 무료) · 제주/도서산간 3,000원 추가` : '무료배송'],
+                    ['배송 방법', store.courier],
+                    ['배송비', store.shipFee ? `${won(store.shipFee)} (${won(store.freeOver)} 이상 무료)` : '무료배송'],
                     ['출고', store.dispatch],
                   ] : [['배송비', '스토어 배송 정책에 따름 — 장바구니에서 스토어별로 계산']]),
                   ['교환/반품 신청', '배송 완료 후 7일 이내, 마이페이지 > 주문/배송에서 신청'],
                   ['반품 배송비', `단순 변심: 왕복 ${storeInfo ? won((store.shipFee || 3000) * 2) : '배송비'} / 상품 하자·오배송: 판매자 부담`],
-                  ['교환/반품 불가', '착용 흔적·세탁·택 제거 시, 신선식품 단순 변심, 주문 제작 상품'],
+                  ['교환/반품 불가', '사용 · 훼손으로 상품 가치가 떨어진 경우, 신선식품 · 주문 제작 상품의 단순 변심'],
                   ['구매 확정', '배송 완료 7일 후 자동 구매확정 (확정 이후에는 교환/반품 불가)'],
                   ['포인트', '적립은 구매확정 때 · 취소 · 반품 완료 시 그 상품분 사용 포인트는 환원'],
                 ].map(([k, v]) => (
