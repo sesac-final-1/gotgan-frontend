@@ -28,7 +28,7 @@ export function useNotificationStream() {
         toast(n.title);
         void queryClient.invalidateQueries({ queryKey: queryKeys.notification.all });
         if (n.type === 'CHAT_MESSAGE') void queryClient.invalidateQueries({ queryKey: queryKeys.chat.all }); // 보고 있지 않은 방의 새 메시지 — 목록 · 배지 숫자
-        if (n.type === 'ORDER_NEW') { // 판매자 새 주문(O-13) — 주문 관리 목록 · 대시보드 숫자를 바로 다시 불러옴
+        if (n.type === 'ORDER_NEW' || n.type === 'CLAIM_REQUESTED') { // 판매자 새 주문(O-13) · 반품 · 교환 요청(Q-구-15) — 주문 관리 목록 · 대시보드 숫자를 바로 다시 불러옴
           void queryClient.invalidateQueries({ queryKey: queryKeys.order.seller() });
           void queryClient.invalidateQueries({ queryKey: queryKeys.store.sellerDashboard() });
         }

@@ -94,6 +94,19 @@ describe('알림 벨', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['store', 'seller', 'dashboard'] });
   });
 
+  it('반품 · 교환 요청 알림(CLAIM_REQUESTED)이 오면 판매자 주문 · 클레임 목록 · 대시보드를 다시 불러온다 (Q-구-15)', async () => {
+    renderBell();
+    await screen.findByRole('button', { name: '알림 1개' });
+    const [, options] = fetchEventSource.mock.calls[0];
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+    act(() => options.onmessage({ event: 'notification', data: JSON.stringify({ ...ITEMS[0], id: 'a5', type: 'CLAIM_REQUESTED', title: '반품 요청이 들어왔어요' }) }));
+
+    expect(useToastStore.getState().current?.msg).toBe('반품 요청이 들어왔어요');
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['order', 'seller'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['store', 'seller', 'dashboard'] });
+  });
+
   it('로그인하지 않으면 조회 · 연결하지 않음', async () => {
     useAuthStore.setState({ accessToken: null, user: null });
     renderBell();
