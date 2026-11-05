@@ -1,7 +1,7 @@
 // 판매자 대시보드 — 담당 박지연. 통계는 GET /api/seller/dashboard(store.md 15절), 그 밖은 각 담당 API(15절 "넣지 않은 것")
 import { Link } from 'react-router';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
-import { Kpi, BarChart, PageHead, Stars, StatusPill } from '@/shared/components/ui';
+import { Kpi, BarChart, PageHead, Pill, Stars, StatusPill } from '@/shared/components/ui';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useSellerDashboardQuery } from '@/features/store/hooks/useSellerDashboardQuery';
 import { useSellerOrderItemsQuery } from '@/features/order/hooks/useSellerOrderItemsQuery';
@@ -137,7 +137,7 @@ export default function SellerDashboard() {
             <div className="panel-head"><span className="panel-title">새 리뷰</span><Link to="/seller/reviews" className="text-[12px] text-mute">답글 달기</Link></div>
             {(reviews?.content ?? []).map((r) => (
               <div key={r.id} className="px-5 py-3 border-b border-line last:border-0">
-                <div className="flex items-center gap-2 text-[12px]"><Stars value={r.rating} size={11} /><span className="text-mute">{r.writer} · {r.productName}</span></div>
+                <div className="flex items-center gap-2 text-[12px]"><Stars value={r.rating} size={11} /><span className="text-mute">{r.writer} · {r.productName}</span>{r.blinded && <Pill tone="rust">블라인드</Pill>}</div>
                 <p className="text-[13px] mt-1 line-clamp-2 text-ink-2">{r.body}</p>
               </div>
             ))}
