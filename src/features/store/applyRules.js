@@ -1,4 +1,5 @@
 // 입점 신청 · 보완 재제출 공용 규칙 — 담당 박지연. 계약: backend docs/api/store.md 2절(입력 규칙) · 2-3절(재제출)
+import { introToText, textToIntro } from '@/features/store/storeText';
 
 // 서버(SellerApplyRequest · ApplicationResubmitRequest)가 형식을 검사하는 네 칸 — 같은 규칙 · 문구로 화면에서 미리 막는다. 서버 규칙이 바뀌면 여기도 같이
 const RESERVED_SLUGS = ['admin', 'seller', 'new', 'api', 'me'];
@@ -39,7 +40,7 @@ export function toResubmitForm(me) {
     storeName: me.storeName ?? '',
     slug: me.slug ?? '',
     categoryId: s.categoryId,
-    intro: s.intro ?? '',
+    intro: introToText(s.intro), // 저장된 HTML → 태그 없는 글자(스토어 설정과 같은 방식)
     expectedMonthlySales: s.expectedMonthlySales ?? '',
     salesChannel: s.salesChannel ?? '',
     bank: s.settlementAccount?.bank ?? '',
@@ -63,7 +64,7 @@ export function buildResubmitRequest(me, form) {
     if (v !== start[k]) request[k] = v;
   }
   if (form.categoryId !== start.categoryId) request.categoryId = form.categoryId;
-  if (form.intro.trim() !== start.intro) request.intro = form.intro.trim();
+  if (form.intro.trim() !== start.intro) request.intro = textToIntro(form.intro) ?? ''; // '' = 소개 지우기(null 이면 서버가 그대로 둠)
   if (form.expectedMonthlySales && form.expectedMonthlySales !== start.expectedMonthlySales) request.expectedMonthlySales = form.expectedMonthlySales;
   if (form.salesChannel.trim() && form.salesChannel.trim() !== start.salesChannel) request.salesChannel = form.salesChannel.trim();
   const products = normalizeProducts(form.products);

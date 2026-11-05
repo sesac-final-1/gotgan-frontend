@@ -28,7 +28,7 @@ const ME = {
 describe('보완 재제출 — 바뀐 칸만', () => {
   it('처음 값은 제출한 내용 그대로(빈 값은 빈 문자열, 가격은 입력칸용 문자열)', () => {
     expect(toResubmitForm(ME)).toMatchObject({
-      bizType: 'INDIVIDUAL', companyName: '곳간상회', storeName: '곳간상회', slug: 'gotgan-store', categoryId: 1, intro: '<p>소개</p>',
+      bizType: 'INDIVIDUAL', companyName: '곳간상회', storeName: '곳간상회', slug: 'gotgan-store', categoryId: 1, intro: '소개',
       expectedMonthlySales: '', salesChannel: '', bank: '국민은행', number: '000000-00-000000', holder: '홍길동',
       products: [{ name: '감귤', subCategory: '과일', price: '32900' }, { name: '꿀', subCategory: '과일', price: '48000' }],
     });
@@ -36,6 +36,15 @@ describe('보완 재제출 — 바뀐 칸만', () => {
 
   it('아무것도 안 바꾸면 빈 본문 {} — 서버는 "확인했다"로 접수', () => {
     expect(buildResubmitRequest(ME, toResubmitForm(ME))).toEqual({ request: {}, bizChanged: false });
+  });
+
+  it('스토어 소개 — 칸에는 태그 없는 글자, 안 바꾸면 안 보내고(서식 유지) 바꾸면 줄마다 문단으로', () => {
+    const me = { ...ME, submitted: { ...ME.submitted, intro: '<p><b>제주</b> 귤</p><p>3대째</p>' } };
+    const start = toResubmitForm(me);
+    expect(start.intro).toBe('제주 귤\n3대째');
+
+    expect(buildResubmitRequest(me, start).request).not.toHaveProperty('intro');
+    expect(buildResubmitRequest(me, { ...start, intro: '제주 귤\n4대째' }).request.intro).toBe('<p>제주 귤</p><p>4대째</p>');
   });
 
   it('바꾼 칸만 — 앞뒤 공백은 무시, 계좌는 세 값 모두, 대표 상품은 목록 전체, 소개만 빈칸으로 지울 수 있음', () => {
