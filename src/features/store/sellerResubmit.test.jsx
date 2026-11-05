@@ -65,6 +65,8 @@ describe('보완 재제출', () => {
     expect(input('상호명')).toHaveValue('곳간상회');
     expect(input('계좌번호')).toHaveValue('000000-00-000000');
     expect(screen.getByLabelText('스토어 주소')).toHaveValue('gotgan-store');
+    expect(screen.getByDisplayValue('소개')).toBeInTheDocument(); // <p> 태그가 글자로 보이지 않음
+    expect(screen.queryByDisplayValue(/<p>/)).toBeNull();
     expect(screen.getByText('지금 낸 파일: old.pdf')).toBeInTheDocument();
     expect(screen.queryByLabelText('사업자등록증')).toBeNull(); // 요청 안 한 서류는 칸이 없음
     expect(screen.getByText('고친 항목 1개')).toBeInTheDocument(); // 요청 서류 1
