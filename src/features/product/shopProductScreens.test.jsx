@@ -240,6 +240,19 @@ describe('상품 상세 — 스토어 정보 (GET /api/stores/{id})', () => {
     expect(screen.getAllByRole('link', { name: /오롯이 리넨/ })[0]).toHaveAttribute('href', '/store/1');
   });
 
+  it('승인 직후 스토어(택배사 · 출고 안내 · 무료 기준 없음)는 빈 문구 없이 배송비만', async () => {
+    mockApi({ store: { ...STORE_HOME, shippingFee: 3000, freeShippingThreshold: null, courier: null, dispatchNote: null } });
+    renderAt('/products/3', <ShopProductDetail />, '/products/:id');
+    await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
+
+    expect((await screen.findAllByText('3,000원')).length).toBe(2); // 상단 배송 칸 · 안내 표 — '· 3,000원' · '(0원 이상 무료)' 아님
+    expect(screen.queryByText(/·\s*3,000원/)).toBeNull();
+    expect(screen.queryByText('배송 방법')).toBeNull();
+    expect(screen.queryByText('출고')).toBeNull();
+    expect(screen.queryByText(/0원 이상 무료/)).toBeNull();
+    expect(screen.getByText('반품 배송비')).toBeInTheDocument(); // 값이 있는 행은 그대로
+  });
+
   it('상품정보 탭은 상품 설명(HTML 정화) — 스토어 소개는 스토어 카드에만', async () => {
     mockApi({ store: STORE_HOME, detail: { ...DETAIL, description: '<p>도톰한 리넨<img src=x onerror="alert(1)"></p>' } });
     renderAt('/products/3', <ShopProductDetail />, '/products/:id');
