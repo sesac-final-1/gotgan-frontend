@@ -184,6 +184,7 @@ describe('신청 폼', () => {
     expect(useToastStore.getState().current.msg).toContain('영소문자 · 숫자 · 하이픈 3~30자');
     slug('admin'); next();
     expect(useToastStore.getState().current.msg).toBe('사용할 수 없는 스토어 주소입니다.');
+    expect(screen.getByText(`${window.location.host}/store/`)).toBeInTheDocument(); // 없는 도메인이 아니라 지금 사이트 주소
     expect(screen.getByRole('heading', { name: '스토어 · 카테고리 · 판매 예정 상품' })).toBeInTheDocument();
   });
 

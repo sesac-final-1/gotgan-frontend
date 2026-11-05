@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { PageHead, StatusPill, KV, Modal } from '@/shared/components/ui';
 import { useMyStoreQuery } from '@/features/store/hooks/useMyStoreQuery';
 import { useUpdateMyStoreMutation, useCloseMyStoreMutation } from '@/features/store/hooks/useMyStoreMutations';
+import { storeUrlPrefix } from '@/features/store/constants';
 import { uploadStoreImage, STORE_IMAGE_TYPES, STORE_IMAGE_MAX_BYTES } from '@/features/store/api/storeApi';
 import { initialSettings, validateSettings, buildSettingsRequest, paletteWith, couriersWith, isAllFree } from '@/features/store/storeSettings';
 import { toast } from '@/shared/stores/toastStore';
@@ -83,7 +84,7 @@ function StoreSettingsBody({ s }) {
               <div className="flex gap-1.5">{paletteWith(s.color).map((c) => <button key={c} aria-label={`대표 색 ${c}`} onClick={() => set({ color: c })} className={cx('w-7 h-7', f.color === c && 'ring-2 ring-offset-2 ring-ink')} style={{ background: c }} />)}</div>
             </div>
             <div><label className="label">스토어명</label><input className="field bg-cream" value={s.name} readOnly /><p className="text-[12px] text-mute mt-1">스토어명 변경은 관리자 승인이 필요합니다.</p></div>
-            <div><label className="label">스토어 URL</label><input className="field bg-cream num" value={`gotgan.kr/store/${s.slug}`} readOnly /></div>
+            <div><label className="label">스토어 URL</label><input className="field bg-cream num" value={`${storeUrlPrefix()}${s.slug}`} readOnly /></div>
             <div><label className="label">고객센터 전화</label><input className="field num" value={f.csPhone} onChange={(e) => set({ csPhone: e.target.value })} placeholder="010-0000-0000" /></div>
             <div><label className="label">소개</label><textarea rows={3} maxLength={5000} className="field" value={f.intro} onChange={(e) => set({ intro: e.target.value })} /></div>
           </div>

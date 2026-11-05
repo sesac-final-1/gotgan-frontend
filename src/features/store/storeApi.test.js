@@ -32,6 +32,14 @@ describe('fetchStores — GET /api/stores 를 화면 필드로', () => {
 });
 
 describe('fetchStore — GET /api/stores/{id} 를 스토어 홈 필드로', () => {
+  it.each([[1, '/api/stores/1'], ['1', '/api/stores/1'], ['park-farm', '/api/stores/slug/park-farm'], ['store-24', '/api/stores/slug/store-24']])('%s → %s', async (value, url) => {
+    const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: HOME } });
+
+    await fetchStore(value);
+
+    expect(get).toHaveBeenCalledWith(url);
+  });
+
   it('운영 중 — 판매자 정보 · 배송 안내를 목업 이름으로, 대표 이미지 → cover', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: HOME } });
 
