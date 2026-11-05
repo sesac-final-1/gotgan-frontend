@@ -40,8 +40,12 @@ export const toStoreHome = (r) => ({
   dispatch: r.dispatchNote ?? '',
 });
 
+// 화면 주소 /store/{값} — 숫자면 id(14-2), 아니면 입점 신청 때 정한 스토어 주소 slug(14-3). 숫자만으로 된 slug 는 만들 수 없다
 // 없거나 삭제된 스토어는 404 STORE_NOT_FOUND
-export const fetchStore = async (storeId) => toStoreHome((await axiosInstance.get(`/api/stores/${storeId}`)).data.data);
+export const fetchStore = async (idOrSlug) => {
+  const path = /^\d+$/.test(String(idOrSlug)) ? idOrSlug : `slug/${encodeURIComponent(idOrSlug)}`;
+  return toStoreHome((await axiosInstance.get(`/api/stores/${path}`)).data.data);
+};
 
 // GET /api/reviews/ratings/stores?ids= — 스토어 홈 별점(review #160, 공개). store 응답에는 평점이 없어 화면이 따로 묻는다(노션 10/28 안내)
 // 리뷰가 없으면 0 · 0, 블라인드 · 삭제 리뷰는 빠진 값

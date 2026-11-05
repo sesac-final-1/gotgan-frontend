@@ -59,6 +59,16 @@ describe('스토어 홈 /store/:id — GET /api/stores/{id}', () => {
     expect(document.querySelector('[onerror]')).toBeNull();
   });
 
+  it('스토어 주소(slug)로 들어와도 같은 스토어 홈 — 상품 · 별점은 응답의 숫자 id 로', async () => {
+    const get = mockApi();
+    renderAt('/store/park-farm', <ShopStoreHome />, '/store/:id');
+
+    expect(await screen.findByRole('heading', { level: 1, name: '산골농부 박씨네' })).toBeInTheDocument();
+    expect(get).toHaveBeenCalledWith('/api/stores/slug/park-farm');
+    expect(await screen.findByText('햇감귤')).toBeInTheDocument();
+    expect(get).toHaveBeenCalledWith('/api/products', { params: { storeId: 1, sort: 'NEW', size: 100 } });
+  });
+
   it('문의하기 — 그 스토어 스토어 톡을 열고 스토어 카드, 내 채팅방으로 이동', async () => {
     useAuthStore.setState({ accessToken: 't', user: { userId: 10, name: '김서연', roles: ['BUYER'] }, isAuthReady: true });
     mockApi();

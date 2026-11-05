@@ -9,6 +9,8 @@ describe('formatProblem — 서버와 같은 형식 규칙', () => {
     expect(formatProblem(['managerEmail'], { managerEmail: 'seller' })).toBe('이메일 형식이 올바르지 않습니다.');
     expect(formatProblem(['slug'], { slug: '-bad' })).toContain('영소문자 · 숫자 · 하이픈 3~30자');
     expect(formatProblem(['slug'], { slug: 'admin' })).toBe('사용할 수 없는 스토어 주소입니다.');
+    expect(formatProblem(['slug'], { slug: '12345' })).toBe('스토어 주소는 숫자만으로 만들 수 없습니다.');
+    expect(formatProblem(['slug'], { slug: 'store-24' })).toBeNull();
     expect(formatProblem(['companyName'], { companyName: '' })).toBeNull(); // 규칙 없는 칸은 통과(빈칸 검사는 따로)
   });
 });

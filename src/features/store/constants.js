@@ -1,6 +1,9 @@
 // 입점 신청 화면 표시값 — 담당 박지연 (backend docs/api/store.md 2 · 2-2절 enum). admin/constants 에 같은 라벨이 있지만 store 는 admin 을 참조하지 않는다
 export const APPLICATION_STATUS_LABEL = { PENDING: '심사대기', SUPPLEMENT: '보완요청', APPROVED: '승인', REJECTED: '반려' };
 
+// 스토어 주소 앞부분 — 지금 접속한 사이트 기준이라 배포 · 로컬 모두 실제로 열린다
+export const storeUrlPrefix = () => `${window.location.host}/store/`;
+
 export const BIZ_TYPES = [{ value: 'INDIVIDUAL', label: '개인사업자' }, { value: 'CORPORATE', label: '법인사업자' }];
 
 // 서류 4종 — 앞 3종은 1개씩(PDF · JPG · PNG), 상품 사진은 3~10장(JPG · PNG). 10MB 이하
