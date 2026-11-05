@@ -142,9 +142,9 @@ function DetailBody({ p, store: storeInfo, closedName }) {
             <dt className="text-mute">배송</dt>
             {storeInfo ? (
               <dd>
-                <div className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {store.courier} · {store.shipFee ? `${comma(store.shipFee)}원` : '무료배송'}</div>
+                <div className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {[store.courier, store.shipFee ? `${comma(store.shipFee)}원` : '무료배송'].filter(Boolean).join(' · ')}</div>
                 {store.freeOver > 0 && store.shipFee > 0 && <div className="text-mute mt-0.5">{comma(store.freeOver)}원 이상 구매 시 무료 (스토어 묶음배송)</div>}
-                <div className="text-moss mt-0.5 font-medium">{store.dispatch}</div>
+                {store.dispatch && <div className="text-moss mt-0.5 font-medium">{store.dispatch}</div>}
               </dd>
             ) : (
               <dd className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {closedName ? '지금은 판매하지 않는 스토어예요' : '스토어 배송 정책 — 장바구니에서 배송비 계산'}</dd>
@@ -241,7 +241,7 @@ function DetailBody({ p, store: storeInfo, closedName }) {
                 {[
                   ...(storeInfo ? [
                     ['배송 방법', store.courier],
-                    ['배송비', store.shipFee ? `${won(store.shipFee)} (${won(store.freeOver)} 이상 무료)` : '무료배송'],
+                    ['배송비', store.shipFee ? `${won(store.shipFee)}${store.freeOver ? ` (${won(store.freeOver)} 이상 무료)` : ''}` : '무료배송'],
                     ['출고', store.dispatch],
                   ] : [['배송비', '스토어 배송 정책에 따름 — 장바구니에서 스토어별로 계산']]),
                   ['교환/반품 신청', '배송 완료 후 7일 이내, 마이페이지 > 주문/배송에서 신청'],
@@ -249,7 +249,7 @@ function DetailBody({ p, store: storeInfo, closedName }) {
                   ['교환/반품 불가', '사용 · 훼손으로 상품 가치가 떨어진 경우, 신선식품 · 주문 제작 상품의 단순 변심'],
                   ['구매 확정', '배송 완료 7일 후 자동 구매확정 (확정 이후에는 교환/반품 불가)'],
                   ['포인트', '적립은 구매확정 때 · 취소 · 반품 완료 시 그 상품분 사용 포인트는 환원'],
-                ].map(([k, v]) => (
+                ].filter(([, v]) => v).map(([k, v]) => ( // 승인 직후 스토어는 택배사 · 출고 안내가 비어 있음(store.md 13-1) — 빈 행은 뺀다
                   <tr key={k} className="border-b border-line"><th className="w-40 bg-cream text-left font-medium px-3 py-3 text-ink-2 align-top">{k}</th><td className="px-3 py-3 leading-relaxed">{v}</td></tr>
                 ))}
               </tbody>
