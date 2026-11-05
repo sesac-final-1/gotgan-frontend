@@ -27,7 +27,7 @@ function buildColumns({ sel, toggle, onStock, onCopy }) {
       accessorKey: 'name', header: '상품',
       cell: ({ row: { original: p } }) => (
         <div className="flex items-center gap-3 min-w-[260px]">
-          {p.images[0] ? <img src={p.images[0]} alt="" className="w-11 h-11 object-cover" /> : <div className="w-11 h-11 bg-sand" />}
+          {p.images[0] ? <img src={p.images[0]} data-cat={p.cat} alt="" className="w-11 h-11 object-cover" /> : <div className="w-11 h-11 bg-sand" />}
           <div><Link to={`/seller/products/${p.id}/edit`} className="font-medium hover:underline">{p.name}</Link><div className="text-[11.5px] text-mute num">상품번호 {p.id}</div></div>
         </div>
       ),

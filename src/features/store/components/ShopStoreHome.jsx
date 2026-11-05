@@ -46,7 +46,7 @@ function StoreBody({ s }) {
   return (
     <div>
       <div className="relative h-[220px] md:h-[300px] overflow-hidden">
-        {s.cover ? <img src={s.cover} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full" style={{ background: s.color }} />}
+        {s.cover ? <img src={s.cover} data-fallback="store" alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full" style={{ background: s.color }} />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
       </div>
       <div className="max-w-[1280px] mx-auto px-4 md:px-6">

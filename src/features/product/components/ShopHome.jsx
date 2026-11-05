@@ -86,7 +86,7 @@ export default function ShopHome() {
             const cover = products.find((p) => p.cat === c.id);
             return (
               <Link key={c.id} to={`/products?cat=${c.id}`} className="group border-r border-b border-line p-3 md:p-4 flex items-center gap-3 hover:bg-cream">
-                {cover && <img src={cover.images[0]} alt="" className="w-11 h-11 object-cover shrink-0 grayscale group-hover:grayscale-0 transition" />}
+                {cover && <img src={cover.images[0]} data-cat={c.id} alt="" className="w-11 h-11 object-cover shrink-0 grayscale group-hover:grayscale-0 transition" />}
                 <div className="min-w-0">
                   <div className="text-[13px] md:text-sm font-bold truncate">{c.name}</div>
                   <div className="text-[10.5px] font-mono text-mute truncate">{c.en}</div>
@@ -117,7 +117,7 @@ export default function ShopHome() {
         <section className="mt-20 bg-cream">
           <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-14 grid lg:grid-cols-[1.1fr_1fr] gap-10 items-center">
             <div className="relative">
-              <img src={featured.cover ?? FEATURED_COVER} alt="" className="w-full aspect-[16/10] object-cover" />
+              <img src={featured.cover ?? FEATURED_COVER} data-fallback="store" alt="" className="w-full aspect-[16/10] object-cover" />
               <div className="absolute left-4 bottom-4 bg-white px-3 py-2 text-[12px]"><span className="font-bold">{featured.name}</span> · 전북 전주 · 입점 {Math.round((Date.now() - featured.since) / 864e5 / 30)}개월</div>
             </div>
             <div>
@@ -128,7 +128,7 @@ export default function ShopHome() {
               {featuredItems.length > 0 && <div className="mt-7 grid grid-cols-3 gap-3">
                 {featuredItems.map((p) => (
                   <Link key={p.id} to={`/products/${p.id}`} className="group">
-                    <img src={p.images[0]} alt="" className="w-full aspect-square object-cover" />
+                    <img src={p.images[0]} data-cat={p.cat} alt="" className="w-full aspect-square object-cover" />
                     <div className="mt-2 text-[12px] text-ink-2 line-clamp-1 group-hover:underline">{p.name}</div>
                     <div className="text-[13px] font-bold num">{comma(p.price)}원</div>
                   </Link>

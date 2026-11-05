@@ -109,12 +109,12 @@ function DetailBody({ p, store: storeInfo, closedName }) {
           <div className="flex md:flex-col gap-2">
             {p.images.map((s, i) => (
               <button key={s} onMouseEnter={() => setImg(i)} onClick={() => setImg(i)} className={cx('w-16 h-20 border-2 shrink-0', i === img ? 'border-ink' : 'border-transparent')}>
-                <img src={s} alt="" className="w-full h-full object-cover" />
+                <img src={s} data-cat={p.cat} alt="" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
           <div className="relative flex-1 bg-sand aspect-[4/5] overflow-hidden">
-            <img src={p.images[img]} alt={p.name} className="absolute inset-0 w-full h-full object-cover" />
+            <img src={p.images[img]} data-cat={p.cat} alt={p.name} className="absolute inset-0 w-full h-full object-cover" />
             {soldOut && <span className="absolute left-4 top-4 bg-ink text-white text-xs font-bold px-3 py-1.5">일시품절</span>}
           </div>
         </div>
@@ -214,7 +214,7 @@ function DetailBody({ p, store: storeInfo, closedName }) {
               <h3 className="text-center text-[22px] font-bold mt-2">{p.name}</h3>
               {p.description && <div className="text-sm text-ink-2 mt-6 leading-relaxed" dangerouslySetInnerHTML={safeHtml(p.description)} />}{/* 판매자 상품 설명 HTML — 서버 정화 + 화면 safeHtml */}
               <div className="mt-8 space-y-2">
-                {p.images.map((s) => <img key={s} src={s} alt="" className="w-full" />)}
+                {p.images.map((s) => <img key={s} src={s} data-cat={p.cat} alt="" className="w-full" />)}
               </div>
               <h4 className="mt-12 mb-3 font-bold text-[15px]">상품정보 제공고시</h4>
               <table className="w-full text-[13px] border-t border-ink">
@@ -260,7 +260,7 @@ function DetailBody({ p, store: storeInfo, closedName }) {
         {/* 우측 스토어 카드 */}
         <aside className="hidden lg:block pt-10">
           {storeInfo && <div className="sticky top-32 border border-line">
-            {store.cover ? <img src={store.cover} alt="" className="w-full aspect-[16/9] object-cover" /> : <div className="w-full aspect-[16/9]" style={{ background: store.color }} />}
+            {store.cover ? <img src={store.cover} data-fallback="store" alt="" className="w-full aspect-[16/9] object-cover" /> : <div className="w-full aspect-[16/9]" style={{ background: store.color }} />}
             <div className="p-5">
               <div className="flex items-center gap-2">
                 <span className="w-8 h-8 text-white text-sm font-bold flex items-center justify-center" style={{ background: store.color }}>{store.name[0]}</span>
@@ -286,7 +286,7 @@ function DetailBody({ p, store: storeInfo, closedName }) {
       <Modal open={cartModal} onClose={() => setCartModal(false)} title="장바구니에 담았어요" width={400}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setCartModal(false)}>쇼핑 계속하기</button><Link to="/cart" className="btn btn-ink btn-sm">장바구니 보기</Link></>}>
         <div className="flex gap-3">
-          <img src={p.images[0]} alt="" className="w-16 h-20 object-cover" />
+          <img src={p.images[0]} data-cat={p.cat} alt="" className="w-16 h-20 object-cover" />
           <div className="text-[13px]"><div className="font-semibold">{p.name}</div><div className="text-mute mt-1">{lines.map((l) => l.label).filter(Boolean).join(', ') || '단일 상품'}</div></div>
         </div>
       </Modal>

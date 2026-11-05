@@ -139,3 +139,5 @@ store/cover-6.jpg | Hoyoung Choi | https://unsplash.com/photos/QJII95HD_Lk
 store/cover-7.jpg | Battlecreek Coffee Roasters | https://unsplash.com/photos/mY4hAwxNA_0
 store/cover-8.jpg | Teanna Morgan | https://unsplash.com/photos/fBL6kfky0nU
 store/cover-9.jpg | Andrej Lišakov | https://unsplash.com/photos/3A4XZUopCJA
+
+fallback/ — 이미지 로드 실패 때 쓰는 대체 이미지. 프로젝트에서 직접 그린 SVG(외부 저작물 없음)

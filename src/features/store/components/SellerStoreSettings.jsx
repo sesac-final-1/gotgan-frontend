@@ -72,7 +72,7 @@ function StoreSettingsBody({ s }) {
           <div className="panel-head"><span className="panel-title">기본 정보</span><StatusPill s={s.status} /></div>
           <div className="p-5 space-y-4">
             <div className="relative h-32" style={{ background: f.color }}>
-              {f.cover && <img src={f.cover} alt="" className="w-full h-full object-cover" />}
+              {f.cover && <img src={f.cover} data-fallback="store" alt="" className="w-full h-full object-cover" />}
               <div className="absolute right-2 bottom-2 flex gap-1">
                 {f.cover && <button disabled={closed} onClick={() => set({ imageKey: null, cover: null })} className="btn btn-line btn-xs bg-white">이미지 삭제</button>}
                 <button disabled={closed || uploading} onClick={() => fileRef.current?.click()} className="btn btn-line btn-xs bg-white">{uploading ? '올리는 중…' : '커버 변경'}</button>

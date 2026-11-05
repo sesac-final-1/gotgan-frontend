@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="스토어">
+  <rect width="400" height="500" fill="#EFECE6"/>
+  <g transform="translate(200 215)" fill="none" stroke="#6B665C" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M-70-15-55-55H55L70-15"/><path d="M-60-15V60H60V-15"/><path d="M-70-15H70"/><path d="M-20 60V20H20V60"/></g>
+  <text x="200" y="345" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="700" fill="#6B665C">스토어</text>
+  <text x="200" y="380" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#6B665C" opacity=".7">이미지를 잠시 불러올 수 없어요</text>
+</svg>
