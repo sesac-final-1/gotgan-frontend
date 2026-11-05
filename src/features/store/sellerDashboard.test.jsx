@@ -21,15 +21,17 @@ const ORDERS = {
     page: 0, size: 6, totalElements: 1, totalPages: 1, hasNext: false },
 };
 
-function mockApi({ dash = DASH, store = MY_STORE } = {}) {
+const REVIEW = { reviewId: 31, productId: 101, productName: '서귀포 햇감귤', writerDisplayName: '곳간러버', rating: 5, content: '달아요', blinded: false, replyContent: null,
+  createdAt: '2026-10-30T14:00:00+09:00', imageUrls: [] };
+
+function mockApi({ dash = DASH, store = MY_STORE, reviews = [REVIEW] } = {}) {
   return vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => {
     const data = {
       '/api/seller/store': store,
       '/api/seller/dashboard': dash,
       '/api/seller/order-items': ORDERS,
       '/api/seller/reviews/summary': { averageRating: 4.5, ratedCount: 12, distribution: [], products: [], tabCounts: { all: 12 } },
-      '/api/seller/reviews': { content: [{ reviewId: 31, productId: 101, productName: '서귀포 햇감귤', writerDisplayName: '곳간러버', rating: 5, content: '달아요', blinded: false, replyContent: null,
-        createdAt: '2026-10-30T14:00:00+09:00', imageUrls: [] }], page: 0, size: 3, totalPages: 1 },
+      '/api/seller/reviews': { content: reviews, page: 0, size: 3, totalPages: 1 },
       '/api/seller/inquiries/summary': { unanswered: 3, answered: 5, all: 8 },
     }[url];
     if (data === undefined) throw new Error(`unexpected GET ${url}`);
@@ -69,6 +71,15 @@ describe('판매자 대시보드 — GET /api/seller/dashboard + 주문 · 리�
     expect(screen.getByRole('link', { name: /서귀포 햇감귤\s*3개/ })).toHaveAttribute('href', '/seller/products/101/edit');
     expect(await screen.findByText('달아요')).toBeInTheDocument();
     expect(screen.getByText(/이번 주 구매확정분 정산 예정 48,000원\(2건\)/)).toBeInTheDocument();
+  });
+
+  it('새 리뷰 — 블라인드된 리뷰에만 블라인드 표시', async () => {
+    mockApi({ reviews: [REVIEW, { ...REVIEW, reviewId: 32, content: '광고 리뷰', blinded: true }] });
+    renderDashboard();
+
+    const blinded = (await screen.findByText('광고 리뷰')).parentElement;
+    expect(within(blinded).getByText('블라인드')).toBeInTheDocument();
+    expect(within(screen.getByText('달아요').parentElement).queryByText('블라인드')).toBeNull();
   });
 
   it('못 받은 영역(unavailable)은 그 카드만 안내 · 다음 지급 없음 · 30일 결제 없음', async () => {
