@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="뷰티">
+  <rect width="400" height="500" fill="#F6E6EA"/>
+  <g transform="translate(200 215)" fill="none" stroke="#8A4A5C" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><rect x="-25" y="-5" width="50" height="70" rx="6"/><path d="M-15-5V-35H15V-5"/><path d="M-15-35-5-65H15V-35"/></g>
+  <text x="200" y="345" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="700" fill="#8A4A5C">뷰티</text>
+  <text x="200" y="380" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#8A4A5C" opacity=".7">이미지를 잠시 불러올 수 없어요</text>
+</svg>

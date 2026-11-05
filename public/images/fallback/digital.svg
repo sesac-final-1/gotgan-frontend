@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="디지털 · 가전">
+  <rect width="400" height="500" fill="#E4EAF1"/>
+  <g transform="translate(200 215)" fill="none" stroke="#3F5670" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><rect x="-75" y="-55" width="150" height="95" rx="8"/><path d="M-30 65H30M0 40V65"/></g>
+  <text x="200" y="345" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="700" fill="#3F5670">디지털 · 가전</text>
+  <text x="200" y="380" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#3F5670" opacity=".7">이미지를 잠시 불러올 수 없어요</text>
+</svg>

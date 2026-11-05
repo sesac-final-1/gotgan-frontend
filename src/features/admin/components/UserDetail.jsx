@@ -74,7 +74,7 @@ function DetailBody({ u }) {
       </div>
       <div className="grid xl:grid-cols-[360px_1fr] gap-4 mt-4">
         <div className="panel">
-          <div className="p-5 flex items-center gap-3 border-b border-line"><img src={u.avatar} alt="" className="w-12 h-12 rounded-full object-cover" /><div><b>{u.name}</b> <span className="text-mute text-[13px]">({u.nick})</span><div><StatusPill s={u.status} /></div></div></div>
+          <div className="p-5 flex items-center gap-3 border-b border-line"><img src={u.avatar} data-fallback="avatar" alt="" className="w-12 h-12 rounded-full object-cover" /><div><b>{u.name}</b> <span className="text-mute text-[13px]">({u.nick})</span><div><StatusPill s={u.status} /></div></div></div>
           <div className="p-5"><KV rows={[
             ['회원번호', u.id.toUpperCase()], ['휴대폰', u.phone], ['회원등급', <GradeBadge grade={u.grade} />], ['최근 접속', ymdhm(u.lastLogin)],
             ...(suspended ? [['정지 기간', suspensionLabel(u.suspendedUntil, ymdhm)]] : []),

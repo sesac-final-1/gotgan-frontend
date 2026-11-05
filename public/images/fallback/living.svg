@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="리빙 · 인테리어">
+  <rect width="400" height="500" fill="#E6EEE6"/>
+  <g transform="translate(200 215)" fill="none" stroke="#47634C" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M-75 0 0-60 75 0"/><path d="M-55-14V60H55V-14"/><path d="M-15 60V15H15V60"/></g>
+  <text x="200" y="345" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="700" fill="#47634C">리빙 · 인테리어</text>
+  <text x="200" y="380" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#47634C" opacity=".7">이미지를 잠시 불러올 수 없어요</text>
+</svg>

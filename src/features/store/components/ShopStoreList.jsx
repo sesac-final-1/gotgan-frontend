@@ -44,7 +44,7 @@ function StoreCard({ s, catName }) {
   return (
     <Link to={`/store/${s.id}`} className="group border border-line hover:border-ink transition-colors">
       <div className="grid grid-cols-3 gap-px bg-line">
-        {items.map((p) => <img key={p.id} src={p.images[0]} alt="" className="w-full aspect-square object-cover" />)}
+        {items.map((p) => <img key={p.id} src={p.images[0]} data-cat={p.cat} alt="" className="w-full aspect-square object-cover" />)}
       </div>
       <div className="p-5 flex items-start gap-4">
         <span className="w-11 h-11 shrink-0 text-white font-bold flex items-center justify-center" style={{ background: s.color }}>{s.name[0]}</span>

@@ -9,7 +9,7 @@ export default function ProductCard({ p, store, rank, showStore = true }) {
     <div className="group relative">
       <Link to={`/products/${p.id}`} className="block">
         <div className="relative aspect-[4/5] bg-sand overflow-hidden">
-          <img src={p.images[0]} alt={p.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+          <img src={p.images[0]} data-cat={p.cat} alt={p.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
           {soldOut && <div className="absolute inset-0 bg-white/55 flex items-center justify-center"><span className="bg-ink text-white text-xs font-bold px-3 py-1.5">일시품절</span></div>}
           {rank && <span className="absolute left-0 top-0 min-w-7 h-7 px-1.5 bg-ink text-white text-[13px] font-bold num flex items-center justify-center">{rank}</span>}
         </div>

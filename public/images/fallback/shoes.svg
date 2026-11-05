@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="신발 · 가방">
+  <rect width="400" height="500" fill="#F0E7E2"/>
+  <g transform="translate(200 215)" fill="none" stroke="#6E4F42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M-80 30V-25L-40-20C-25 5 20 5 80 20V40H-80z"/><path d="M-40-20-30-45M-15-5-5-25"/></g>
+  <text x="200" y="345" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="700" fill="#6E4F42">신발 · 가방</text>
+  <text x="200" y="380" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#6E4F42" opacity=".7">이미지를 잠시 불러올 수 없어요</text>
+</svg>

@@ -24,7 +24,7 @@ export default function MyPageLayout({ me, gradeLabel = '', next = null, pointBa
         <div className="p-6 md:p-8 flex items-center gap-5">
           {me && (
             <>
-              <img src={me.avatar} alt="" className="w-16 h-16 rounded-full object-cover" />
+              <img src={me.avatar} data-fallback="avatar" alt="" className="w-16 h-16 rounded-full object-cover" />
               <div>
                 <div className="flex items-center gap-2 text-[13px] text-white/60"><GradeBadge grade={me.grade} dark /> {gradeLabel} 회원 · {next ? `${next.id}까지 ${won(next.min - me.spent)}` : '최고 등급'}</div>
                 <div className="text-[22px] font-bold mt-0.5">{me.name}님, 반가워요</div>

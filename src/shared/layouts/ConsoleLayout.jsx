@@ -44,7 +44,7 @@ export default function ConsoleLayout({ kind, groups, account, badge, bell, onLo
           <Link to="/" className="hidden md:flex items-center gap-1 text-white/70 hover:text-white">쇼핑몰 보기 <ExternalLink size={13} /></Link>
           {bell}
           <div className="flex items-center gap-2">
-            <img src={account.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+            <img src={account.avatar} data-fallback="avatar" alt="" className="w-7 h-7 rounded-full object-cover" />
             <div className="hidden sm:block leading-tight">
               <div className="text-[13px] font-semibold">{account.name}</div>
               <div className="text-[11px] text-white/55">{account.role}</div>

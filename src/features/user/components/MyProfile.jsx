@@ -32,7 +32,7 @@ export default function MyProfile({ onWithdrawn }) {
     <div>
       <MyPageHead>회원정보 수정</MyPageHead>
       <div className="max-w-[520px] space-y-4">
-        <img src={me.avatar} alt="" className="w-16 h-16 rounded-full object-cover" />
+        <img src={me.avatar} data-fallback="avatar" alt="" className="w-16 h-16 rounded-full object-cover" />
         <ProfileForm key={`${me.name}|${me.nick}|${me.phone}`} me={me} />
         <div className="border-t border-line pt-4">
           <label className="label">비밀번호</label>

@@ -17,7 +17,7 @@ const DATE = { tdClass: 'num text-ink-2', search: false };
 const COLUMNS = [
   {
     accessorKey: 'name', header: '회원',
-    cell: ({ row }) => <Link to={`/admin/users/${row.original.id}`} className="flex items-center gap-2 font-semibold hover:underline"><img src={row.original.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />{row.original.name}</Link>,
+    cell: ({ row }) => <Link to={`/admin/users/${row.original.id}`} className="flex items-center gap-2 font-semibold hover:underline"><img src={row.original.avatar} data-fallback="avatar" alt="" className="w-7 h-7 rounded-full object-cover" />{row.original.name}</Link>,
   },
   { accessorKey: 'email', header: '이메일', meta: { tdClass: 'text-ink-2' } },
   { accessorKey: 'grade', header: '등급', cell: ({ getValue }) => <GradeBadge grade={getValue()} /> },
