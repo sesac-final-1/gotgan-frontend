@@ -115,7 +115,7 @@ describe('서비스 상태 패널', () => {
   it('상태 4가지를 글자로 보여 주고 파드 수를 알려 준다', () => {
     render(<SystemServicePanel services={[svc('order-service', 'UP', 2, 2), svc('payment-service', 'DEGRADED', 1, 2), svc('product-service', 'DOWN', 0, 2), svc('review-service', 'RECOVERING', 0, 1)]} />);
     for (const label of ['정상', '일부', '중단', '복구 중']) expect(screen.getByText(label)).toBeTruthy();
-    expect(screen.getByRole('img', { name: '파드 2개 중 1개 준비' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '파드 2개 중 1개 준비' }).textContent).toContain('1/2');
   });
 
   it('오류율은 퍼센트로, 값이 없으면 - 로 표시한다', () => {

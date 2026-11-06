@@ -12,8 +12,11 @@ const shortName = (name) => name.replace(/-service$/, '');
 
 function PodDots({ ready, desired }) {
   return (
-    <span role="img" aria-label={`파드 ${desired}개 중 ${ready}개 준비`} className="text-xl leading-none tracking-wider">
-      {'●'.repeat(ready)}<span className="text-line-2">{'○'.repeat(desired - ready)}</span>
+    <span role="img" aria-label={`파드 ${desired}개 중 ${ready}개 준비`} className="inline-flex items-center gap-2 whitespace-nowrap">
+      <span className="text-xl leading-none tracking-wider">
+        {'●'.repeat(ready)}<span className="text-line-2">{'○'.repeat(desired - ready)}</span>
+      </span>
+      <span className="text-base tabular-nums text-ink-2">{ready}/{desired}</span>
     </span>
   );
 }
@@ -21,11 +24,11 @@ function PodDots({ ready, desired }) {
 function ServiceRow({ service, errorRate }) {
   const state = STATE[service.state] ?? { label: service.state, className: 'bg-sand text-ink-2' };
   return (
-    <li className="grid grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[minmax(7rem,1fr)_4rem_6rem_6rem] items-center gap-3 py-3 border-t border-line first:border-t-0">
+    <li className="grid grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[minmax(7rem,1fr)_6rem_6rem_6rem] items-center gap-3 py-3 border-t border-line first:border-t-0">
       <span className="text-lg font-bold">{shortName(service.name)}</span>
       <PodDots ready={service.ready} desired={service.desired} />
       <span className={`inline-flex justify-center px-2 py-1 text-base font-bold whitespace-nowrap ${state.className}`}>{state.label}</span>
-      <span className="text-right text-base num">오류 {formatErrorRate(errorRate)}</span>
+      <span className="text-right text-base tabular-nums whitespace-nowrap">오류 {formatErrorRate(errorRate)}</span>
     </li>
   );
 }
