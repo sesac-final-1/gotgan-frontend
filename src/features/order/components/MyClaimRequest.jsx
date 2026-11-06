@@ -10,6 +10,7 @@ import { CLAIM_REASONS, CLAIM_TYPE_LABEL } from '@/features/order/constants';
 import { claimDoneMessage, claimTypesOf, lineStatusLabel, orderNoOf } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
 import { cx, won, comma } from '@/shared/utils/format';
+import { fallbackSrc } from '@/shared/utils/imageFallback'; // 사진 없는 주문은 src 가 비어 onError 가 안 난다
 
 const TYPES = ['CANCEL', 'RETURN', 'EXCHANGE'];
 
@@ -73,7 +74,7 @@ function RequestBody({ o, l }) {
     <div>
       <MyPageHead>취소 · 반품 · 교환 신청</MyPageHead>
       <div className="flex gap-4 border border-line p-4 text-[13px]">
-        <img src={l.thumbnailUrl} alt="" className="w-16 h-20 object-cover bg-cream" />
+        <img src={l.thumbnailUrl || fallbackSrc()} alt="" className="w-16 h-20 object-cover bg-cream" />
         <div className="flex-1"><div className="text-mute">{l.storeName}</div><div className="font-medium text-[14px]">{l.productName}</div><div className="text-mute">{l.optionName || '단일상품'} · {l.quantity}개 · {won(l.itemAmt)}</div></div>
         <div><StatusPill s={lineStatusLabel(o, l)} /></div>
       </div>

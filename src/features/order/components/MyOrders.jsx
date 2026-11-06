@@ -13,6 +13,7 @@ import { canWithdraw } from '@/features/order/utils/claimView';
 import { PERIODS, flowCounts, lineStatusLabel, ordersInPeriod, toDate } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
 import { cx, won, ymd } from '@/shared/utils/format';
+import { fallbackSrc } from '@/shared/utils/imageFallback'; // 사진 없는 주문은 src 가 비어 onError 가 안 난다
 
 // 클레임 신청 경로의 lineId = 상품주문번호(itemNo)
 const claimPath = (l, type) => `/mypage/claim/${l.itemNo}?type=${type}`;
@@ -103,7 +104,7 @@ export default function MyOrders() {
             <OrderNotice status={o.status} />
             {o.items.map((l) => (
               <div key={l.orderItemId} className="flex flex-wrap sm:flex-nowrap gap-4 p-4 border-b border-line last:border-0">
-                <Link to={`/products/${l.productId}`}><img src={l.thumbnailUrl} alt="" className="w-20 h-24 object-cover bg-cream" /></Link>
+                <Link to={`/products/${l.productId}`}><img src={l.thumbnailUrl || fallbackSrc()} alt="" className="w-20 h-24 object-cover bg-cream" /></Link>
                 <div className="flex-1 min-w-0 text-[13px]">
                   <StatusPill s={lineStatusLabel(o, l)} />
                   <div className="mt-1.5 text-mute">{l.storeName}</div>

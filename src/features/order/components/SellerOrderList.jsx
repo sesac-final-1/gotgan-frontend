@@ -14,6 +14,7 @@ import { bulkSummary, failureMap, statusOfTab, tabCounts, toShipItems } from '@/
 import { toDate } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
 import { won, ymdhm, cx } from '@/shared/utils/format';
+import { fallbackSrc } from '@/shared/utils/imageFallback'; // 사진 없는 주문은 src 가 비어 onError 가 안 난다
 
 const COURIERS = ['CJ대한통운', '롯데택배', '한진택배', '우체국택배', '로젠택배'];
 const TABS = ['전체', ...FLOW];
@@ -36,7 +37,7 @@ function buildColumns({ sel, toggle, failures }) {
       id: 'product', header: '상품 / 옵션',
       cell: ({ row: { original: o } }) => (
         <div className="flex items-center gap-2.5 min-w-[240px]">
-          <img src={o.thumbnailUrl} alt="" className="w-9 h-9 object-cover bg-cream" />
+          <img src={o.thumbnailUrl || fallbackSrc()} alt="" className="w-9 h-9 object-cover bg-cream" />
           <div>
             <div className="truncate max-w-[240px]">{o.productName}</div>
             <div className="text-[11.5px] text-mute">{o.optionName || '단일상품'}</div>

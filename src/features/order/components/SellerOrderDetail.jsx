@@ -10,6 +10,7 @@ import { bulkSummary, toShipItems } from '@/features/order/utils/sellerBulk';
 import { toDate, trackingOf } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
 import { won, ymdhm } from '@/shared/utils/format';
+import { fallbackSrc } from '@/shared/utils/imageFallback'; // 사진 없는 주문은 src 가 비어 onError 가 안 난다
 
 const COURIERS = ['CJ대한통운', '롯데택배', '한진택배', '우체국택배', '로젠택배'];
 
@@ -51,7 +52,7 @@ export default function SellerOrderDetail() {
           <div className="panel">
             <div className="panel-head"><span className="panel-title">주문 상품</span><StatusPill s={ITEM_STATUS_LABEL[o.status] ?? o.status} /></div>
             <div className="p-5 flex gap-4">
-              <img src={o.thumbnailUrl} alt="" className="w-20 h-24 object-cover bg-cream" />
+              <img src={o.thumbnailUrl || fallbackSrc()} alt="" className="w-20 h-24 object-cover bg-cream" />
               <div className="flex-1 text-[13px]">
                 <div className="font-semibold text-[15px]">{o.productName}</div>
                 <div className="text-mute mt-1">{o.optionName || '단일상품'} · {o.quantity}개</div>

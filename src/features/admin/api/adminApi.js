@@ -152,8 +152,10 @@ export const fetchAdminStoreSettlements = async (storeId) => {
 export const fetchAdminSettlementWeek = async (week) =>
   (await axiosInstance.get('/api/admin/settlements', { params: { week } })).data.data.settlements.map(toAdminSettlement);
 
+const BATCH_TIMEOUT_MS = 30_000; // 집계 · 일괄 지급만 오래 걸림 — 5,000건 약 11.6초(11/6 k6), gateway 이 경로 30초와 같게
+
 // POST /api/admin/settlements/pay {ids} → {success[], failed[{id, code, message}]} — 건마다 따로 커밋
-export const paySettlements = async (ids) => (await axiosInstance.post('/api/admin/settlements/pay', { ids })).data.data;
+export const paySettlements = async (ids) => (await axiosInstance.post('/api/admin/settlements/pay', { ids }, { timeout: BATCH_TIMEOUT_MS })).data.data;
 
 // PATCH /api/admin/settlements/{id}/hold {hold, reason} — hold=true 면 reason 필수
 export const holdSettlement = async ({ id, hold, reason }) =>
@@ -163,7 +165,7 @@ export const holdSettlement = async ({ id, hold, reason }) =>
 export const fetchAdminSettlement = async (id) => toSettlementDetail((await axiosInstance.get(`/api/admin/settlements/${id}`)).data.data);
 
 // POST /api/admin/settlements/aggregate {week} → {week, created, updated, autoHeld, carriedOver} — 멱등(스토어 × 주차 1건)
-export const aggregateSettlements = async (week) => (await axiosInstance.post('/api/admin/settlements/aggregate', { week })).data.data;
+export const aggregateSettlements = async (week) => (await axiosInstance.post('/api/admin/settlements/aggregate', { week }, { timeout: BATCH_TIMEOUT_MS })).data.data;
 
 
 // 카테고리 · 수수료 — admin-service: product 카테고리(GET /api/admin/categories) + settlement 수수료(GET /api/admin/commissions) (backend #95)
