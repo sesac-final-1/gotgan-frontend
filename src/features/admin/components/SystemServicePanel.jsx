@@ -14,7 +14,7 @@ function PodDots({ ready, desired }) {
   return (
     <span role="img" aria-label={`파드 ${desired}개 중 ${ready}개 준비`} className="inline-flex items-center gap-2 whitespace-nowrap">
       <span className="text-xl leading-none tracking-wider">
-        {'●'.repeat(ready)}<span className="text-line-2">{'○'.repeat(desired - ready)}</span>
+        {'●'.repeat(ready)}<span className="text-mute">{'○'.repeat(desired - ready)}</span>
       </span>
       <span className="text-base tabular-nums text-ink-2">{ready}/{desired}</span>
     </span>
@@ -24,11 +24,11 @@ function PodDots({ ready, desired }) {
 function ServiceRow({ service, errorRate, chaosEnabled, onKill }) {
   const state = STATE[service.state] ?? { label: service.state, className: 'bg-sand text-ink-2' };
   return (
-    <li className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[minmax(6rem,1fr)_6rem_5.5rem_6rem_6rem] items-center gap-3 py-3 border-t border-line first:border-t-0">
-      <span className="text-lg font-bold">{serviceShortName(service.name)}</span>
+    <li className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[minmax(7rem,1fr)_6.5rem_6rem_6rem_6rem] items-center gap-3 py-3 border-t border-line first:border-t-0">
+      <span className="text-xl font-bold">{serviceShortName(service.name)}</span>
       <PodDots ready={service.ready} desired={service.desired} />
-      <span className={`inline-flex justify-center px-2 py-1 text-base font-bold whitespace-nowrap ${state.className}`}>{state.label}</span>
-      <span className="col-span-2 sm:col-span-1 sm:text-right text-base tabular-nums whitespace-nowrap">오류 {formatErrorRate(errorRate)}</span>
+      <span className={`inline-flex justify-center px-2 py-1 text-lg font-bold whitespace-nowrap ${state.className}`}>{state.label}</span>
+      <span className="col-span-2 sm:col-span-1 sm:text-right text-lg tabular-nums whitespace-nowrap">오류 {formatErrorRate(errorRate)}</span>
       {service.killable ? (
         <button type="button" className="btn btn-line btn-sm" disabled={!chaosEnabled || service.state !== 'UP'} onClick={() => onKill(service)}
           aria-label={`${serviceShortName(service.name)} 내리기`}>내리기</button>
@@ -46,7 +46,7 @@ export default function SystemServicePanel({ services, metrics, chaosEnabled = f
   const sorted = [...services].sort((a, b) => Number(b.killable) - Number(a.killable));
   return (
     <section aria-label="서비스 상태" className="border border-line bg-paper p-4">
-      <h2 className="text-base font-bold mb-1">서비스 상태</h2>
+      <h2 className="text-lg font-bold mb-1">서비스 상태</h2>
       {!chaosEnabled && <p className="text-sm text-mute">내리기 기능이 꺼져 있어요. 시연 때만 켭니다.</p>}
       <ul>
         {sorted.map((s) => <ServiceRow key={s.name} service={s} errorRate={errorRateOf[s.name]} chaosEnabled={chaosEnabled} onKill={setKillTarget} />)}

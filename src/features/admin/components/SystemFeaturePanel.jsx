@@ -10,10 +10,10 @@ const STATE = {
 function FeatureRow({ feature }) {
   const state = STATE[feature.state] ?? { icon: '⚪', label: feature.state, className: 'text-ink-2' };
   return (
-    <li className="flex items-center gap-2 py-3 border-t border-line first:border-t-0">
-      <span aria-hidden="true" className="text-sm leading-none">{state.icon}</span>
-      <span className="text-lg font-bold">{feature.label}</span>
-      <span className={`ml-auto text-base font-bold whitespace-nowrap ${state.className}`}>
+    <li className="flex flex-wrap items-center gap-x-2 py-3 border-t border-line first:border-t-0">
+      <span aria-hidden="true" className="text-base leading-none">{state.icon}</span>
+      <span className="text-xl font-bold">{feature.label}</span>
+      <span className={`ml-auto text-lg font-bold ${state.className}`}>
         {state.label}
         {feature.causes?.length > 0 && <span className="font-normal"> · {feature.causes.map(serviceShortName).join(', ')}</span>}
       </span>
@@ -24,7 +24,7 @@ function FeatureRow({ feature }) {
 export default function SystemFeaturePanel({ features }) {
   return (
     <section aria-label="사용자 기능" className="border border-line bg-paper p-4">
-      <h2 className="text-base font-bold mb-1">사용자 기능</h2>
+      <h2 className="text-lg font-bold mb-1">사용자 기능</h2>
       <ul>
         {features.map((f) => <FeatureRow key={f.key} feature={f} />)}
       </ul>

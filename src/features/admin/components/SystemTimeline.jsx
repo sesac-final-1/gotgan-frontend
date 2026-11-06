@@ -8,7 +8,7 @@ const clock = (iso) => new Date(iso).toLocaleTimeString('en-GB', { timeZone: 'As
 function EventRow({ event }) {
   const scope = event.scope === 'ONE' ? '1개' : '전부';
   return (
-    <li className="flex flex-wrap items-baseline gap-x-2 py-2 border-t border-line first:border-t-0 text-base tabular-nums">
+    <li className="flex flex-wrap items-baseline gap-x-2 py-2 border-t border-line first:border-t-0 text-lg tabular-nums">
       <span>{clock(event.killedAt)}</span>
       <span className="font-bold">{serviceShortName(event.service)}</span>
       <span>{scope} 내림</span>
@@ -25,7 +25,7 @@ export default function SystemTimeline() {
   const { data: events, isError } = useSystemEventsQuery();
   return (
     <section aria-label="타임라인" className="border border-line bg-paper p-4">
-      <h2 className="text-base font-bold mb-1">타임라인</h2>
+      <h2 className="text-lg font-bold mb-1">타임라인</h2>
       {events?.length > 0 ? (
         <ul>{events.map((e) => <EventRow key={e.eventId} event={e} />)}</ul>
       ) : (
