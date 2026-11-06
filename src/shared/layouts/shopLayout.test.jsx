@@ -38,6 +38,16 @@ describe('쇼핑몰 레이아웃 — 드로어 배경', () => {
 });
 
 describe('쇼핑몰 푸터 링크', () => {
+  it('유틸 바 — 로그인하면 마이페이지 · 장바구니 글자 링크, 비로그인이면 없음', () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const { unmount } = render(<MemoryRouter initialEntries={['/']}><ShopLayout categories={CATEGORIES} user={{ name: '이도현', roles: [] }} /></MemoryRouter>);
+    expect(screen.getAllByRole('link', { name: '마이페이지' }).map((l) => l.textContent)).toContain('마이페이지');
+    expect(screen.getAllByRole('link', { name: '장바구니' }).map((l) => l.textContent)).toContain('장바구니');
+    unmount();
+    render(<MemoryRouter initialEntries={['/']}><ShopLayout categories={CATEGORIES} /></MemoryRouter>);
+    expect(screen.getAllByRole('link', { name: '마이페이지' }).map((l) => l.textContent)).not.toContain('마이페이지');
+  });
+
   it('실제 화면으로 가는 링크만 — 랭킹 · 1:1 문의는 없다', () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     render(<MemoryRouter initialEntries={['/']}><ShopLayout categories={CATEGORIES} /></MemoryRouter>);
