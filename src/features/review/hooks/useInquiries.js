@@ -1,4 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { queryKeys } from '@/shared/api/queryKeys';
 import {
   answerInquiry, createInquiry, deleteInquiry, fetchMyInquiries, fetchProductInquiries, fetchSellerInquiries,
@@ -11,8 +12,9 @@ export const INQUIRY_PAGE_SIZE = 10;
 // 상품 상세 Q&A — 탭 숫자(첫 페이지 totalElements)와 목록이 같은 키를 쓰도록 params 를 여기서 만든다
 export function useProductInquiriesQuery(productId, page = 0) {
   const params = { productId, page, size: INQUIRY_PAGE_SIZE };
+  const viewerId = useAuthStore((s) => s.user?.userId ?? null); // 내 문의(mine) · 내 비밀글 내용은 보는 사람마다 달라 키에 넣는다 — useProductReviewsQuery 참고
   return useQuery({
-    queryKey: queryKeys.review.productInquiries(params),
+    queryKey: [...queryKeys.review.productInquiries(params), viewerId],
     queryFn: () => fetchProductInquiries(params),
     placeholderData: keepPreviousData,
   });
