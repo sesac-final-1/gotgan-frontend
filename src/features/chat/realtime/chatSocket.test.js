@@ -1,3 +1,4 @@
+import { ReconnectionTimeMode } from '@stomp/stompjs';
 import { createChatSocket, reconnectDelay, RELEASE_GRACE_MS } from '@/features/chat/realtime/chatSocket';
 
 // STOMP 클라이언트는 가짜 — 연결 · 끊김 · 서버 프레임을 직접 흉내 내 연결 수명 규칙(chat.md 6-1절)을 확인한다
@@ -196,7 +197,15 @@ describe('chatSocket — 안 쓰면 바로 끊기 (좀비 연결 방지)', () =>
 });
 
 describe('chatSocket — 끊김 · 재연결', () => {
-  it('끊기면 지연을 늘려 가며 재연결하고, 연결되면 처음 값으로 · 다시 연결되면 방을 다시 구독한다', async () => {
+  it('재연결 지연은 라이브러리 지수 모드로 늘린다 — 1초 근처에서 시작, 최대 30초', () => {
+    socket.subscribeRoom(7, vi.fn());
+    const { config } = stomp.last();
+    expect(config.reconnectTimeMode).toBe(ReconnectionTimeMode.EXPONENTIAL);
+    expect(config.maxReconnectDelay).toBe(30_000);
+    expect(config.reconnectDelay).toBeLessThanOrEqual(1_000);
+  });
+
+  it('끊기면 재연결하고 · 다시 연결되면 방을 다시 구독한다', async () => {
     const statuses = [];
     socket.onStatus((s) => statuses.push(s));
     socket.subscribeRoom(7, vi.fn());
@@ -204,12 +213,10 @@ describe('chatSocket — 끊김 · 재연결', () => {
     await connect(c);
     c.config.onWebSocketClose({ code: 1006 });
     c.config.onWebSocketClose({ code: 1006 });
-    expect(c.reconnectDelay).toBeGreaterThanOrEqual(2_000);
     expect(socket.status).toBe('disconnected');
 
     c.subs.length = 0;
     await connect(c);
-    expect(c.reconnectDelay).toBeLessThanOrEqual(1_000);
     expect(c.subs.map((s) => s.destination)).toEqual(['/user/queue/errors', '/sub/rooms/7']);
     expect(statuses).toEqual(['connecting', 'connected', 'disconnected', 'connecting', 'connected']);
   });
