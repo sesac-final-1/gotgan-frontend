@@ -19,9 +19,9 @@ export default function SystemDashboard() {
         <p role="alert" className="mb-3 px-4 py-3 bg-rust-soft text-lg font-bold text-rust">연결 끊김 — 마지막으로 받은 상태를 보여 주고 있어요.</p>
       )}
       {status ? (
-        <div className="grid xl:grid-cols-[3fr_2fr] gap-4 items-start">
+        <div className="grid gap-4">
           <SystemServicePanel services={status.services} metrics={metrics} chaosEnabled={status.chaosEnabled} />
-          <div className="grid gap-4">
+          <div className="grid xl:grid-cols-2 gap-4 items-start">
             <SystemFeaturePanel features={status.features} />
             <SystemTimeline />
           </div>

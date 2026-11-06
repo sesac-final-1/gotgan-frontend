@@ -132,9 +132,11 @@ describe('서비스 상태 패널', () => {
     expect(screen.getByText('오류 -')).toBeTruthy();
   });
 
-  it('내릴 수 없는 서비스는 아래로 보낸다', () => {
-    render(<SystemServicePanel services={[svc('gateway-service', 'UP', 2, 2, false), svc('order-service', 'UP', 2, 2)]} />);
-    expect(screen.getAllByRole('listitem').map((li) => li.textContent)[0]).toContain('order');
+  it('내릴 수 없는 서비스는 카드와 나눠 버튼 없이 보여 준다', () => {
+    render(<SystemServicePanel chaosEnabled services={[svc('gateway-service', 'UP', 2, 2, false), svc('order-service', 'UP', 2, 2)]} />);
+    expect(within(screen.getByRole('list', { name: '내릴 수 있는 서비스' })).getByText('order')).toBeTruthy();
+    expect(within(screen.getByRole('list', { name: '내릴 수 없는 서비스' })).getByText('gateway')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'gateway 내리기' })).toBeNull();
   });
 });
 
@@ -233,7 +235,8 @@ describe('서비스 내리기', () => {
     await renderPage();
     expect(screen.getByRole('button', { name: 'order 내리기' }).disabled).toBe(true);
     expect(screen.getByText(/내리기 기능이 꺼져/)).toBeTruthy();
-    expect(rowOf('gateway').textContent).toContain('내릴 수 없음');
+    expect(screen.getByText('내릴 수 없음')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'gateway 내리기' })).toBeNull();
   });
 });
 
