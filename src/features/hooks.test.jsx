@@ -299,7 +299,7 @@ describe('정산 관리 (A안 — 고른 주차만 API 조회)', () => {
     try {
       const pay = renderHook(() => usePaySettlementsMutation(), { wrapper: Wrapper }).result;
       expect(await act(() => pay.current.mutateAsync([1]))).toEqual({ success: [1], failed: [] });
-      expect(post).toHaveBeenCalledWith('/api/admin/settlements/pay', { ids: [1] });
+      expect(post).toHaveBeenCalledWith('/api/admin/settlements/pay', { ids: [1] }, { timeout: 30_000 });
 
       const hold = renderHook(() => useHoldSettlementsMutation(), { wrapper: Wrapper }).result;
       await act(() => hold.current.mutateAsync({ ids: [3, 7], reason: '계좌 확인' }));
@@ -501,7 +501,7 @@ describe('판매자 정산 · 관리자 정산 상세 · 지금 집계 (settleme
     try {
       const { result } = renderHook(() => useAggregateSettlementsMutation(), { wrapper: Wrapper });
       expect(await act(() => result.current.mutateAsync('2026-W43'))).toMatchObject({ created: 2 });
-      expect(post).toHaveBeenCalledWith('/api/admin/settlements/aggregate', { week: '2026-W43' });
+      expect(post).toHaveBeenCalledWith('/api/admin/settlements/aggregate', { week: '2026-W43' }, { timeout: 30_000 });
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'settlements'] });
     } finally {
       post.mockRestore();
