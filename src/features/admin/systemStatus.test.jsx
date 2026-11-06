@@ -5,6 +5,8 @@ import { resetSystemMock } from '@/features/admin/api/systemMock';
 import * as systemApi from '@/features/admin/api/systemApi';
 import SystemDashboard from '@/features/admin/components/SystemDashboard';
 import SystemFeaturePanel from '@/features/admin/components/SystemFeaturePanel';
+import SystemLinks from '@/features/admin/components/SystemLinks';
+import SystemTimeline from '@/features/admin/components/SystemTimeline';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import { formatErrorRate } from '@/features/admin/constants';
 import { useToastStore } from '@/shared/stores/toastStore';
@@ -178,7 +180,7 @@ describe('서비스 내리기', () => {
     render(<QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider>);
     await screen.findByRole('button', { name: 'order 내리기' });
   };
-  const rowOf = (name) => screen.getByText(name).closest('li');
+  const rowOf = (name) => within(screen.getByRole('region', { name: '서비스 상태' })).getByText(name).closest('li'); // 타임라인에도 같은 이름이 나온다
   const open = (name) => fireEvent.click(screen.getByRole('button', { name: `${name} 내리기` }));
 
   it('레플리카 2 서비스는 1개만 내릴 수 있고 바로 일부 상태로 바뀐다', async () => {
@@ -232,5 +234,50 @@ describe('서비스 내리기', () => {
     expect(screen.getByRole('button', { name: 'order 내리기' }).disabled).toBe(true);
     expect(screen.getByText(/내리기 기능이 꺼져/)).toBeTruthy();
     expect(rowOf('gateway').textContent).toContain('내릴 수 없음');
+  });
+});
+
+describe('타임라인 · 바로가기', () => {
+  let queryClient;
+  afterEach(() => {
+    cleanup();
+    queryClient?.clear();
+    vi.restoreAllMocks();
+  });
+  const renderTimeline = (events) => {
+    vi.spyOn(systemApi, 'fetchSystemEvents').mockImplementation(events);
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><SystemTimeline /></QueryClientProvider>);
+  };
+
+  it('내린 시각 · 복구 시각 · 걸린 시간을 서울 시각으로 보여 준다', async () => {
+    renderTimeline(async () => [
+      { eventId: '2', service: 'review-service', scope: 'ALL', killedAt: '2026-11-09T05:10:00Z', recoveredAt: null, recoverySeconds: null },
+      { eventId: '1', service: 'order-service', scope: 'ONE', killedAt: '2026-11-09T05:03:11Z', recoveredAt: '2026-11-09T05:04:02Z', recoverySeconds: 51 },
+    ]);
+    const rows = await screen.findAllByRole('listitem');
+    expect(rows[0].textContent).toContain('review');
+    expect(rows[0].textContent).toContain('복구 기다리는 중');
+    expect(rows[1].textContent).toContain('14:03:11');
+    expect(rows[1].textContent).toContain('1개 내림');
+    expect(rows[1].textContent).toContain('14:04:02 복구 · 51초');
+  });
+
+  it('없으면 빈 안내, 실패하면 실패 안내를 보여 준다', async () => {
+    renderTimeline(async () => []);
+    expect(await screen.findByText('아직 내린 서비스가 없어요.')).toBeTruthy();
+    cleanup();
+    vi.restoreAllMocks();
+    renderTimeline(async () => { throw new Error('503'); });
+    expect(await screen.findByText('타임라인을 불러오지 못했어요.')).toBeTruthy();
+  });
+
+  it('쇼핑몰은 새 창으로 열고 Grafana 는 접속 명령을 안내한다', () => {
+    render(<SystemLinks />);
+    const shop = screen.getByRole('link', { name: /쇼핑몰 새 창으로 열기/ });
+    expect(shop.getAttribute('target')).toBe('_blank');
+    expect(shop.getAttribute('rel')).toContain('noopener');
+    fireEvent.click(screen.getByRole('button', { name: 'Grafana 안내' }));
+    expect(screen.getByText(/port-forward svc\/grafana 3000/)).toBeTruthy();
   });
 });
