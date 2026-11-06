@@ -20,7 +20,7 @@ export default function ChatInbox({ kind, basePath }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState(TABS[kind][0][0]);
   const filter = Object.fromEntries(TABS[kind])[tab];
-  const { data: rooms = [], isLoading } = useChatRoomsQuery(filter);
+  const { data: rooms = [], isLoading, isError } = useChatRoomsQuery(filter);
   const { data: allRooms = [], isSuccess } = useChatRoomsQuery({}); // 열린 방은 탭과 상관없이 찾는다
   const found = allRooms.find((r) => String(r.roomId) === roomId);
   // 관리자 목록엔 스토어 톡이 없다 — 도움 요청 카드로 들어온 방은 읽기 전용으로 연다(서버가 권한 확인, 아니면 404)
@@ -35,7 +35,8 @@ export default function ChatInbox({ kind, basePath }) {
         <div className="p-3 border-b border-line overflow-x-auto"><Segments items={TABS[kind].map(([t]) => t)} value={tab} onChange={setTab} /></div>
         <ul className="flex-1 overflow-y-auto">
           {isLoading && <li className="p-6 text-center text-mute text-sm">불러오는 중…</li>}
-          {!isLoading && rooms.length === 0 && <li><Empty title="대화가 없어요" /></li>}
+          {isError && <li className="p-6 text-center text-mute text-sm">대화 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</li>}
+          {!isLoading && !isError && rooms.length === 0 && <li><Empty title="대화가 없어요" /></li>}
           {rooms.map((r) => (
             <li key={r.roomId}>
               <Link to={`${basePath}/${r.roomId}`}
