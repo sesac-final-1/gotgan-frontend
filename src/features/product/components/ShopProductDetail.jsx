@@ -12,6 +12,7 @@ import { useProductReviewSummaryQuery } from '@/features/review/hooks/useProduct
 import { useCart } from '@/features/order/hooks/useCart';
 import { earnOf } from '@/features/user/constants';
 import ProductCard from '@/features/product/components/ProductCard';
+import { ListStatus } from '@/features/product/components/ListStatus';
 import ShopProductReviews from '@/features/review/components/ShopProductReviews';
 import ShopProductQna from '@/features/review/components/ShopProductQna';
 import { Stars, Price, Modal } from '@/shared/components/ui';
@@ -32,11 +33,15 @@ function Qty({ value, onChange }) {
 
 export default function ShopProductDetail() {
   const { id } = useParams();
-  const { data: p, isLoading, isError } = useProductQuery(id);
+  const query = useProductQuery(id);
+  const { data: p, isLoading, isError, error } = query;
   // 목록 카드(GET /api/stores)에는 배송 정책이 없어 스토어 홈 응답을 쓴다
   const { data: store } = useStoreQuery(p?.storeId);
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
-  if (isError || !p) return <div className="p-20 text-center">상품을 찾을 수 없습니다. <Link to="/" className="underline">홈으로</Link></div>;
+  // 없는 상품은 404 뿐이다 — 서버 장애(502 등) · 연결 실패를 없는 상품처럼 안내하지 않는다(QA N-박-7)
+  const notFound = error?.response?.status === 404;
+  if (isError && !notFound && !p) return <ListStatus query={query} failText="상품을 불러오지 못했어요." />;
+  if (notFound || !p) return <div className="p-20 text-center">상품을 찾을 수 없습니다. <Link to="/" className="underline">홈으로</Link></div>;
   // key: 다른 상품으로 이동하면 이미지 · 옵션 선택 · 리뷰 필터 상태 초기화
   return <DetailBody key={p.id} p={p} store={store?.status === '운영중' ? store : undefined} closedName={store && store.status !== '운영중' ? store.name : undefined} />;
 }

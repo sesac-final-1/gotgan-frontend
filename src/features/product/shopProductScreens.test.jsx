@@ -49,7 +49,7 @@ function Where() {
 }
 
 // GET 을 URL 로 나눠 돌려준다 — 상품 목록은 handlers.products(params) 로
-function mockApi({ products = () => page([card(3, '리넨 셔츠')]), detail = DETAIL, ratings, store = null, stores = [] } = {}) {
+function mockApi({ products = () => page([card(3, '리넨 셔츠')]), detail = DETAIL, detailError, ratings, store = null, stores = [] } = {}) {
   return vi.spyOn(axiosInstance, 'get').mockImplementation(async (url, opts = {}) => {
     if (url === '/api/categories') return { data: { data: CATEGORIES } };
     if (url === '/api/stores') return { data: { data: stores } };
@@ -59,6 +59,8 @@ function mockApi({ products = () => page([card(3, '리넨 셔츠')]), detail = D
     }
     if (url === '/api/products') return { data: { data: products(opts.params) } };
     if (url.startsWith('/api/products/')) {
+      const failure = detailError?.();
+      if (failure) throw failure;
       if (!detail) throw Object.assign(new Error('404'), { response: { status: 404 } });
       return { data: { data: detail } };
     }
@@ -225,6 +227,36 @@ describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
     mockApi({ detail: null });
     renderAt('/products/999', <ShopProductDetail />, '/products/:id');
     expect(await screen.findByText(/상품을 찾을 수 없습니다/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument();
+  });
+
+  // 훅이 한 번 재시도(1초 뒤)한 다음에 실패 화면이 나온다
+  it.each([
+    ['서버 장애(502)', Object.assign(new Error('502'), { response: { status: 502 } })],
+    ['연결 실패(응답 없음)', new Error('Network Error')],
+  ])('%s 는 없는 상품이 아니라 불러오기 실패 — 다시 시도하면 상세가 열림', async (_, failure) => {
+    let fail = true;
+    mockApi({ detailError: () => (fail ? failure : null) });
+    renderAt('/products/3', <ShopProductDetail />, '/products/:id');
+
+    expect(await screen.findByText(/상품을 불러오지 못했어요/, {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.queryByText(/상품을 찾을 수 없습니다/)).not.toBeInTheDocument();
+
+    fail = false;
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect(await screen.findByRole('heading', { level: 1, name: DETAIL.name })).toBeInTheDocument();
+  });
+
+  it('이미 받은 상세는 다시 불러오다 실패해도 그대로 보임', async () => {
+    let fail = false;
+    mockApi({ detailError: () => (fail ? Object.assign(new Error('502'), { response: { status: 502 } }) : null) });
+    renderAt('/products/3', <ShopProductDetail />, '/products/:id');
+    expect(await screen.findByRole('heading', { level: 1, name: DETAIL.name })).toBeInTheDocument();
+
+    fail = true;
+    await queryClient.refetchQueries({ queryKey: ['product', 'detail', '3'] });
+    expect(screen.getByRole('heading', { level: 1, name: DETAIL.name })).toBeInTheDocument();
+    expect(screen.queryByText(/상품을 불러오지 못했어요/)).not.toBeInTheDocument();
   });
 });
 
