@@ -12,6 +12,7 @@ import { claimProgress, claimStatusLabel, nextAction, reasonLabel } from '@/feat
 import { toDate } from '@/features/order/utils/orderView';
 import { toast } from '@/shared/stores/toastStore';
 import { won, comma, ymd } from '@/shared/utils/format';
+import { fallbackSrc } from '@/shared/utils/imageFallback'; // 사진 없는 주문은 src 가 비어 onError 가 안 난다
 
 const STAGES = { 처리대기: 'OPEN', 처리완료: 'DONE' };
 const TYPES = { 전체: null, 취소: 'CANCEL', 반품: 'RETURN', 교환: 'EXCHANGE' };
@@ -137,7 +138,7 @@ export default function SellerClaimList() {
             <button disabled={busy} className="btn btn-ink btn-sm" onClick={() => act(detail, detailNext.action)}>{detailNext.label}</button>
           </> : <button className="btn btn-line btn-sm" onClick={() => setDetail(null)}>닫기</button>}>
           <div className="flex gap-3 pb-4 border-b border-line text-[13px]">
-            <img src={detail.thumbnailUrl} alt="" className="w-14 h-16 object-cover bg-cream" />
+            <img src={detail.thumbnailUrl || fallbackSrc()} alt="" className="w-14 h-16 object-cover bg-cream" />
             <div className="flex-1"><div className="font-semibold">{detail.productName}</div><div className="text-mute">{detail.optionName || '단일상품'} · {detail.quantity}개</div><div className="num text-mute">{detail.itemNo}</div></div>
             <StatusPill s={claimStatusLabel(detail)} />
           </div>

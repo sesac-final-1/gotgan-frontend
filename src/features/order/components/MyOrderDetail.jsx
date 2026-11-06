@@ -6,6 +6,7 @@ import { useMyOrderQuery } from '@/features/order/hooks/useMyOrderQuery';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 import { lineStatusLabel, payMethodLabel, toDate, trackingOf } from '@/features/order/utils/orderView';
 import { cx, won, comma, ymdhm } from '@/shared/utils/format';
+import { fallbackSrc } from '@/shared/utils/imageFallback'; // 사진 없는 주문은 src 가 비어 onError 가 안 난다
 
 export default function MyOrderDetail() {
   const { id } = useParams(); // 주문번호
@@ -22,7 +23,7 @@ export default function MyOrderDetail() {
         <div className="border border-line">
           {o.items.map((l) => (
             <div key={l.orderItemId} className="flex gap-4 p-4 border-b border-line last:border-0 text-[13px]">
-              <img src={l.thumbnailUrl} alt="" className="w-16 h-20 object-cover bg-cream" />
+              <img src={l.thumbnailUrl || fallbackSrc()} alt="" className="w-16 h-20 object-cover bg-cream" />
               <div className="flex-1"><StatusPill s={lineStatusLabel(o, l)} /><div className="font-medium text-[14px] mt-1.5">{l.productName}</div><div className="text-mute">{l.storeName} · {l.optionName || '단일상품'} · {l.quantity}개</div></div>
               <div className="flex flex-col items-end justify-between">
                 <div className="font-bold num">{won(l.itemAmt)}</div>

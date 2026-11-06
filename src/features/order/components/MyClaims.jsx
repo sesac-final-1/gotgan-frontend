@@ -13,6 +13,7 @@ import { CLAIM_TYPE_LABEL } from '@/features/order/constants';
 import { canWithdraw, claimProgress, claimStatusLabel, reasonLabel } from '@/features/order/utils/claimView';
 import { toDate } from '@/features/order/utils/orderView';
 import { comma, won, ymd } from '@/shared/utils/format';
+import { fallbackSrc } from '@/shared/utils/imageFallback'; // 사진 없는 주문은 src 가 비어 onError 가 안 난다
 
 const TYPES = ['전체', '취소', '반품', '교환'];
 
@@ -21,7 +22,7 @@ function buildColumns(onOpen) {
     {
       id: 'product', accessorFn: (c) => `${c.productName} ${c.optionName ?? ''}`, header: '상품',
       cell: ({ row: { original: c } }) => (
-        <div className="flex items-center gap-3 py-1.5"><img src={c.thumbnailUrl} alt="" className="w-12 h-14 object-cover bg-cream" /><span className="font-medium">{c.productName}<br /><span className="text-mute font-normal">{c.optionName || '단일상품'}</span></span></div>
+        <div className="flex items-center gap-3 py-1.5"><img src={c.thumbnailUrl || fallbackSrc()} alt="" className="w-12 h-14 object-cover bg-cream" /><span className="font-medium">{c.productName}<br /><span className="text-mute font-normal">{c.optionName || '단일상품'}</span></span></div>
       ),
     },
     { id: 'type', accessorFn: (c) => CLAIM_TYPE_LABEL[c.type], header: '유형' },
