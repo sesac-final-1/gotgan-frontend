@@ -1,9 +1,10 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killService } from '@/features/admin/api/systemApi';
 import { resetSystemMock } from '@/features/admin/api/systemMock';
 import * as systemApi from '@/features/admin/api/systemApi';
 import SystemDashboard from '@/features/admin/components/SystemDashboard';
+import SystemFeaturePanel from '@/features/admin/components/SystemFeaturePanel';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import { formatErrorRate } from '@/features/admin/constants';
 
@@ -131,5 +132,32 @@ describe('서비스 상태 패널', () => {
   it('내릴 수 없는 서비스는 아래로 보낸다', () => {
     render(<SystemServicePanel services={[svc('gateway-service', 'UP', 2, 2, false), svc('order-service', 'UP', 2, 2)]} />);
     expect(screen.getAllByRole('listitem').map((li) => li.textContent)[0]).toContain('order');
+  });
+});
+
+describe('사용자 기능 패널', () => {
+  afterEach(cleanup);
+
+  it('멈춘 기능에 원인 서비스를 짧은 이름으로 함께 보여 주고 계산 값임을 알린다', () => {
+    render(<SystemFeaturePanel features={[
+      { key: 'BROWSE', label: '둘러보기 · 상품 상세', state: 'UP', causes: [] },
+      { key: 'ORDER', label: '주문 · 결제', state: 'DOWN', causes: ['order-service', 'payment-service'] },
+    ]} />);
+    const [browse, order] = screen.getAllByRole('listitem');
+    expect(browse.textContent).toContain('정상');
+    expect(order.textContent).toContain('중단 · order, payment');
+    expect(screen.getByText(/의존 관계로 계산/)).toBeTruthy();
+  });
+
+  it('서비스를 내리면 시스템 화면의 기능도 중단으로 바뀐다', async () => {
+    resetSystemMock();
+    await killService({ name: 'review-service', scope: 'ALL' });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider>);
+    const panel = await screen.findByRole('region', { name: '사용자 기능' });
+    expect(within(panel).getByText('리뷰 보기').closest('li').textContent).toContain('중단 · review');
+    expect(within(panel).getByText('장바구니').closest('li').textContent).toContain('정상');
+    queryClient.clear();
+    resetSystemMock();
   });
 });

@@ -1,4 +1,4 @@
-import { formatErrorRate } from '@/features/admin/constants';
+import { formatErrorRate, serviceShortName } from '@/features/admin/constants';
 
 // 서비스 상태 패널 — 담당 박지연. 발표 화면에서 뒤에서도 보이게 글자 · 점을 크게, 색만으로 구분하지 않고 글자를 같이 쓴다(설계 3절)
 const STATE = {
@@ -7,8 +7,6 @@ const STATE = {
   DOWN: { label: '중단', className: 'bg-rust-soft text-rust' },
   RECOVERING: { label: '복구 중', className: 'bg-sky-soft text-sky' },
 };
-
-const shortName = (name) => name.replace(/-service$/, '');
 
 function PodDots({ ready, desired }) {
   return (
@@ -25,7 +23,7 @@ function ServiceRow({ service, errorRate }) {
   const state = STATE[service.state] ?? { label: service.state, className: 'bg-sand text-ink-2' };
   return (
     <li className="grid grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[minmax(7rem,1fr)_6rem_6rem_6rem] items-center gap-3 py-3 border-t border-line first:border-t-0">
-      <span className="text-lg font-bold">{shortName(service.name)}</span>
+      <span className="text-lg font-bold">{serviceShortName(service.name)}</span>
       <PodDots ready={service.ready} desired={service.desired} />
       <span className={`inline-flex justify-center px-2 py-1 text-base font-bold whitespace-nowrap ${state.className}`}>{state.label}</span>
       <span className="text-right text-base tabular-nums whitespace-nowrap">오류 {formatErrorRate(errorRate)}</span>
