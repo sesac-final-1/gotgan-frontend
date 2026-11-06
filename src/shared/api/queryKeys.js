@@ -22,6 +22,10 @@ export const queryKeys = {
     report: (type, id) => ['admin', 'reports', type, id], // reports() 아래라 처리 후 목록을 무효화하면 상세도 함께
     categories: () => ['admin', 'categories'],
     storeProducts: (storeId) => ['admin', 'stores', storeId, 'products'], // 실제 API — 판매중지 후 이 키만 무효화
+    system: () => ['admin', 'system'], // 장애 시연 — 내리기 후 이 키로 전부 다시 조회
+    systemStatus: () => ['admin', 'system', 'status'],
+    systemMetrics: () => ['admin', 'system', 'metrics'],
+    systemEvents: () => ['admin', 'system', 'events'],
   },
 
   // ── user (이경석)

@@ -53,6 +53,7 @@ const ADMIN = {
   stores: 'admin/AdminStoresPage', 'stores/:id': 'admin/AdminStoreDetailPage', settlements: 'admin/AdminSettlementsPage',
   users: 'admin/AdminUsersPage', 'users/:id': 'admin/AdminUserDetailPage', reports: 'admin/AdminReportsPage',
   categories: 'admin/AdminCategoriesPage', chats: 'admin/AdminChatsPage', 'chats/:roomId': 'admin/AdminChatsPage',
+  system: 'admin/AdminSystemPage',
 };
 
 export const router = createBrowserRouter([
