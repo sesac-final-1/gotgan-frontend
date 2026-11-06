@@ -60,7 +60,7 @@ function LineActions({ o, l, claim, writable, onWrite }) {
 // 결제 대기 · 실패 안내 — 결제 대기 만료(ORD-07)는 서버 스케줄러가 처리하고 화면은 상태만 보여 준다
 function OrderNotice({ status }) {
   if (status === 'PENDING') return <div className="px-4 py-2.5 text-[12px] bg-cream border-b border-line text-ink-2">결제가 아직 확인되지 않았어요. 결제를 마치지 않으면 잠시 후 주문이 자동 취소되고 사용한 포인트는 돌려드려요.</div>;
-  if (status === 'FAILED') return <div className="px-4 py-2.5 text-[12px] bg-cream border-b border-line text-rust">결제 시간이 지났거나 결제가 확인되지 않아 주문이 취소되었어요. 사용한 포인트는 돌려드렸어요.</div>;
+  if (status === 'FAILED') return <div className="px-4 py-2.5 text-[12px] bg-cream border-b border-line text-rust">결제 시간이 지났거나 결제가 확인되지 않아 주문이 취소되었어요. 사용한 포인트는 자동으로 돌려드려요.</div>;
   return null;
 }
 
