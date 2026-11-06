@@ -191,6 +191,14 @@ describe('채팅함', () => {
     expect(screen.queryByPlaceholderText(/메시지 입력/)).not.toBeInTheDocument();
   });
 
+  it('목록 조회가 실패하면 빈 목록이 아니라 불러오지 못했다고 안내한다 (11/6 chat 장애 시험)', async () => {
+    vi.spyOn(axiosInstance, 'get').mockRejectedValue(new Error('502'));
+    renderAt('/mypage/chats', <ChatInbox kind="buyer" basePath="/mypage/chats" />, '/mypage/chats/:roomId');
+    expect(await screen.findByText(/대화 목록을 불러오지 못했어요/, {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.queryByText('대화가 없어요')).toBeNull();
+    cleanup();
+  });
+
   it('방을 고르기 전 · 없는 방 안내, 방이 없으면 빈 목록', async () => {
     rooms = [];
     renderAt('/mypage/chats', <ChatInbox kind="buyer" basePath="/mypage/chats" />, '/mypage/chats/:roomId');

@@ -1,4 +1,4 @@
-import { Client } from '@stomp/stompjs';
+import { Client, ReconnectionTimeMode } from '@stomp/stompjs';
 
 /**
  * 채팅 실시간 연결 (STOMP, 담당 구지훈 · chat.md 6 · 6-1절) — 앱 전체에서 연결 하나를 같이 쓴다.
@@ -17,7 +17,7 @@ const BASE_DELAY_MS = 1_000;
 const MAX_DELAY_MS = 30_000;
 const ERRORS_DESTINATION = '/user/queue/errors';
 
-/** 재연결 지연 — attempt 0 이면 1초 근처, 이후 두 배씩 최대 30초. 절반~전부 사이 무작위 */
+/** 첫 재연결 지연 — attempt 0 이면 1초 근처. 절반~전부 사이 무작위. 이후 두 배 · 최대 30초는 라이브러리 EXPONENTIAL 이 맡는다 */
 export const reconnectDelay = (attempt, random = Math.random) =>
   Math.round(Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** attempt) * (0.5 + random() * 0.5));
 
@@ -28,7 +28,6 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
   const errorListeners = new Set();
   let client = null;
   let status = 'idle'; // idle · connecting · connected · disconnected · stopped
-  let attempt = 0;
   let needsRefresh = false;
   let releaseTimer = null;
   let hidden = doc.visibilityState === 'hidden';
@@ -66,6 +65,9 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
       heartbeatIncoming: HEARTBEAT_MS,
       heartbeatOutgoing: HEARTBEAT_MS,
       reconnectDelay: reconnectDelay(0),
+      // client.reconnectDelay 를 나중에 바꿔도 다음 재연결엔 안 먹는다(activate · 연결 성공 때만 읽음, 7.x) — 11/6 chat 장애 시험에서 0.7초 간격 유지 확인
+      reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
+      maxReconnectDelay: MAX_DELAY_MS,
       beforeConnect: async () => {
         setStatus('connecting');
         if (needsRefresh) {
@@ -85,8 +87,6 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
         client.connectHeaders = { Authorization: `Bearer ${token}` };
       },
       onConnect: () => {
-        attempt = 0;
-        client.reconnectDelay = reconnectDelay(0);
         client.subscribe(ERRORS_DESTINATION, (msg) => emitError(JSON.parse(msg.body)));
         stompSubs.clear();
         if (!hidden) rooms.forEach((_, roomId) => subscribeStomp(roomId));
@@ -108,8 +108,6 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
           return;
         }
         if (event?.code === 4401) needsRefresh = true;
-        attempt += 1;
-        client.reconnectDelay = reconnectDelay(attempt);
         setStatus('disconnected');
       },
     });
