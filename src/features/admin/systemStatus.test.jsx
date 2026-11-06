@@ -4,6 +4,8 @@ import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killService }
 import { resetSystemMock } from '@/features/admin/api/systemMock';
 import * as systemApi from '@/features/admin/api/systemApi';
 import SystemDashboard from '@/features/admin/components/SystemDashboard';
+import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
+import { formatErrorRate } from '@/features/admin/constants';
 
 const T0 = new Date('2026-11-09T14:00:00+09:00');
 const service = (status, name) => status.services.find((s) => s.name === name);
@@ -98,10 +100,36 @@ describe('시스템 상태 화면', () => {
 
   it('실패해도 마지막 값을 유지하고 연결 끊김을 표시한다', async () => {
     renderPage();
-    expect(await screen.findByText(/order-service/)).toBeTruthy();
+    expect(await screen.findByText('order')).toBeTruthy();
     vi.spyOn(systemApi, 'fetchSystemStatus').mockRejectedValue(new Error('503'));
     await act(() => queryClient.refetchQueries());
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('연결 끊김'));
-    expect(screen.getByText(/order-service/)).toBeTruthy();
+    expect(screen.getByText('order')).toBeTruthy();
+  });
+});
+
+describe('서비스 상태 패널', () => {
+  afterEach(cleanup);
+  const svc = (name, state, ready, desired, killable = true) => ({ name, state, ready, desired, killable, pods: [] });
+
+  it('상태 4가지를 글자로 보여 주고 파드 수를 알려 준다', () => {
+    render(<SystemServicePanel services={[svc('order-service', 'UP', 2, 2), svc('payment-service', 'DEGRADED', 1, 2), svc('product-service', 'DOWN', 0, 2), svc('review-service', 'RECOVERING', 0, 1)]} />);
+    for (const label of ['정상', '일부', '중단', '복구 중']) expect(screen.getByText(label)).toBeTruthy();
+    expect(screen.getByRole('img', { name: '파드 2개 중 1개 준비' })).toBeTruthy();
+  });
+
+  it('오류율은 퍼센트로, 값이 없으면 - 로 표시한다', () => {
+    expect(formatErrorRate(0)).toBe('0%');
+    expect(formatErrorRate(0.123)).toBe('12.3%');
+    expect(formatErrorRate(1)).toBe('100%');
+    expect(formatErrorRate(null)).toBe('-');
+    render(<SystemServicePanel services={[svc('order-service', 'UP', 2, 2), svc('review-service', 'UP', 1, 1)]} metrics={{ services: [{ name: 'order-service', errorRate: 0.05 }, { name: 'review-service', errorRate: null }] }} />);
+    expect(screen.getByText('오류 5%')).toBeTruthy();
+    expect(screen.getByText('오류 -')).toBeTruthy();
+  });
+
+  it('내릴 수 없는 서비스는 아래로 보낸다', () => {
+    render(<SystemServicePanel services={[svc('gateway-service', 'UP', 2, 2, false), svc('order-service', 'UP', 2, 2)]} />);
+    expect(screen.getAllByRole('listitem').map((li) => li.textContent)[0]).toContain('order');
   });
 });
