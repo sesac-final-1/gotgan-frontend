@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killService } from '@/features/admin/api/systemApi';
 import { resetSystemMock } from '@/features/admin/api/systemMock';
@@ -7,6 +7,7 @@ import SystemDashboard from '@/features/admin/components/SystemDashboard';
 import SystemFeaturePanel from '@/features/admin/components/SystemFeaturePanel';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import { formatErrorRate } from '@/features/admin/constants';
+import { useToastStore } from '@/shared/stores/toastStore';
 
 const T0 = new Date('2026-11-09T14:00:00+09:00');
 const service = (status, name) => status.services.find((s) => s.name === name);
@@ -114,7 +115,7 @@ describe('서비스 상태 패널', () => {
   const svc = (name, state, ready, desired, killable = true) => ({ name, state, ready, desired, killable, pods: [] });
 
   it('상태 4가지를 글자로 보여 주고 파드 수를 알려 준다', () => {
-    render(<SystemServicePanel services={[svc('order-service', 'UP', 2, 2), svc('payment-service', 'DEGRADED', 1, 2), svc('product-service', 'DOWN', 0, 2), svc('review-service', 'RECOVERING', 0, 1)]} />);
+    render(<SystemServicePanel chaosEnabled services={[svc('order-service', 'UP', 2, 2), svc('payment-service', 'DEGRADED', 1, 2), svc('product-service', 'DOWN', 0, 2), svc('review-service', 'RECOVERING', 0, 1)]} />);
     for (const label of ['정상', '일부', '중단', '복구 중']) expect(screen.getByText(label)).toBeTruthy();
     expect(screen.getByRole('img', { name: '파드 2개 중 1개 준비' }).textContent).toContain('1/2');
   });
@@ -159,5 +160,77 @@ describe('사용자 기능 패널', () => {
     expect(within(panel).getByText('장바구니').closest('li').textContent).toContain('정상');
     queryClient.clear();
     resetSystemMock();
+  });
+});
+
+describe('서비스 내리기', () => {
+  let queryClient;
+  afterEach(() => {
+    cleanup();
+    queryClient?.clear();
+    vi.restoreAllMocks();
+    resetSystemMock();
+    useToastStore.setState({ current: null });
+  });
+  const renderPage = async () => {
+    resetSystemMock();
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider>);
+    await screen.findByRole('button', { name: 'order 내리기' });
+  };
+  const rowOf = (name) => screen.getByText(name).closest('li');
+  const open = (name) => fireEvent.click(screen.getByRole('button', { name: `${name} 내리기` }));
+
+  it('레플리카 2 서비스는 1개만 내릴 수 있고 바로 일부 상태로 바뀐다', async () => {
+    await renderPage();
+    open('order');
+    fireEvent.click(screen.getByRole('button', { name: '1개만 내리기' }));
+    await waitFor(() => expect(rowOf('order').textContent).toContain('일부'));
+    expect(rowOf('order').textContent).toContain('1/2');
+    expect(useToastStore.getState().current.msg).toContain('order 파드 1개');
+    expect(screen.queryByRole('button', { name: '1개만 내리기' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'order 내리기' }).disabled).toBe(true);
+  });
+
+  it('전부 내리면 중단으로 바뀌고 기능도 멈춘다', async () => {
+    await renderPage();
+    open('order');
+    fireEvent.click(screen.getByRole('button', { name: '전부 내리기' }));
+    await waitFor(() => expect(rowOf('order').textContent).toContain('중단'));
+    expect(screen.getByText('주문 · 결제').closest('li').textContent).toContain('중단 · order');
+  });
+
+  it('레플리카 1 서비스는 1개 선택 없이 내리기만 있다', async () => {
+    await renderPage();
+    open('review');
+    expect(screen.queryByRole('button', { name: '1개만 내리기' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '내리기' }));
+    await waitFor(() => expect(rowOf('review').textContent).toContain('중단'));
+  });
+
+  it('취소하면 내리지 않는다', async () => {
+    await renderPage();
+    open('order');
+    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    expect(rowOf('order').textContent).toContain('정상');
+    expect(screen.queryByRole('button', { name: '전부 내리기' })).toBeNull();
+  });
+
+  it('서버가 거절하면 그 메시지를 보여 준다', async () => {
+    await renderPage();
+    vi.spyOn(systemApi, 'killService').mockRejectedValue({ response: { data: { message: '방금 내린 서비스입니다.' } } });
+    open('order');
+    fireEvent.click(screen.getByRole('button', { name: '전부 내리기' }));
+    await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('방금 내린 서비스입니다.'));
+    expect(rowOf('order').textContent).toContain('정상');
+  });
+
+  it('내리기가 꺼져 있으면 버튼을 막고 안내한다 · gateway 는 내릴 수 없다', async () => {
+    const status = await systemApi.fetchSystemStatus();
+    vi.spyOn(systemApi, 'fetchSystemStatus').mockResolvedValue({ ...status, chaosEnabled: false });
+    await renderPage();
+    expect(screen.getByRole('button', { name: 'order 내리기' }).disabled).toBe(true);
+    expect(screen.getByText(/내리기 기능이 꺼져/)).toBeTruthy();
+    expect(rowOf('gateway').textContent).toContain('내릴 수 없음');
   });
 });
