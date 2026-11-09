@@ -1,95 +1,73 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { axiosInstance } from '@/shared/api/axiosInstance';
 import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killService } from '@/features/admin/api/systemApi';
-import { resetSystemMock } from '@/features/admin/api/systemMock';
-import * as systemApi from '@/features/admin/api/systemApi';
 import SystemDashboard from '@/features/admin/components/SystemDashboard';
 import SystemFeaturePanel from '@/features/admin/components/SystemFeaturePanel';
 import SystemLinks from '@/features/admin/components/SystemLinks';
-import SystemTimeline from '@/features/admin/components/SystemTimeline';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
+import SystemTimeline from '@/features/admin/components/SystemTimeline';
 import { formatErrorRate } from '@/features/admin/constants';
 import { useToastStore } from '@/shared/stores/toastStore';
 
-const T0 = new Date('2026-11-09T14:00:00+09:00');
-const service = (status, name) => status.services.find((s) => s.name === name);
-const feature = (status, key) => status.features.find((f) => f.key === key);
-const after = (seconds) => vi.setSystemTime(new Date(T0.getTime() + seconds * 1000));
+// 장애 시연 화면 — 계약 backend admin.md 7절. 서버를 흉내 내는 작은 상태 하나로 내리기 흐름까지 확인한다
+const BASE = '/api/admin/system';
+const svcOf = (name, desired, killable = true) => ({ name, killable, desired, ready: desired, state: 'UP', pods: [] });
+let server;
 
-describe('시스템 상태 목', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(T0);
-    resetSystemMock();
+function resetServer({ chaosEnabled = true } = {}) {
+  server = {
+    chaosEnabled,
+    services: [svcOf('order-service', 2), svcOf('review-service', 1), svcOf('gateway-service', 2, false)],
+    features: [
+      { key: 'CART_ORDER', label: '장바구니 · 주문', state: 'UP', causes: [] },
+      { key: 'REVIEW', label: '리뷰 · 문의', state: 'UP', causes: [] },
+    ],
+  };
+}
+
+function stubServer() {
+  vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => {
+    if (url === `${BASE}/status`) return { data: { data: { chaosEnabled: server.chaosEnabled, serverTime: '2026-11-09T14:00:00+09:00', services: server.services, features: server.features } } };
+    if (url === `${BASE}/metrics`) return { data: { data: { services: server.services.map((s) => ({ name: s.name, requestsPerSecond: 1, errorRate: s.ready ? 0 : 1 })) } } };
+    return { data: { data: [] } };
   });
-  afterEach(() => vi.useRealTimers());
-
-  it('처음에는 모든 서비스 · 기능이 정상이다', async () => {
-    const status = await fetchSystemStatus();
-    expect(status.services.every((s) => s.state === 'UP' && s.ready === s.desired)).toBe(true);
-    expect(status.features.every((f) => f.state === 'UP')).toBe(true);
+  vi.spyOn(axiosInstance, 'post').mockImplementation(async (url, { scope }) => {
+    const name = url.split('/').at(-2);
+    const svc = server.services.find((s) => s.name === name);
+    const one = scope === 'ONE' && svc.desired > 1;
+    Object.assign(svc, one ? { ready: svc.desired - 1, state: 'RECOVERING' } : { ready: 0, state: 'DOWN' });
+    if (name === 'order-service' && !one) server.features[0] = { ...server.features[0], state: 'DOWN', causes: [name] };
+    if (name === 'review-service') server.features[1] = { ...server.features[1], state: 'DOWN', causes: [name] };
+    return { data: { data: { eventId: 1, deletedPods: Array.from({ length: one ? 1 : svc.desired }, (_, i) => `${name}-${i}`) } } };
   });
+}
 
-  it('레플리카 2 서비스를 1개 내리면 일부 상태이고 기능은 멈추지 않는다', async () => {
-    await killService({ name: 'order-service', scope: 'ONE' });
-    const status = await fetchSystemStatus();
-    expect(service(status, 'order-service')).toMatchObject({ state: 'DEGRADED', ready: 1 });
-    expect(feature(status, 'ORDER').state).toBe('UP');
-  });
+describe('시스템 상태 API', () => {
+  afterEach(() => vi.restoreAllMocks());
 
-  it('전부 내리면 중단 → 복구 중 → 정상으로 바뀌고 타임라인에 복구 시간이 남는다', async () => {
-    await killService({ name: 'order-service', scope: 'ALL' });
-    expect(service(await fetchSystemStatus(), 'order-service').state).toBe('DOWN');
-    expect((await fetchSystemEvents())[0]).toMatchObject({ service: 'order-service', recoveredAt: null });
-
-    after(10);
-    expect(service(await fetchSystemStatus(), 'order-service').state).toBe('RECOVERING');
-
-    after(23);
-    expect(service(await fetchSystemStatus(), 'order-service').state).toBe('UP');
-    expect((await fetchSystemEvents())[0].recoverySeconds).toBe(23);
-  });
-
-  it('장애 영향표대로 기능이 멈춘다 — payment 는 주문만, store 는 장바구니까지', async () => {
-    await killService({ name: 'payment-service', scope: 'ALL' });
-    let status = await fetchSystemStatus();
-    expect(feature(status, 'ORDER')).toMatchObject({ state: 'DOWN', causes: ['payment-service'] });
-    expect(feature(status, 'CART').state).toBe('UP');
-    expect(feature(status, 'BROWSE').state).toBe('UP');
-
-    await killService({ name: 'store-service', scope: 'ALL' });
-    status = await fetchSystemStatus();
-    expect(feature(status, 'CART')).toMatchObject({ state: 'DOWN', causes: ['store-service'] });
+  it('조회는 봉투를 벗겨 그대로 돌려준다', async () => {
+    const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data: { url } } }));
+    await expect(fetchSystemStatus()).resolves.toEqual({ url: `${BASE}/status` });
+    await expect(fetchSystemMetrics()).resolves.toEqual({ url: `${BASE}/metrics` });
+    await expect(fetchSystemEvents()).resolves.toEqual({ url: `${BASE}/events` });
+    expect(get).toHaveBeenCalledTimes(3);
   });
 
-  it('내려간 서비스는 지표 오류율이 1, 나머지는 0 이다', async () => {
-    await killService({ name: 'review-service', scope: 'ALL' });
-    const { services } = await fetchSystemMetrics();
-    expect(services.find((s) => s.name === 'review-service')).toMatchObject({ errorRate: 1, requestsPerSecond: 0 });
-    expect(services.find((s) => s.name === 'order-service').errorRate).toBe(0);
-  });
-
-  it('내릴 수 없는 서비스는 400, 1분 안에 다시 내리면 409', async () => {
-    await expect(killService({ name: 'gateway-service', scope: 'ALL' })).rejects.toMatchObject({ response: { status: 400, data: { code: 'SYSTEM_SERVICE_NOT_KILLABLE' } } });
-    await killService({ name: 'chat-service', scope: 'ALL' });
-    await expect(killService({ name: 'chat-service', scope: 'ALL' })).rejects.toMatchObject({ response: { status: 409, data: { code: 'SYSTEM_KILL_COOLDOWN' } } });
-    after(60);
-    await expect(killService({ name: 'chat-service', scope: 'ALL' })).resolves.toMatchObject({ deletedPods: ['chat-service-1'] });
-  });
-
-  it('레플리카 1 서비스는 1개를 골라도 전부 내린 것과 같다', async () => {
-    await killService({ name: 'review-service', scope: 'ONE' });
-    expect(service(await fetchSystemStatus(), 'review-service').state).toBe('DOWN');
+  it('내리기는 서비스 이름 경로로 범위를 보낸다', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { eventId: 12, deletedPods: ['order-service-a'] } } });
+    await expect(killService({ name: 'order-service', scope: 'ONE' })).resolves.toEqual({ eventId: 12, deletedPods: ['order-service-a'] });
+    expect(post).toHaveBeenCalledWith(`${BASE}/services/order-service/kill`, { scope: 'ONE', reason: undefined });
   });
 });
 
 describe('시스템 상태 화면', () => {
   let queryClient;
+  beforeEach(() => { resetServer(); stubServer(); });
   afterEach(() => {
     cleanup();
     queryClient?.clear();
     vi.restoreAllMocks();
-    resetSystemMock();
   });
   const renderPage = () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -97,7 +75,7 @@ describe('시스템 상태 화면', () => {
   };
 
   it('받은 값이 없이 실패하면 다시 시도 안내를 보여 준다', async () => {
-    vi.spyOn(systemApi, 'fetchSystemStatus').mockRejectedValue(new Error('503'));
+    axiosInstance.get.mockRejectedValue(new Error('503'));
     renderPage();
     expect(await screen.findByRole('button', { name: '다시 시도' })).toBeTruthy();
   });
@@ -105,7 +83,7 @@ describe('시스템 상태 화면', () => {
   it('실패해도 마지막 값을 유지하고 연결 끊김을 표시한다', async () => {
     renderPage();
     expect(await screen.findByText('order')).toBeTruthy();
-    vi.spyOn(systemApi, 'fetchSystemStatus').mockRejectedValue(new Error('503'));
+    axiosInstance.get.mockRejectedValue(new Error('503'));
     await act(() => queryClient.refetchQueries());
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('연결 끊김'));
     expect(screen.getByText('order')).toBeTruthy();
@@ -154,16 +132,9 @@ describe('사용자 기능 패널', () => {
     expect(screen.getByText(/의존 관계로 계산/)).toBeTruthy();
   });
 
-  it('서비스를 내리면 시스템 화면의 기능도 중단으로 바뀐다', async () => {
-    resetSystemMock();
-    await killService({ name: 'review-service', scope: 'ALL' });
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(<QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider>);
-    const panel = await screen.findByRole('region', { name: '사용자 기능' });
-    expect(within(panel).getByText('리뷰 보기').closest('li').textContent).toContain('중단 · review');
-    expect(within(panel).getByText('장바구니').closest('li').textContent).toContain('정상');
-    queryClient.clear();
-    resetSystemMock();
+  it('일부 장애(DEGRADED)도 원인과 함께 표시한다', () => {
+    render(<SystemFeaturePanel features={[{ key: 'CART_ORDER', label: '장바구니 · 주문', state: 'DEGRADED', causes: ['order-service'] }]} />);
+    expect(screen.getByRole('listitem').textContent).toContain('일부 · order');
   });
 });
 
@@ -173,11 +144,10 @@ describe('서비스 내리기', () => {
     cleanup();
     queryClient?.clear();
     vi.restoreAllMocks();
-    resetSystemMock();
     useToastStore.setState({ current: null });
   });
+  beforeEach(() => { resetServer(); stubServer(); });
   const renderPage = async () => {
-    resetSystemMock();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider>);
     await screen.findByRole('button', { name: 'order 내리기' });
@@ -185,11 +155,11 @@ describe('서비스 내리기', () => {
   const rowOf = (name) => within(screen.getByRole('region', { name: '서비스 상태' })).getByText(name).closest('li'); // 타임라인에도 같은 이름이 나온다
   const open = (name) => fireEvent.click(screen.getByRole('button', { name: `${name} 내리기` }));
 
-  it('레플리카 2 서비스는 1개만 내릴 수 있고 바로 일부 상태로 바뀐다', async () => {
+  it('레플리카 2 서비스는 1개만 내릴 수 있고 바로 복구 중으로 바뀐다', async () => {
     await renderPage();
     open('order');
     fireEvent.click(screen.getByRole('button', { name: '1개만 내리기' }));
-    await waitFor(() => expect(rowOf('order').textContent).toContain('일부'));
+    await waitFor(() => expect(rowOf('order').textContent).toContain('복구 중'));
     expect(rowOf('order').textContent).toContain('1/2');
     expect(useToastStore.getState().current.msg).toContain('order 파드 1개');
     expect(screen.queryByRole('button', { name: '1개만 내리기' })).toBeNull();
@@ -201,7 +171,7 @@ describe('서비스 내리기', () => {
     open('order');
     fireEvent.click(screen.getByRole('button', { name: '전부 내리기' }));
     await waitFor(() => expect(rowOf('order').textContent).toContain('중단'));
-    expect(screen.getByText('주문 · 결제').closest('li').textContent).toContain('중단 · order');
+    expect(screen.getByText('장바구니 · 주문').closest('li').textContent).toContain('중단 · order');
   });
 
   it('레플리카 1 서비스는 1개 선택 없이 내리기만 있다', async () => {
@@ -222,7 +192,7 @@ describe('서비스 내리기', () => {
 
   it('서버가 거절하면 그 메시지를 보여 준다', async () => {
     await renderPage();
-    vi.spyOn(systemApi, 'killService').mockRejectedValue({ response: { data: { message: '방금 내린 서비스입니다.' } } });
+    axiosInstance.post.mockRejectedValue({ response: { data: { message: '방금 내린 서비스입니다.' } } });
     open('order');
     fireEvent.click(screen.getByRole('button', { name: '전부 내리기' }));
     await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('방금 내린 서비스입니다.'));
@@ -230,8 +200,7 @@ describe('서비스 내리기', () => {
   });
 
   it('내리기가 꺼져 있으면 버튼을 막고 안내한다 · gateway 는 내릴 수 없다', async () => {
-    const status = await systemApi.fetchSystemStatus();
-    vi.spyOn(systemApi, 'fetchSystemStatus').mockResolvedValue({ ...status, chaosEnabled: false });
+    resetServer({ chaosEnabled: false });
     await renderPage();
     expect(screen.getByRole('button', { name: 'order 내리기' }).disabled).toBe(true);
     expect(screen.getByText(/내리기 기능이 꺼져/)).toBeTruthy();
@@ -248,7 +217,7 @@ describe('타임라인 · 바로가기', () => {
     vi.restoreAllMocks();
   });
   const renderTimeline = (events) => {
-    vi.spyOn(systemApi, 'fetchSystemEvents').mockImplementation(events);
+    vi.spyOn(axiosInstance, 'get').mockImplementation(async () => ({ data: { data: await events() } }));
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={queryClient}><SystemTimeline /></QueryClientProvider>);
   };
