@@ -54,7 +54,7 @@ function buildColumns({ sel, toggle, onStock, onCopy }) {
     },
     {
       accessorKey: 'rating', header: '평점', meta: { tdClass: 'whitespace-nowrap' },
-      cell: ({ row: { original: p } }) => <>★ {p.rating} <span className="text-mute num">({comma(p.reviews)})</span></>,
+      cell: ({ row: { original: p } }) => (p.rated ? <>★ {p.rating} <span className="text-mute num">({comma(p.reviews)})</span></> : <span className="text-mute">-</span>),
     },
     { accessorKey: 'created', header: '등록일', sortingFn: 'datetime', meta: { tdClass: 'num text-ink-2' }, cell: ({ getValue }) => ymd(getValue()) },
     {
