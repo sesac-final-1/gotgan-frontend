@@ -17,9 +17,14 @@ export default function ProductCard({ p, store, rank, showStore = true }) {
           {showStore && <div className="text-[12px] font-bold text-ink-2 mb-0.5">{store?.name}</div>}
           <div className="text-[13px] text-ink-2 leading-snug line-clamp-2 min-h-[2.4em]">{p.name}</div>
           <div className="mt-1"><Price p={p} /></div>
-          <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-mute">
-            <span className="text-ink">★ {p.rating.toFixed(1)}</span>
-            <span className="num">({comma(p.reviews)})</span>
+          {/* 별점을 못 받아도 줄 높이는 유지해 카드가 들썩이지 않게 한다 */}
+          <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-mute min-h-[18px]">
+            {p.rated && (
+              <>
+                <span className="text-ink">★ {p.rating.toFixed(1)}</span>
+                <span className="num">({comma(p.reviews)})</span>
+              </>
+            )}
           </div>
           {p.tags.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1">
