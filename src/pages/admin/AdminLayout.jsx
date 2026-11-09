@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileCheck, Store, Wallet, Users, Flag, Tags, MessagesSquare } from 'lucide-react';
+import { LayoutDashboard, FileCheck, Store, Wallet, Users, Flag, Tags, MessagesSquare, Activity } from 'lucide-react';
 import ConsoleLayout from '@/shared/layouts/ConsoleLayout';
 import NotificationBell from '@/features/notification/components/NotificationBell';
 import { useApplicationsQuery } from '@/features/admin/hooks/useApplicationsQuery';
@@ -33,6 +33,7 @@ export default function AdminLayout() {
       ],
     },
     { title: '설정', items: [{ to: '/admin/categories', label: '카테고리 · 수수료', icon: Tags }] },
+    { title: '시스템', items: [{ to: '/admin/system', label: '시스템 상태', icon: Activity }] },
   ];
   return (
     <ConsoleLayout kind="admin" badge="운영관리" groups={groups} bell={<NotificationBell dark />} onLogout={logout}
