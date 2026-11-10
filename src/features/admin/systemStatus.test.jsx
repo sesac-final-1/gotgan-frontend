@@ -136,15 +136,17 @@ describe('사용자 기능 패널', () => {
       { key: 'BROWSE', label: '둘러보기 · 상품 상세', state: 'UP', causes: [] },
       { key: 'ORDER', label: '주문 · 결제', state: 'DOWN', causes: ['order-service', 'payment-service'] },
     ]} />);
-    const [browse, order] = screen.getAllByRole('listitem');
+    const [browse, order] = within(screen.getAllByRole('list').at(-1)).getAllByRole('listitem');
     expect(browse.textContent).toContain('정상');
     expect(order.textContent).toContain('중단 · order, payment');
     expect(screen.getByText(/의존 관계로 계산/)).toBeTruthy();
+    const legend = screen.getByRole('list', { name: '상태 설명' }).textContent;
+    for (const word of ['정상', '일부', '중단', '남은 파드로 동작']) expect(legend).toContain(word);
   });
 
   it('일부 장애(DEGRADED)도 원인과 함께 표시한다', () => {
     render(<SystemFeaturePanel features={[{ key: 'CART_ORDER', label: '장바구니 · 주문', state: 'DEGRADED', causes: ['order-service'] }]} />);
-    expect(screen.getByRole('listitem').textContent).toContain('일부 · order');
+    expect(screen.getByText('장바구니 · 주문').closest('li').textContent).toContain('일부 · order');
   });
 });
 
