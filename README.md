@@ -12,7 +12,7 @@
 gotgan-frontend/
 ├── vercel.json              /api/* → https://api.gotgan.click rewrite · SPA 새로고침 · 보안 헤더(CSP 강제 · HSTS · X-Frame-Options 등)
 ├── vite.config.js           로컬 /api · /ws(채팅 STOMP) 프록시 → localhost:8080 (gateway) · Vitest 설정
-├── .env.example             VITE_PORTONE_STORE_ID · VITE_PORTONE_CHANNEL_KEY · VITE_GRAFANA_URL (값은 Vercel 환경 변수)
+├── .env.example             VITE_PORTONE_STORE_ID · VITE_PORTONE_CHANNEL_KEY (값은 Vercel 환경 변수)
 └── src/
     ├── app/                 router.jsx(라우트 표 + 지연 로딩) · RootLayout · RouteError · providers.jsx · bootstrap.js(부팅 시 refresh 1회)
     ├── pages/{shop,mypage,seller,admin}/   라우트 1개 = 파일 1개, features 조립만
