@@ -1,7 +1,9 @@
 # 목업 → 실제 API 교체 가이드
 
-지금 화면은 전부 **목업 데이터**로 동작한다. 백엔드 API가 준비되면 아래 순서대로 교체한다.
-목표는 **화면(컴포넌트) 수정 0줄** — 바꾸는 곳은 `features/{도메인}/api/*Api.js` 함수 본문이 대부분이다.
+> **교체 완료 (11/3) — 이 문서는 기록용이다.** 모든 화면이 실제 API 에 연결됐고 `src/mocks/` 는 11/3 삭제(frontend #80), 임시 점검 화면 `/qa` 도 삭제했다. 테스트 목킹은 `vi.spyOn(axiosInstance, …)` (컨벤션 4-1). 아래 1 ~ 4절 · 6절은 교체 당시의 절차 · 분담 기록이고, 5절의 알림 · 채팅 · 정산 필드 대응은 지금 코드와 같다.
+
+교체 당시: 화면은 전부 **목업 데이터**로 동작했고, 백엔드 API가 준비되는 대로 아래 순서로 교체했다.
+목표는 **화면(컴포넌트) 수정 0줄** — 바꾸는 곳은 `features/{도메인}/api/*Api.js` 함수 본문이 대부분이었다.
 
 ## 1. 구조 — 어디를 바꾸나
 
@@ -66,7 +68,7 @@ export function useConfirmOrderItemsMutation() {
 | 판매자 주문(`SellerOrderList`) · 구매자 상품 목록(`ShopProductList`) | **서버 페이징** | 운영 시 건수가 계속 늘어남 |
 | 그 밖의 전부 | 클라이언트 (전체 1회 로드 → 화면에서 검색 · 정렬 · 페이징) | 데모 규모 · 수백 건 이하 |
 
-서버 페이징 전환 (두 화면 맨 위에 TODO 있음):
+서버 페이징 전환 (✅ 끝 — 판매자 주문 · 클레임 · 리뷰 · 문의, 구매자 상품 목록이 서버 페이징):
 
 1. api 함수가 `params({ page, size, sort, q, status })` 를 받아 `GET ...?page&size&sort` 호출, 응답 `{ content, totalPages, totalElements }`
 2. 훅은 이미 `useSellerOrderItemsQuery(params)` 처럼 params 를 queryKey 에 넣는다 — 그대로 사용, `placeholderData: keepPreviousData` 추가
@@ -82,7 +84,7 @@ export function useConfirmOrderItemsMutation() {
 ### 장바구니 — ✅ 끝 (`features/order/hooks/useCart.js`, `cartMockStore` 삭제)
 
 `GET /api/carts` + 담기 · 수량 · 선택 · 삭제(`POST · PATCH · DELETE /api/carts/items`). 반환 `{ cart, lines, cartCount, addToCart(items), setQty, toggleLine, toggleAll, removeLines }` — 필드는 API 이름(`productOptionId · quantity · checked · lineAmt`, 스토어 묶음 `stores[]`).
-상품 상세의 담기는 구매자 상품 API(옵션 ID)가 나오면 연결 (`ShopProductDetail` TODO).
+상품 상세의 담기도 연결됨 (`ShopProductDetail` → `addToCart`, 옵션 ID).
 
 ### 알림 · 채팅 — 처음부터 실제 API (목업 없음, 10/27 · 구지훈)
 
@@ -95,9 +97,9 @@ export function useConfirmOrderItemsMutation() {
 
 - REST 는 다른 도메인처럼 상대경로(`/api/notifications/**` · `/api/chats/**`). 실시간만 배포에서 `api.gotgan.click` 에 직접 연결한다 — SSE `https://api.gotgan.click/api/notifications/stream`(`@microsoft/fetch-event-source`, Authorization 헤더), WebSocket `wss://api.gotgan.click/ws/chat`(STOMP, 토큰은 CONNECT 프레임). 로컬은 Vite 프록시
 - 알림 SSE 로 `CHAT_MESSAGE` 가 오면 채팅 queryKey(`queryKeys.chat.all`)를 무효화해 채팅 목록 · 배지를 갱신한다
-- 채팅 진입 버튼: 상품 상세 '판매자에게 문의' · 고객센터 '운영팀과 채팅' · 판매자센터 채팅 '운영팀에 문의' · 관리자 스토어 상세 '판매자와 상담' · 스토어 톡 안 '운영팀에 도움 요청' · 내 주문 상세 '판매자 문의'(상품마다) · '결제 · 환불 문의' · 판매자 정산 상세 '이 정산 문의' · 관리자 정산 상세 '판매자와 상담' · 신고 접수 완료 '운영팀에 처리 문의' (`OpenChatButton`)
+- 채팅 진입 버튼: 상품 상세 '판매자에게 문의' · 고객센터 '운영팀과 채팅' · 판매자센터 채팅 '운영팀에 문의' · 관리자 스토어 상세 '판매자와 상담' · 스토어 톡 안 '운영팀에 도움 요청' · 내 주문 상세 '판매자 문의'(상품마다) · '결제 · 환불 문의' · 판매자 정산 상세 '이 정산 문의' · 관리자 정산 상세 '판매자와 상담' · 신고 접수 완료 '운영팀에 처리 문의' · 스토어 홈 '문의하기'(스토어 톡) (`OpenChatButton`)
 
-### 임시 훅 — 응답에 필드가 들어오면 삭제
+### 임시 훅 — 응답에 필드가 들어오면 삭제 (✅ 끝 — 아래 셋 모두 코드에 없음)
 
 | 임시 | 어디서 | 대신 필요한 것 | 담당 |
 |---|---|---|---|
@@ -133,15 +135,17 @@ export function useConfirmOrderItemsMutation() {
 
 ### 인증 — `shared/api/axiosInstance.js`
 
-Authorization 헤더 · 401 시 single-flight refresh 재시도는 TODO(이경석). 로그인 · 회원가입 화면(`ShopLogin` · `ShopSignup`)은 지금 토스트만.
+✅ 끝 — 요청 인터셉터가 `Authorization: Bearer {AT}` 를 붙이고, 401 이면 single-flight(`shared/api/refresh.js`)로 재발급 후 한 번 재시도, 재발급도 실패하면 비로그인 상태로 (`/api/auth/**` 자체의 401 은 재시도 안 함). 부팅 복구는 `app/bootstrap.js` → `features/auth/session.js`. 로그인 · 회원가입(`ShopLogin` · `ShopSignup`) · 소셜 로그인(`/auth/callback`)은 실제 API (컨벤션 4-4).
 
 ## 6. 담당 · 파일
 
-| 담당 | api 파일 | 화면 (components) | TODO 수 |
+| 담당 | api 파일 | 화면 (components) | 교체 당시 TODO 수 |
 |---|---|---|---|
 | 구지훈 | `admin/api/adminApi.js` · `settlement/api/settlementApi.js` (+ 결제 PortOne) | 관리자 전체 · 판매자 정산 | 24 |
 | 이경석 | `user/api/userApi.js` · `order/api/orderApi.js` · `review/api/reviewApi.js` (+ auth) | 마이페이지 · 장바구니 · 주문 · 리뷰 · 문의 · 로그인 · 판매자 주문/클레임/리뷰/문의 | 41 |
 | 박지연 | `product/api/productApi.js` · `store/api/storeApi.js` | 상품 목록 · 상세 · 스토어 · 입점 신청 · 판매자 상품/대시보드/스토어 설정 | 18 |
+
+지금(11/10) 남은 `TODO(` 는 5개, 모두 이경석 `features/order` — 서버 API 가 없는 기능(클레임 사진 첨부 · 배송준비 취소요청 · 판매취소 · 송장 수정 · 구매자 요약 · 엑셀 다운로드 등)이라 화면에 가짜 동작을 두지 않은 자리다. 목업 교체 TODO 는 0개.
 
 > 교체 순서 권장: 조회(api 본문) → 화면 확인 → mutation 추가 → 임시 훅 · 계산 필드 정리 → 마지막 도메인이 끝나면 `src/mocks/` 삭제
 
@@ -152,4 +156,4 @@ npm run lint && npm test && npm run build
 ```
 
 - 교체한 화면을 브라우저에서 열어 로딩 → 데이터 → 검색 · 정렬 · 페이저 → 변경 후 목록 갱신까지 확인
-- `grep -rn "mocks/" src/features/{도메인}` 결과가 비면 그 도메인 교체 완료
+- `grep -rn "mocks/" src/features/{도메인}` 결과가 비면 그 도메인 교체 완료 (11/10 현재 전 도메인 비어 있음)
