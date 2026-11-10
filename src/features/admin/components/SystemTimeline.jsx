@@ -13,7 +13,7 @@ function EventRow({ event }) {
       <span>{clock(event.killedAt)}</span>
       <span className="font-bold">{serviceShortName(event.service)}</span>
       <span>{scope} 내림</span>
-      {event.reason?.startsWith('시나리오') && <span className="px-1.5 text-sm font-bold bg-sand text-ink-2">시나리오</span>}
+      {event.reason?.startsWith('시나리오') && <span className="px-1.5 text-sm font-bold bg-sand text-ink-2">이중화 검증</span>}
       {event.recoveredAt ? (
         <span className="text-moss font-bold">→ {clock(event.recoveredAt)} 복구 · {event.recoverySeconds}초</span>
       ) : (

@@ -278,7 +278,7 @@ describe('시나리오 — 레플리카 2 서비스 1개씩 내리기', () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     return render(<QueryClientProvider client={queryClient}><SystemScenarioPanel services={services} chaosEnabled={chaosEnabled} /></QueryClientProvider>);
   };
-  const button = () => screen.getByRole('button', { name: '레플리카 2 서비스 1개씩 내리기' });
+  const button = () => screen.getByRole('button', { name: '구매 경로 장애 주입' });
 
   it('대상은 내릴 수 있고 레플리카 2 이상인 서비스만(review · gateway 제외)', () => {
     renderPanel();
@@ -291,8 +291,8 @@ describe('시나리오 — 레플리카 2 서비스 1개씩 내리기', () => {
     renderPanel();
     fireEvent.click(button());
     expect(screen.getByText(/order · user 파드를 1개씩 지웁니다/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '1개씩 내리기' }));
-    await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('2개 서비스 파드를 1개씩 내렸어요.'));
+    fireEvent.click(screen.getByRole('button', { name: '장애 주입' }));
+    await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('2개 서비스에 장애를 주입했어요 — 파드 1개씩 제거'));
     expect(post).toHaveBeenCalledWith(`${BASE}/scenarios/kill-one-each`, {});
   });
 
@@ -312,11 +312,11 @@ describe('시나리오 — 레플리카 2 서비스 1개씩 내리기', () => {
     const post = vi.spyOn(axiosInstance, 'post').mockRejectedValueOnce({ response: { data: { code: 'SYSTEM_SCENARIO_NOT_READY', message: 'x' } } });
     renderPanel();
     fireEvent.click(button());
-    fireEvent.click(screen.getByRole('button', { name: '1개씩 내리기' }));
+    fireEvent.click(screen.getByRole('button', { name: '장애 주입' }));
     await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('모든 대상 서비스가 정상일 때만 실행할 수 있어요.'));
     post.mockRejectedValueOnce({ response: { data: { code: 'SYSTEM_KILL_COOLDOWN', message: '방금 내린 서비스가 있어요.' } } });
     fireEvent.click(button());
-    fireEvent.click(screen.getByRole('button', { name: '1개씩 내리기' }));
+    fireEvent.click(screen.getByRole('button', { name: '장애 주입' }));
     await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('방금 내린 서비스가 있어요.'));
   });
 
@@ -328,7 +328,7 @@ describe('시나리오 — 레플리카 2 서비스 1개씩 내리기', () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={queryClient}><SystemTimeline /></QueryClientProvider>);
     const rows = await screen.findAllByRole('listitem');
-    expect(rows[0].textContent).toContain('시나리오');
-    expect(rows[1].textContent).not.toContain('시나리오');
+    expect(rows[0].textContent).toContain('이중화 검증');
+    expect(rows[1].textContent).not.toContain('이중화 검증');
   });
 });
