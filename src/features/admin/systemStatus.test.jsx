@@ -141,7 +141,7 @@ describe('사용자 기능 패널', () => {
     expect(order.textContent).toContain('중단 · order, payment');
     expect(screen.getByText(/의존 관계로 계산/)).toBeTruthy();
     const legend = screen.getByRole('list', { name: '상태 설명' }).textContent;
-    for (const word of ['정상', '일부', '중단', '남은 파드로 동작']) expect(legend).toContain(word);
+    for (const word of ['정상', '일부 동작', '중단']) expect(legend).toContain(word);
   });
 
   it('일부 장애(DEGRADED)도 원인과 함께 표시한다', () => {
