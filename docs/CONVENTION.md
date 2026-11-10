@@ -57,7 +57,7 @@
 | 항목 | 확정 규칙 | 관련 절 |
 |---|---|---|
 | 서비스 구성 | Spring 10개(gateway · user · store · product · order · payment · review · settlement · admin · chat — chat 은 10/27 추가) + Keycloak | 2-1 · 3-2 |
-| admin-service | 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합. 자기 DB는 신고 · 조치 이력(admindb, ADR-0001 예외 10/26)만 · 실시간 알림 센터(10/27) | 2-1 · 2-4 · 2-7 |
+| admin-service | 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합. 자기 DB는 신고 · 조치 이력(admindb, ADR-0001 예외 10/26) · 장애 시연 내리기 기록(`chaos_event`, 11/7)만 · 실시간 알림 센터(10/27) | 2-1 · 2-4 · 2-7 |
 | 카테고리 · 수수료 | 카테고리는 product-service, 카테고리별 수수료는 settlement-service | 2-1 · 3-2 |
 | 대시보드 | 판매자는 store, 관리자는 admin 안에서 조합 — 병렬 호출 + 실패 영역만 빼고 부분 응답 | 2-7 |
 | 서비스 간 호출 | Resilience4j 표준 (타임아웃 · 서킷 브레이커 · 멱등 GET만 재시도 · 폴백) | 2-7 |
@@ -78,7 +78,7 @@
 
 ### 1-1. 브랜치
 
-- `main` — 보호 브랜치. 직접 push 금지, PR + 승인 1명 + CI 통과 후 Squash merge
+- `main` — 보호 브랜치(Rulesets `pull_request_ruleset`). 직접 push 금지, PR + 승인 1명 + 필수 검사(backend · frontend `ci-ok`, config `SonarCloud Code Analysis`) 통과 후 머지 — 저장소 규칙은 merge · squash · rebase 모두 허용, 실제 `main` 이력은 머지 커밋(Merge pull request)
 - 작업 브랜치: `feat/{도메인}-{작업}` (예: `feat/order-payment-verify`, `feat/infra-eks-cluster`)
 - 그 외: `fix/` · `refactor/` · `docs/` · `chore/`(빌드 · 설정)
 - 도메인 값: `auth` `user` `store` `product` `order` `payment` `review` `settlement` `admin` `chat`(10/27) `gateway` `front`(프론트 공통) `infra`(Keycloak 설정 포함, 예: `feat/infra-keycloak-realm`) `cicd` `obs`(관측성) `sls`(서버리스)
@@ -95,11 +95,10 @@
 
 - 이슈 제목: `[요구사항 ID] 작업` — 예: `[ORD-06] 결제 검증`
 - PR 제목: 커밋 메시지 형식과 동일
-- PR 본문 템플릿:
-  - 개요 — 관련 요구사항 ID · 이슈 링크
-  - 작업 내용 — 변경 사항 개조식
-  - 테스트 — 확인 방법 (curl · 화면 · 테스트 코드)
-  - 팀원 확인 사항 — 다른 팀원이 알아야 할 것
+- PR 본문 템플릿(`.github/pull_request_template.md`, 세 저장소 같음):
+  - 🚀 개요 — 관련 요구사항 ID · 이슈 링크 · 무엇을 · 왜 바꿨나
+  - 🛠️ 작업 내용 — 변경마다 이전 → 이후 · 이유 · 파일 표
+  - 📋 팀원 가이드 — 담당자별 알아야 할 것 · 로컬 환경 · 검증(확인 방법 → 기대 결과) · 리스크
 - **프론트 · 다른 서비스에 영향 있는 변경(응답 형식 · 에러 코드 · 이벤트 payload · API 경로)은 PR 제목에 `[영향]` 표시**, 영향받는 담당자 리뷰 필수
 - PR 하나에 기능 하나, 변경 300줄 이하 권장
 - main 대상 PR은 CI에서 **SonarQube Cloud 품질 게이트**를 통과해야 머지 (이슈는 PR 코멘트로 확인)
@@ -152,8 +151,8 @@
 gotgan-frontend/src/
 ├── app/                          # 앱 전역
 │   ├── router.jsx                #   전체 라우트 (단일 파일, 도메인별 주석 구획 · 경로 → 파일 표 + 지연 로딩)
-│   ├── RootLayout.jsx            #   최상위 틀 (ToastHost 등)
 │   ├── RouteError.jsx            #   화면 받기 실패(배포 직후 옛 파일) → 새로고침 안내
+│   ├── RootLayout.jsx            #   최상위 틀 (ToastHost 등)
 │   ├── providers.jsx             #   QueryClientProvider 등
 │   ├── bootstrap.js              #   부팅 시 refresh 1회 → 로그인 상태 복구
 │   └── App.jsx
@@ -178,7 +177,8 @@ gotgan-frontend/src/
 │   └── settlement/               #   판매자 정산
 │       ├── api/                  #     settlementApi.js
 │       ├── hooks/                #     useSellerSettlementsQuery.js · useSellerSettlementQuery.js · useSettlementReportMutation.js
-│       └── components/
+│       ├── components/
+│       └── constants.js
 ├── shared/                       # 도메인에 속하지 않는 공통
 │   ├── api/                      #   axiosInstance.js · queryKeys.js · refresh.js(single-flight) · retry.js
 │   ├── components/ui/            #   목업 공통 컴포넌트 (Pill · Price · Modal · Kpi · BarChart …)
@@ -262,6 +262,7 @@ export const queryKeys = {
     all: ['product'],
     list: (params) => ['product', 'list', params ?? {}],            // 서버 페이징 — 조건이 키에 들어감
     detail: (productId) => ['product', 'detail', String(productId)],
+    seller: () => ['product', 'seller'],
   },
   // ── order (이경석)
   order: {
@@ -303,14 +304,16 @@ export function useMyOrderQuery(orderNo) {
 }
 
 // features/order/hooks/useSellerDeliveryMutations.js
-export const useShipOrderItemsMutation = () => {
+function useSellerMutation(mutationFn) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (items) => shipOrderItems(items),
+    mutationFn,
     // 상위 키로 무효화하면 필터 · 페이지가 다른 목록 · 상세까지 모두 새로 고침된다
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.order.seller() }),
   });
-};
+}
+
+export const useShipOrderItemsMutation = () => useSellerMutation((items) => shipOrderItems(items));
 ```
 
 | 상황 | 사용 |
@@ -342,7 +345,7 @@ globalFilterFn: (row, id, value) => { /* ... */ },
 // 올바름
 function globalFilterFn(row, columnId, filterValue) { /* ... */ }   // 모듈 스코프
 
-function AdminStoreListPage() {
+function StoreList() {
   const columnFilters = useMemo(
     () => (status === 'ALL' ? [] : [{ id: 'status', value: status }]),
     [status],
