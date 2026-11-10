@@ -105,7 +105,7 @@ describe('fetchProduct — GET /api/products/{id} 를 상세 필드로', () => {
 
 // product.md 11절 응답 한 건
 const SELLER_ROW = {
-  productId: 3, name: '프렌치 리넨 오버핏 셔츠', categoryId: 301, categoryName: '셔츠', topCategoryName: '패션의류',
+  productId: 3, name: '프렌치 리넨 오버핏 셔츠', categoryId: 301, categoryName: '셔츠', topCategoryId: 3, topCategoryName: '패션의류',
   price: 89000, discountRate: 15.0, salePrice: 75650, imageUrl: 'https://img/products/1/a.jpg', totalStock: 142, soldOut: false,
   status: 'ON_SALE', statusReason: null, displayable: true, hiddenReason: null, createdAt: '2026-10-20T10:00:00+09:00',
 };
@@ -117,13 +117,15 @@ describe('판매자 상품 목록 — GET /api/seller/products 를 표 행으로
     const rows = await fetchSellerProducts();
 
     expect(get).toHaveBeenCalledWith('/api/seller/products');
-    expect(rows).toEqual([{ id: 3, name: '프렌치 리넨 오버핏 셔츠', catId: 301, catName: '패션의류', sub: '셔츠', price: 89000, discount: 0.15,
+    expect(rows).toEqual([{ id: 3, name: '프렌치 리넨 오버핏 셔츠', catId: 301, catName: '패션의류', cat: 3, sub: '셔츠', price: 89000, discount: 0.15,
       salePrice: 75650, images: ['https://img/products/1/a.jpg'], stock: 142, soldOut: false, status: '판매중', pill: '판매중', blocked: false,
       statusReason: '', hidden: '', created: new Date('2026-10-20T10:00:00+09:00'), rating: 0, reviews: 0 }]);
   });
 
   it('상태 — 품절 · 판매중지 · 강제중지(판매중지 탭 + 사유), 이미지 없으면 빈 배열', () => {
     expect(toSellerProductRow({ ...SELLER_ROW, soldOut: true })).toMatchObject({ status: '품절', pill: '품절' });
+    // 상위 카테고리가 없으면(삭제) 대체 이미지는 기본 그림 — data-cat 비움
+    expect(toSellerProductRow({ ...SELLER_ROW, topCategoryId: null }).cat).toBeNull();
     expect(toSellerProductRow({ ...SELLER_ROW, status: 'STOPPED', hiddenReason: 'STOPPED' })).toMatchObject({ status: '판매중지', pill: '판매중지', hidden: '' });
     expect(toSellerProductRow({ ...SELLER_ROW, status: 'BLOCKED', statusReason: '허위 표시', hiddenReason: 'BLOCKED', imageUrl: null }))
       .toMatchObject({ status: '판매중지', pill: '강제중지', blocked: true, statusReason: '허위 표시', hidden: '', images: [] });
