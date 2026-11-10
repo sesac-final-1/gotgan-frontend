@@ -4,7 +4,7 @@
 
 ## 상태
 
-목업([gotgan_expage](https://mockup-page-sable.vercel.app/))을 **JavaScript · React 18 · Vite 6 · Tailwind 4 · TanStack Query v5 · TanStack Table v8 · Zustand · React Router v7** 로 이식했고, **모든 화면이 실제 API** 에 연결돼 있습니다 — `src/mocks/` 는 11/3 삭제(컨벤션 4장 · 가이드라인 14장). 테스트는 Vitest + React Testing Library 60개 파일 · 650개(`npm test`).
+목업([gotgan_expage](https://mockup-page-sable.vercel.app/))을 **JavaScript · React 18 · Vite 6 · Tailwind 4 · TanStack Query v5 · TanStack Table v8 · Zustand · React Router v7** 로 이식했고, **모든 화면이 실제 API** 에 연결돼 있습니다 — `src/mocks/` 는 11/3 삭제(컨벤션 4장 · 가이드라인 14장). 테스트는 Vitest + React Testing Library 60개 파일 · 657개(`npm test`, 11/10).
 
 ## 구조
 
