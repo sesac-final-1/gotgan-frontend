@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
-import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killService } from '@/features/admin/api/systemApi';
+import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService } from '@/features/admin/api/systemApi';
 
 // 장애 시연 화면 — 담당 박지연. 폴링은 탭이 안 보이면 멈춘다(react-query 기본). 실패해도 마지막 값(data)은 남아 '연결 끊김' 과 함께 보여 준다.
 // 다음 폴링이 곧 다시 물어보므로 재시도는 하지 않는다. 다시 들어왔을 때 옛 상태가 남지 않게 staleTime 0(앱 기본은 1분)
@@ -25,6 +25,15 @@ export function useKillServiceMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: killService,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.system() }),
+  });
+}
+
+// 시나리오(레플리카 2 서비스 1개씩) — 성공하면 바로 다시 조회
+export function useKillOneEachMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: killOneEach,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.system() }),
   });
 }

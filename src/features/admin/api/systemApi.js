@@ -15,3 +15,8 @@ export const fetchSystemEvents = async () => (await axiosInstance.get(`${BASE}/e
 // 202 { eventId, deletedPods } — scope: 'ONE' | 'ALL'. 스위치가 꺼져 있으면 403
 export const killService = async ({ name, scope, reason }) =>
   (await axiosInstance.post(`${BASE}/services/${encodeURIComponent(name)}/kill`, { scope, reason })).data.data;
+
+// 시나리오 — 레플리카 2 이상 서비스의 파드를 1개씩 한 번에 내린다(admin.md 7-2-1). 대상 중 하나라도 정상이 아니면 아무것도 지우지 않고 409
+// 202 { services: [{ service, eventId, deletedPods }] }. 사유를 비우면 서버가 「시나리오 — …」 로 기록
+export const killOneEach = async ({ reason } = {}) =>
+  (await axiosInstance.post(`${BASE}/scenarios/kill-one-each`, reason ? { reason } : {})).data.data;
