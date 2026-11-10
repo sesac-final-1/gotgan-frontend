@@ -57,7 +57,7 @@
 | 항목 | 확정 규칙 | 관련 절 |
 |---|---|---|
 | 서비스 구성 | Spring 10개(gateway · user · store · product · order · payment · review · settlement · admin · chat — chat 은 10/27 추가) + Keycloak | 2-1 · 3-2 |
-| admin-service | 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합. 자기 DB는 신고 · 조치 이력(admindb, ADR-0001 예외 10/26)만 · 실시간 알림 센터(10/27) | 2-1 · 2-4 · 2-7 |
+| admin-service | 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합. 자기 DB는 신고 · 조치 이력(admindb, ADR-0001 예외 10/26) · 장애 시연 내리기 기록(`chaos_event`, 11/7)만 · 실시간 알림 센터(10/27) | 2-1 · 2-4 · 2-7 |
 | 카테고리 · 수수료 | 카테고리는 product-service, 카테고리별 수수료는 settlement-service | 2-1 · 3-2 |
 | 대시보드 | 판매자는 store, 관리자는 admin 안에서 조합 — 병렬 호출 + 실패 영역만 빼고 부분 응답 | 2-7 |
 | 서비스 간 호출 | Resilience4j 표준 (타임아웃 · 서킷 브레이커 · 멱등 GET만 재시도 · 폴백) | 2-7 |
@@ -78,7 +78,7 @@
 
 ### 1-1. 브랜치
 
-- `main` — 보호 브랜치. 직접 push 금지, PR + 승인 1명 + CI 통과 후 Squash merge
+- `main` — 보호 브랜치(Rulesets `pull_request_ruleset`). 직접 push 금지, PR + 승인 1명 + 필수 검사(backend · frontend `ci-ok`, config `SonarCloud Code Analysis`) 통과 후 머지 — 저장소 규칙은 merge · squash · rebase 모두 허용, 실제 `main` 이력은 머지 커밋(Merge pull request)
 - 작업 브랜치: `feat/{도메인}-{작업}` (예: `feat/order-payment-verify`, `feat/infra-eks-cluster`)
 - 그 외: `fix/` · `refactor/` · `docs/` · `chore/`(빌드 · 설정)
 - 도메인 값: `auth` `user` `store` `product` `order` `payment` `review` `settlement` `admin` `chat`(10/27) `gateway` `front`(프론트 공통) `infra`(Keycloak 설정 포함, 예: `feat/infra-keycloak-realm`) `cicd` `obs`(관측성) `sls`(서버리스)
@@ -95,11 +95,10 @@
 
 - 이슈 제목: `[요구사항 ID] 작업` — 예: `[ORD-06] 결제 검증`
 - PR 제목: 커밋 메시지 형식과 동일
-- PR 본문 템플릿:
-  - 개요 — 관련 요구사항 ID · 이슈 링크
-  - 작업 내용 — 변경 사항 개조식
-  - 테스트 — 확인 방법 (curl · 화면 · 테스트 코드)
-  - 팀원 확인 사항 — 다른 팀원이 알아야 할 것
+- PR 본문 템플릿(`.github/pull_request_template.md`, 세 저장소 같음):
+  - 🚀 개요 — 관련 요구사항 ID · 이슈 링크 · 무엇을 · 왜 바꿨나
+  - 🛠️ 작업 내용 — 변경마다 이전 → 이후 · 이유 · 파일 표
+  - 📋 팀원 가이드 — 담당자별 알아야 할 것 · 로컬 환경 · 검증(확인 방법 → 기대 결과) · 리스크
 - **프론트 · 다른 서비스에 영향 있는 변경(응답 형식 · 에러 코드 · 이벤트 payload · API 경로)은 PR 제목에 `[영향]` 표시**, 영향받는 담당자 리뷰 필수
 - PR 하나에 기능 하나, 변경 300줄 이하 권장
 - main 대상 PR은 CI에서 **SonarQube Cloud 품질 게이트**를 통과해야 머지 (이슈는 PR 코멘트로 확인)
@@ -142,7 +141,7 @@
 | 차트 · 토스트 | 목업 SVG 차트 · 목업 ToastHost | 새 라이브러리 도입 시 팀 합의 |
 | 결제 | `@portone/browser-sdk` | `features/payment`에서만 (`portone.js`) |
 | 테스트 목킹 | `vi.spyOn(axiosInstance, …)` | 모든 화면이 실제 API 라 `src/mocks/` 는 11/3 삭제(frontend #80) — MSW 는 쓰지 않음 |
-| 테스트 | Vitest + React Testing Library | 대상: 유틸 · zod 스키마 · 핵심 훅 |
+| 테스트 | Vitest + React Testing Library | 대상: 유틸 · zod 스키마 · 핵심 훅 · 화면 흐름(`*.test.jsx`). 커버리지 집계는 로직(`.js`)만 — `vite.config.js` `test.coverage` · `sonar.coverage.exclusions` |
 
 ### 4-2. 프로젝트 구조
 
@@ -153,12 +152,13 @@ gotgan-frontend/src/
 ├── app/                          # 앱 전역
 │   ├── router.jsx                #   전체 라우트 (단일 파일, 도메인별 주석 구획 · 경로 → 파일 표 + 지연 로딩)
 │   ├── RouteError.jsx            #   화면 받기 실패(배포 직후 옛 파일) → 새로고침 안내
+│   ├── RootLayout.jsx            #   최상위 틀 (ToastHost 등)
 │   ├── providers.jsx             #   QueryClientProvider 등
 │   ├── bootstrap.js              #   부팅 시 refresh 1회 → 로그인 상태 복구
 │   └── App.jsx
 ├── pages/                        # 라우트 1개 = 페이지 파일 1개. features 조립만
-│   ├── shop/                     #   메인 · 상품 · 스토어 · 장바구니 · 주문서 · 로그인 · 입점 신청
-│   ├── mypage/                   #   주문 · 클레임 · 리뷰 · 회원정보 · 배송지 · 포인트
+│   ├── shop/                     #   메인 · 상품 · 스토어 · 장바구니 · 주문서 · 로그인 · 입점 신청 · 고객센터 · 정책(공지 · FAQ · 수수료 · 판매자 약관)
+│   ├── mypage/                   #   주문 · 클레임 · 리뷰 · 문의 · 회원정보 · 배송지 · 포인트 · 1:1 채팅
 │   ├── seller/                   #   판매자센터
 │   └── admin/                    #   관리자
 ├── features/                     # 도메인별 구현 (담당 경계 = 폴더 경계)
@@ -169,29 +169,29 @@ gotgan-frontend/src/
 │   ├── order/                    #   장바구니 · 주문 · 결제 · 클레임 · 판매자 주문
 │   ├── review/                   #   리뷰 · 상품문의 · 판매자 답글
 │   ├── admin/                    #   관리자 화면 전부 (admin-service만 호출)
-│   ├── support/                  #   FAQ (프론트 정적 데이터)
+│   ├── support/                  #   고객센터 FAQ · 공지 · 수수료 · 판매자 약관 (프론트 정적 데이터)
 │   ├── chat/                     #   1:1 채팅 — 구매자 · 판매자 · 관리자 상담함 공용 (chat-service, STOMP, 10/27)
 │   ├── notification/             #   알림 벨 · 알림 목록 · SSE (admin-service 알림 센터, 10/27)
 │   ├── payment/                  #   포트원 결제창 · 결제 확인 로직 (화면 없음 — 주문서가 부름, 담당 구지훈)
 │   ├── report/                   #   신고 접수 모달 (admin-service /api/reports, 담당 구지훈)
-│   ├── qa/                       #   임시 점검 화면 /qa — 시연 전 삭제
 │   └── settlement/               #   판매자 정산
 │       ├── api/                  #     settlementApi.js
-│       ├── hooks/                #     useSettlementsQuery.js · usePaySettlementMutation.js
+│       ├── hooks/                #     useSellerSettlementsQuery.js · useSellerSettlementQuery.js · useSettlementReportMutation.js
 │       ├── components/
-│       └── schemas.js            #     zod
+│       └── constants.js
 ├── shared/                       # 도메인에 속하지 않는 공통
-│   ├── api/                      #   axiosInstance.js · queryKeys.js · refresh.js(single-flight)
+│   ├── api/                      #   axiosInstance.js · queryKeys.js · refresh.js(single-flight) · retry.js
 │   ├── components/ui/            #   목업 공통 컴포넌트 (Pill · Price · Modal · Kpi · BarChart …)
-│   ├── components/common/        #   PostcodeSearch(우편번호 검색) · ConfirmModal · EmptyState · SortableHeader
+│   ├── components/common/        #   PostcodeSearch(우편번호 검색) · DataTable · SearchInput · BlockPager · SortableHeader · MockNav(개발 모드 전용)
 │   ├── layouts/                  #   ShopLayout · MyPageLayout · ConsoleLayout
-│   ├── hooks/  stores/  utils/
+│   ├── hooks/  stores/  utils/   #   utils: format · safeHtml(DOMPurify) · fileType(업로드 형식 확인) · postcode · imageFallback
+├── test/setup.js                 # Vitest 공통 설정
 └── styles/index.css              # Tailwind 진입 · @theme 디자인 토큰
 ```
 
 **운영 규칙**
 
-1. **관리자 화면은 `features/admin`에 둔다** (입점 심사 · 스토어 · 카테고리 · 수수료 · 정산 · 회원 · 관리자 대시보드). `/api/admin/**`(admin-service)만 호출, 도메인 서비스 API를 직접 부르지 않음 — 담당 구지훈. 예외: 관리자 상담함은 `features/chat` 공용 화면이 `/api/chats/**`(chat-service) 호출(10/27)
+1. **관리자 화면은 `features/admin`에 둔다** (입점 심사 · 스토어 · 카테고리 · 수수료 · 정산 · 회원 · 신고 · 관리자 대시보드 · 시스템 상태(장애 시연 `/admin/system`, 11/9 화면 박지연)). `/api/admin/**`(admin-service)만 호출, 도메인 서비스 API를 직접 부르지 않음 — 담당 구지훈. 예외: 관리자 상담함은 `features/chat` 공용 화면이 `/api/chats/**`(chat-service) 호출(10/27)
 2. 다른 사람의 `features/` 폴더는 PR 없이 수정 금지
 3. 두 도메인 이상에서 쓰이면 `shared/`로 승격, 승격 시 팀 공지
 4. `features` 간 직접 import 지양 — 필요하면 `shared` 경유
@@ -202,7 +202,8 @@ gotgan-frontend/src/
 | 경로 | 영역 | 접근 |
 |---|---|---|
 | `/` · `/products` · `/products/:id` · `/stores` · `/store/:id` | 쇼핑몰 | 공개 |
-| `/login` · `/signup` | 인증 | 공개 |
+| `/help` · `/notice` · `/faq` · `/fees` · `/terms/seller` | 고객센터 · 정책(정적) | 공개 |
+| `/login` · `/signup` · `/auth/callback`(소셜 로그인 복귀) | 인증 | 공개 |
 | `/cart` · `/checkout` · `/order/complete` · `/seller/apply` | 쇼핑몰 | BUYER |
 | `/mypage/**` (`/mypage/points` 포함) | 마이페이지 | BUYER |
 | `/seller` · `/seller/**` | 판매자센터 | SELLER |
@@ -237,12 +238,12 @@ gotgan-frontend/src/
 |---|---|---|
 | 컴포넌트 파일 | PascalCase | `ProductCard.jsx` |
 | 페이지 컴포넌트 | `~Page` 접미사 필수, 영역 접두어 | `SellerOrderListPage.jsx` · `AdminApplicationDetailPage.jsx` |
-| 커스텀 훅 | `use` 접두사, 조회 `use{X}Query` · 변경 `use{행위}Mutation` | `useCartQuery` · `useShipOrderItemsMutation` |
-| API 모듈 | `{도메인}Api.js`, 함수는 `get` / `create` / `update` / `delete` + 업무 동사 | `orderApi.js` → `getMyOrders()` · `confirmPurchase()` |
+| 커스텀 훅 | `use` 접두사, 조회 `use{X}Query` · 변경 `use{행위}Mutation` | `useMyOrderQuery` · `useShipOrderItemsMutation` |
+| API 모듈 | `{도메인}Api.js`, 함수는 조회 `fetch` · `create` / `update` / `delete` + 업무 동사 | `orderApi.js` → `fetchMyOrders()` · `confirmPurchase()` |
 | zod 스키마 | `{이름}Schema` | `storeApplySchema` |
 | Zustand 스토어 | `use{X}Store`, 파일 `{x}Store.js` | `useAuthStore` |
 | 상수 | UPPER_SNAKE | `PAYMENT_TIMEOUT_MINUTES` |
-| queryKey | `shared/api/queryKeys.js` 팩토리에서만 (즉석 배열 금지) | `queryKeys.orders.my(params)` |
+| queryKey | `shared/api/queryKeys.js` 팩토리에서만 (즉석 배열 금지) | `queryKeys.order.myOrder(orderNo)` |
 | 함수 형태 | 컴포넌트 · 훅 · 최상위 = `function` 선언문, 내부 핸들러 = 화살표 함수 `handle{Event}` | `const handleShipClick = () => {}` |
 | 이벤트 props | `on{Event}` | `onConfirm` |
 
@@ -256,22 +257,23 @@ gotgan-frontend/src/
 ```js
 // shared/api/queryKeys.js
 export const queryKeys = {
-  // ── product ──────────────────────
-  products: {
-    all: () => ['products'],
-    list: (filters) => ['products', 'list', filters],
-    detail: (id) => ['products', 'detail', id],
-    seller: (params) => ['products', 'seller', params],
+  // ── product (박지연)
+  product: {
+    all: ['product'],
+    list: (params) => ['product', 'list', params ?? {}],            // 서버 페이징 — 조건이 키에 들어감
+    detail: (productId) => ['product', 'detail', String(productId)],
+    seller: () => ['product', 'seller'],
   },
-  // ── order ────────────────────────
-  cart: { all: () => ['cart'] },
-  orders: {
-    my: (params) => ['orders', 'my', params],
-    detail: (orderNo) => ['orders', 'detail', orderNo],
-    sellerItemsAll: () => ['orders', 'seller-items'],               // 무효화용 상위 키
-    sellerItems: (params) => ['orders', 'seller-items', params],
+  // ── order (이경석)
+  order: {
+    all: ['order'],
+    my: () => ['order', 'my'],
+    cart: () => ['order', 'cart'],
+    myOrder: (orderNo) => ['order', 'my', orderNo],                 // my() 아래라 목록을 무효화하면 상세도 함께
+    seller: () => ['order', 'seller'],                              // 무효화용 상위 키
+    sellerItems: (params) => ['order', 'seller', 'items', params ?? {}],
   },
-  // ── settlement · store · user ── (각 도메인 구획에만 추가)
+  // ── admin · user · store · review · settlement · notification · chat · payment ── (각 도메인 구획에만 추가)
 };
 ```
 
@@ -285,34 +287,33 @@ export const queryKeys = {
 // features/order/api/orderApi.js
 import { axiosInstance } from '@/shared/api/axiosInstance';
 
-export async function getOrderDetail(orderNo) {
-  const { data } = await axiosInstance.get(`/api/orders/${orderNo}`);
-  return data.data; // ApiResponse 봉투에서 data만 꺼낸다
-}
+// ApiResponse 봉투에서 data만 꺼낸다
+export const fetchMyOrder = async (orderNo) => (await axiosInstance.get(`/api/orders/${encodeURIComponent(orderNo)}`)).data.data;
 ```
 
 **③ 조회 · 변경**
 
 ```js
-// features/order/hooks/useOrderDetailQuery.js
-export function useOrderDetailQuery(orderNo) {
+// features/order/hooks/useMyOrderQuery.js
+export function useMyOrderQuery(orderNo) {
   return useQuery({
-    queryKey: queryKeys.orders.detail(orderNo),
-    queryFn: () => getOrderDetail(orderNo),
+    queryKey: queryKeys.order.myOrder(orderNo),
+    queryFn: () => fetchMyOrder(orderNo),
+    enabled: Boolean(orderNo),
   });
 }
 
-// features/order/hooks/useShipOrderItemsMutation.js
-export function useShipOrderItemsMutation() {
+// features/order/hooks/useSellerDeliveryMutations.js
+function useSellerMutation(mutationFn) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (request) => shipOrderItems(request),
-    onSuccess: () => {
-      // 상위 키로 무효화하면 필터 · 페이지가 다른 목록까지 모두 새로 고침된다
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders.sellerItemsAll() });
-    },
+    mutationFn,
+    // 상위 키로 무효화하면 필터 · 페이지가 다른 목록 · 상세까지 모두 새로 고침된다
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.order.seller() }),
   });
 }
+
+export const useShipOrderItemsMutation = () => useSellerMutation((items) => shipOrderItems(items));
 ```
 
 | 상황 | 사용 |
@@ -330,8 +331,8 @@ export function useShipOrderItemsMutation() {
 
 ### 4-7. TanStack Table 규칙
 
-- **데모 규모(수백 건 이하) 목록은 전체 1회 로드 + 클라이언트에서 검색 · 정렬 · 페이징** (관리자 입점 심사 · 스토어 · 회원 · 정산, 판매자 상품)
-- 건수가 계속 늘어나는 목록(판매자 주문, 구매자 상품 목록)은 **서버 페이징**(`manualPagination` · `manualSorting`)
+- **데모 규모(수백 건 이하) 목록은 전체 1회 로드 + 클라이언트에서 검색 · 정렬 · 페이징** (`useClientTable` — 관리자 입점 심사 · 스토어 · 회원 · 정산 · 신고 · 카테고리, 판매자 상품 · 정산, 마이페이지 클레임 · 포인트)
+- 건수가 계속 늘어나는 목록(판매자 주문 · 클레임 · 리뷰 · 문의, 구매자 상품 목록 · 상품 리뷰 · 문의)은 **서버 페이징**(`manualPagination` · `manualSorting`, 훅은 `placeholderData: keepPreviousData`)
 - 정렬 헤더는 `shared/components/common/SortableHeader.jsx` 재사용
 - `useClientTable`은 빈 목록에 모듈 상수 `EMPTY`를 넘김 — 매번 새 `[]`를 만들지 않음 (아래 참조 안정성 규칙)
 - **`state`에 넘기는 배열 · 객체는 `useMemo`, 함수는 컴포넌트 바깥(모듈 스코프) 또는 `useCallback`** — 매 렌더링 새 참조를 넘기면 무한 루프로 브라우저가 멈춤
@@ -344,7 +345,7 @@ globalFilterFn: (row, id, value) => { /* ... */ },
 // 올바름
 function globalFilterFn(row, columnId, filterValue) { /* ... */ }   // 모듈 스코프
 
-function AdminStoreListPage() {
+function StoreList() {
   const columnFilters = useMemo(
     () => (status === 'ALL' ? [] : [{ id: 'status', value: status }]),
     [status],
