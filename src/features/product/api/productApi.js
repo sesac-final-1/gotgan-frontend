@@ -88,13 +88,14 @@ export const sellerStatusOf = ({ status, soldOut }) => {
 // 쇼핑몰에 안 보이는 이유 중 상태로 드러나지 않는 것만 문구로 — STOPPED · BLOCKED 는 상태 칸에 이미 보인다
 const HIDDEN_REASON = { CATEGORY_INACTIVE: '카테고리 사용 중지', STORE_INACTIVE: '스토어 운영 중지' };
 
-// GET /api/seller/products 한 건 — { productId, name, categoryId, categoryName, topCategoryName, price, discountRate, salePrice,
+// GET /api/seller/products 한 건 — { productId, name, categoryId, categoryName, topCategoryId, topCategoryName, price, discountRate, salePrice,
 //   imageUrl, totalStock, soldOut, status, statusReason, displayable, hiddenReason, createdAt }
 export const toSellerProductRow = (r) => ({
   id: r.productId,
   name: r.name,
   catId: r.categoryId,
   catName: r.topCategoryName,
+  cat: r.topCategoryId ?? null, // 상위 카테고리 id — 사진이 깨지면 카테고리별 대체 이미지(data-cat)
   sub: r.categoryName,
   price: r.price,
   discount: Number(r.discountRate ?? 0) / 100,
