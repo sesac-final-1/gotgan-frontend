@@ -4,6 +4,7 @@ import SystemTimeline from '@/features/admin/components/SystemTimeline';
 import { ListStatus } from '@/features/product/components/ListStatus';
 import SystemFeaturePanel from '@/features/admin/components/SystemFeaturePanel';
 import SystemLinks from '@/features/admin/components/SystemLinks';
+import SystemScenarioPanel from '@/features/admin/components/SystemScenarioPanel';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import { useSystemMetricsQuery, useSystemStatusQuery } from '@/features/admin/hooks/useSystemQueries';
 
@@ -14,12 +15,13 @@ export default function SystemDashboard() {
 
   return (
     <div>
-      <PageHead title="시스템 상태" desc="서비스를 내리면 어떤 기능이 멈추고 얼마 만에 복구되는지 보여 줍니다." right={<SystemLinks />} />
+      <PageHead title="시스템 상태" desc="장애 발생 시 기능별 영향 범위와 복구 소요 시간을 확인합니다." right={<SystemLinks />} />
       {statusQuery.isError && status && (
         <p role="alert" className="mb-3 px-4 py-3 bg-rust-soft text-lg font-bold text-rust">연결 끊김 — 마지막으로 받은 상태를 보여 주고 있어요.</p>
       )}
       {status ? (
         <div className="grid gap-4">
+          <SystemScenarioPanel services={status.services} chaosEnabled={status.chaosEnabled} />
           <SystemServicePanel services={status.services} metrics={metrics} chaosEnabled={status.chaosEnabled} />
           <div className="grid xl:grid-cols-2 gap-4 items-start">
             <SystemFeaturePanel features={status.features} />

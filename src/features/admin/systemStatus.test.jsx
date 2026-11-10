@@ -1,9 +1,10 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killService } from '@/features/admin/api/systemApi';
+import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService } from '@/features/admin/api/systemApi';
 import SystemDashboard from '@/features/admin/components/SystemDashboard';
 import SystemFeaturePanel from '@/features/admin/components/SystemFeaturePanel';
+import SystemScenarioPanel from '@/features/admin/components/SystemScenarioPanel';
 import SystemLinks from '@/features/admin/components/SystemLinks';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import SystemTimeline from '@/features/admin/components/SystemTimeline';
@@ -59,6 +60,14 @@ describe('시스템 상태 API', () => {
     await expect(killService({ name: 'order-service', scope: 'ONE' })).resolves.toEqual({ eventId: 12, deletedPods: ['order-service-a'] });
     expect(post).toHaveBeenCalledWith(`${BASE}/services/order-service/kill`, { scope: 'ONE', reason: undefined });
   });
+
+  it('시나리오는 본문 없이 보내고 사유가 있으면 함께 보낸다', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { services: [{ service: 'order-service', eventId: 31, deletedPods: ['o-1'] }] } } });
+    await expect(killOneEach()).resolves.toEqual({ services: [{ service: 'order-service', eventId: 31, deletedPods: ['o-1'] }] });
+    expect(post).toHaveBeenLastCalledWith(`${BASE}/scenarios/kill-one-each`, {});
+    await killOneEach({ reason: '리허설' });
+    expect(post).toHaveBeenLastCalledWith(`${BASE}/scenarios/kill-one-each`, { reason: '리허설' });
+  });
 });
 
 describe('시스템 상태 화면', () => {
@@ -82,11 +91,12 @@ describe('시스템 상태 화면', () => {
 
   it('실패해도 마지막 값을 유지하고 연결 끊김을 표시한다', async () => {
     renderPage();
-    expect(await screen.findByText('order')).toBeTruthy();
+    const cards = () => within(screen.getByRole('list', { name: '내릴 수 있는 서비스' }));
+    await waitFor(() => expect(cards().getByText('order')).toBeTruthy());
     axiosInstance.get.mockRejectedValue(new Error('503'));
     await act(() => queryClient.refetchQueries());
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('연결 끊김'));
-    expect(screen.getByText('order')).toBeTruthy();
+    expect(cards().getByText('order')).toBeTruthy();
   });
 });
 
@@ -126,15 +136,17 @@ describe('사용자 기능 패널', () => {
       { key: 'BROWSE', label: '둘러보기 · 상품 상세', state: 'UP', causes: [] },
       { key: 'ORDER', label: '주문 · 결제', state: 'DOWN', causes: ['order-service', 'payment-service'] },
     ]} />);
-    const [browse, order] = screen.getAllByRole('listitem');
+    const [browse, order] = within(screen.getAllByRole('list').at(-1)).getAllByRole('listitem');
     expect(browse.textContent).toContain('정상');
     expect(order.textContent).toContain('중단 · order, payment');
     expect(screen.getByText(/의존 관계로 계산/)).toBeTruthy();
+    const legend = screen.getByRole('list', { name: '상태 설명' }).textContent;
+    for (const word of ['정상', '일부 동작', '중단']) expect(legend).toContain(word);
   });
 
   it('일부 장애(DEGRADED)도 원인과 함께 표시한다', () => {
     render(<SystemFeaturePanel features={[{ key: 'CART_ORDER', label: '장바구니 · 주문', state: 'DEGRADED', causes: ['order-service'] }]} />);
-    expect(screen.getByRole('listitem').textContent).toContain('일부 · order');
+    expect(screen.getByText('장바구니 · 주문').closest('li').textContent).toContain('일부 · order');
   });
 });
 
@@ -203,7 +215,7 @@ describe('서비스 내리기', () => {
     resetServer({ chaosEnabled: false });
     await renderPage();
     expect(screen.getByRole('button', { name: 'order 내리기' }).disabled).toBe(true);
-    expect(screen.getByText(/내리기 기능이 꺼져/)).toBeTruthy();
+    expect(within(screen.getByRole('region', { name: '서비스 상태' })).getByText(/내리기 기능이 꺼져/)).toBeTruthy();
     expect(screen.getByText('내릴 수 없음')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'gateway 내리기' })).toBeNull();
   });
@@ -251,5 +263,74 @@ describe('타임라인 · 바로가기', () => {
     expect(shop.getAttribute('rel')).toContain('noopener');
     fireEvent.click(screen.getByRole('button', { name: 'Grafana 안내' }));
     expect(screen.getByText(/port-forward svc\/grafana 3000/)).toBeTruthy();
+  });
+});
+
+describe('시나리오 — 레플리카 2 서비스 1개씩 내리기', () => {
+  let queryClient;
+  afterEach(() => {
+    cleanup();
+    queryClient?.clear();
+    vi.restoreAllMocks();
+    useToastStore.setState({ current: null });
+  });
+  const svc = (name, desired, state = 'UP', killable = true) => ({ name, killable, desired, ready: desired, state, pods: [] });
+  const SERVICES = [svc('order-service', 2), svc('user-service', 2), svc('review-service', 1), svc('gateway-service', 2, 'UP', false)];
+  const renderPanel = (services = SERVICES, chaosEnabled = true) => {
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(<QueryClientProvider client={queryClient}><SystemScenarioPanel services={services} chaosEnabled={chaosEnabled} /></QueryClientProvider>);
+  };
+  const button = () => screen.getByRole('button', { name: '구매 경로 장애 주입' });
+
+  it('대상은 내릴 수 있고 레플리카 2 이상인 서비스만(review · gateway 제외)', () => {
+    renderPanel();
+    expect(screen.getByText('order · user')).toBeTruthy();
+    expect(button().disabled).toBe(false);
+  });
+
+  it('확인 창에서 내리면 시나리오 API 를 부르고 결과를 알려 준다', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { services: [{ service: 'order-service' }, { service: 'user-service' }] } } });
+    renderPanel();
+    fireEvent.click(button());
+    expect(screen.getByText(/order · user 파드를 1개씩 지웁니다/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '장애 주입' }));
+    await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('2개 서비스에 장애를 주입했어요 — 파드 1개씩 제거'));
+    expect(post).toHaveBeenCalledWith(`${BASE}/scenarios/kill-one-each`, {});
+  });
+
+  it('대상 중 하나라도 정상이 아니면 막고 이유를 보여 준다', () => {
+    renderPanel([svc('order-service', 2, 'RECOVERING'), svc('user-service', 2)]);
+    expect(button().disabled).toBe(true);
+    expect(screen.getByText('모든 대상 서비스가 정상일 때만 실행할 수 있어요.')).toBeTruthy();
+  });
+
+  it('내리기 기능이 꺼져 있으면 막는다', () => {
+    renderPanel(SERVICES, false);
+    expect(button().disabled).toBe(true);
+    expect(screen.getByText('내리기 기능이 꺼져 있어요.')).toBeTruthy();
+  });
+
+  it('서버가 준비 안 됨으로 거절하면 정해진 문구, 그 밖에는 서버 문구를 보여 준다', async () => {
+    const post = vi.spyOn(axiosInstance, 'post').mockRejectedValueOnce({ response: { data: { code: 'SYSTEM_SCENARIO_NOT_READY', message: 'x' } } });
+    renderPanel();
+    fireEvent.click(button());
+    fireEvent.click(screen.getByRole('button', { name: '장애 주입' }));
+    await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('모든 대상 서비스가 정상일 때만 실행할 수 있어요.'));
+    post.mockRejectedValueOnce({ response: { data: { code: 'SYSTEM_KILL_COOLDOWN', message: '방금 내린 서비스가 있어요.' } } });
+    fireEvent.click(button());
+    fireEvent.click(screen.getByRole('button', { name: '장애 주입' }));
+    await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('방금 내린 서비스가 있어요.'));
+  });
+
+  it('타임라인에서 시나리오로 내린 기록을 구분한다', async () => {
+    vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [
+      { eventId: '2', service: 'order-service', scope: 'ONE', reason: '시나리오 — 레플리카 2 서비스 1개씩 내리기', killedAt: '2026-11-10T05:00:00Z', recoveredAt: null, recoverySeconds: null },
+      { eventId: '1', service: 'review-service', scope: 'ALL', reason: null, killedAt: '2026-11-10T04:00:00Z', recoveredAt: null, recoverySeconds: null },
+    ] } });
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><SystemTimeline /></QueryClientProvider>);
+    const rows = await screen.findAllByRole('listitem');
+    expect(rows[0].textContent).toContain('이중화 검증');
+    expect(rows[1].textContent).not.toContain('이중화 검증');
   });
 });
