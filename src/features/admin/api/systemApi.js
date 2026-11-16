@@ -20,3 +20,21 @@ export const killService = async ({ name, scope, reason }) =>
 // 202 { services: [{ service, eventId, deletedPods }] }. 사유를 비우면 서버가 「시나리오 — …」 로 기록
 export const killOneEach = async ({ reason } = {}) =>
   (await axiosInstance.post(`${BASE}/scenarios/kill-one-each`, reason ? { reason } : {})).data.data;
+
+// ── 부하테스트(11/16, admin.md 8절) — k6 Job 을 클러스터 안에서 실행. 실행 중 2초 폴링
+const LOADTEST = `${BASE}/loadtest`;
+
+// { enabled, maxVus, load, accounts, series: { vus, rps, p95Ms, errorRate: [{ t, v }] } }
+export const fetchLoadTest = async () => (await axiosInstance.get(LOADTEST)).data.data;
+
+// 202 { id } — scenario: BROWSE · REVIEWS · CART · MIXED. 실행 중이면 409 SYSTEM_LOADTEST_RUNNING
+export const startLoadTest = async ({ scenario, vus, durationSec }) =>
+  (await axiosInstance.post(LOADTEST, { scenario, vus, durationSec })).data.data;
+
+// 실행 중 사용자 수 변경(0 ~ maxVus) — 없거나 준비 중이면 409 SYSTEM_LOADTEST_NOT_RUNNING
+export const scaleLoadTest = async ({ vus }) => (await axiosInstance.patch(LOADTEST, { vus })).data.data;
+
+export const stopLoadTest = async () => (await axiosInstance.delete(LOADTEST)).data.data;
+
+// 부하용 계정 300개 가입(약 1분) — 장바구니 · 혼합 시나리오 전에 하루 한 번
+export const prepareLoadTestAccounts = async () => (await axiosInstance.post(`${LOADTEST}/accounts`)).data.data;

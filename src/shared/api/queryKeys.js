@@ -26,6 +26,7 @@ export const queryKeys = {
     systemStatus: () => ['admin', 'system', 'status'],
     systemMetrics: () => ['admin', 'system', 'metrics'],
     systemEvents: () => ['admin', 'system', 'events'],
+    systemLoadTest: () => ['admin', 'system', 'loadtest'], // 관리자 화면 부하테스트(11/16)
   },
 
   // ── user (이경석)

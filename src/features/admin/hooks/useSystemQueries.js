@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
-import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService } from '@/features/admin/api/systemApi';
+import {
+  fetchLoadTest, fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService,
+  prepareLoadTestAccounts, scaleLoadTest, startLoadTest, stopLoadTest,
+} from '@/features/admin/api/systemApi';
 
 // 장애 시연 화면 — 담당 박지연. 폴링은 탭이 안 보이면 멈춘다(react-query 기본). 실패해도 마지막 값(data)은 남아 '연결 끊김' 과 함께 보여 준다.
 // 다음 폴링이 곧 다시 물어보므로 재시도는 하지 않는다. 다시 들어왔을 때 옛 상태가 남지 않게 staleTime 0(앱 기본은 1분)
@@ -37,3 +40,28 @@ export function useKillOneEachMutation() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.system() }),
   });
 }
+
+// ── 부하테스트(11/16) — 실행 중(부하 · 계정 준비)엔 2초, 아니면 10초마다 상태 · 그래프를 다시 받는다
+export const LOADTEST_RUNNING_POLL_MS = 2_000;
+export const LOADTEST_IDLE_POLL_MS = 10_000;
+const isRunning = (data) => data?.load?.state === 'RUNNING' || data?.accounts?.state === 'RUNNING';
+
+export function useLoadTestQuery() {
+  return useQuery({
+    queryKey: queryKeys.admin.systemLoadTest(),
+    queryFn: () => fetchLoadTest(),
+    refetchInterval: (query) => (isRunning(query.state.data) ? LOADTEST_RUNNING_POLL_MS : LOADTEST_IDLE_POLL_MS),
+    retry: false,
+    staleTime: 0,
+  });
+}
+
+function useLoadTestMutation(mutationFn) {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn, onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.systemLoadTest() }) });
+}
+
+export const useStartLoadTestMutation = () => useLoadTestMutation(startLoadTest);
+export const useScaleLoadTestMutation = () => useLoadTestMutation(scaleLoadTest);
+export const useStopLoadTestMutation = () => useLoadTestMutation(stopLoadTest);
+export const usePrepareAccountsMutation = () => useLoadTestMutation(prepareLoadTestAccounts);
