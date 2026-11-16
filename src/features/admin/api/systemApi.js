@@ -38,3 +38,21 @@ export const stopLoadTest = async () => (await axiosInstance.delete(LOADTEST)).d
 
 // 부하용 계정 300개 가입(약 1분) — 장바구니 · 혼합 시나리오 전에 하루 한 번
 export const prepareLoadTestAccounts = async () => (await axiosInstance.post(`${LOADTEST}/accounts`)).data.data;
+
+// ── 실시간 모니터링(11/16, admin.md 9절) — 실제 트래픽 기준. 실패해도 200 에 빈 값
+const MONITOR = `${BASE}/monitor`;
+
+// { serverTime, total: { rps, avgMs, errorRate }, services: [{ name, series, db }] } — 점 [{ t, v }]
+export const fetchMonitorOverview = async () => (await axiosInstance.get(`${MONITOR}/overview`)).data.data;
+
+// [{ traceId, timestampMs, method, path, service, status, durationMs }] 최신순
+export const fetchMonitorCalls = async () => (await axiosInstance.get(`${MONITOR}/calls`)).data.data;
+
+// [{ kind: RESPONSE | LOG, timestampMs, service, level, title, status, traceId }] 최신순
+export const fetchMonitorErrors = async () => (await axiosInstance.get(`${MONITOR}/errors`)).data.data;
+
+// { traceId, durationMs, spans: [{ id, parentId, service, name, kind, startMs, durationMs, status, error }] }
+export const fetchMonitorTrace = async (traceId) => (await axiosInstance.get(`${MONITOR}/traces/${encodeURIComponent(traceId)}`)).data.data;
+
+// { topErrors, slowest, statuses } 최근 5분
+export const fetchMonitorSummary = async () => (await axiosInstance.get(`${MONITOR}/summary`)).data.data;

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
 import {
-  fetchLoadTest, fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService,
+  fetchLoadTest, fetchMonitorCalls, fetchMonitorErrors, fetchMonitorOverview, fetchMonitorSummary, fetchMonitorTrace,
+  fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService,
   prepareLoadTestAccounts, scaleLoadTest, startLoadTest, stopLoadTest,
 } from '@/features/admin/api/systemApi';
 
@@ -65,3 +66,22 @@ export const useStartLoadTestMutation = () => useLoadTestMutation(startLoadTest)
 export const useScaleLoadTestMutation = () => useLoadTestMutation(scaleLoadTest);
 export const useStopLoadTestMutation = () => useLoadTestMutation(stopLoadTest);
 export const usePrepareAccountsMutation = () => useLoadTestMutation(prepareLoadTestAccounts);
+
+// ── 실시간 모니터링(11/16) — 그래프 2초, 호출 · 장애 목록 1초(원본 데이터라 바로 반응), 분석 10초. 보고 있는 탭만 부른다
+export const MONITOR_OVERVIEW_POLL_MS = 2_000;
+export const MONITOR_LIST_POLL_MS = 1_000;
+export const MONITOR_SUMMARY_POLL_MS = 10_000;
+
+const monitorQuery = (part, queryFn, refetchInterval, enabled = true) => ({
+  queryKey: queryKeys.admin.systemMonitor(part), queryFn, refetchInterval, enabled, retry: false, staleTime: 0,
+});
+
+export const useMonitorOverviewQuery = () => useQuery(monitorQuery('overview', () => fetchMonitorOverview(), MONITOR_OVERVIEW_POLL_MS));
+export const useMonitorCallsQuery = (enabled) => useQuery(monitorQuery('calls', () => fetchMonitorCalls(), MONITOR_LIST_POLL_MS, enabled));
+export const useMonitorErrorsQuery = (enabled) => useQuery(monitorQuery('errors', () => fetchMonitorErrors(), MONITOR_LIST_POLL_MS, enabled));
+export const useMonitorSummaryQuery = (enabled) => useQuery(monitorQuery('summary', () => fetchMonitorSummary(), MONITOR_SUMMARY_POLL_MS, enabled));
+
+// 트레이스는 고른 줄만 한 번 — 끝난 요청이라 다시 부르지 않는다
+export function useMonitorTraceQuery(traceId) {
+  return useQuery({ queryKey: queryKeys.admin.systemMonitor(['trace', traceId]), queryFn: () => fetchMonitorTrace(traceId), enabled: !!traceId, retry: false });
+}
