@@ -4,6 +4,7 @@ import SystemTimeline from '@/features/admin/components/SystemTimeline';
 import { ListStatus } from '@/features/product/components/ListStatus';
 import SystemFeaturePanel from '@/features/admin/components/SystemFeaturePanel';
 import SystemLinks from '@/features/admin/components/SystemLinks';
+import SystemLoadTestPanel from '@/features/admin/components/SystemLoadTestPanel';
 import SystemScenarioPanel from '@/features/admin/components/SystemScenarioPanel';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import { useSystemMetricsQuery, useSystemStatusQuery } from '@/features/admin/hooks/useSystemQueries';
@@ -21,6 +22,7 @@ export default function SystemDashboard() {
       )}
       {status ? (
         <div className="grid gap-4">
+          <SystemLoadTestPanel />
           <SystemScenarioPanel services={status.services} chaosEnabled={status.chaosEnabled} />
           <SystemServicePanel services={status.services} metrics={metrics} chaosEnabled={status.chaosEnabled} />
           <div className="grid xl:grid-cols-2 gap-4 items-start">
