@@ -1,4 +1,5 @@
 // 장애 시연 화면 /admin/system — 담당 박지연. 서비스를 내리고 그 기능만 멈췄다 살아나는 것을 한 화면에서 보여 준다(F-1)
+import { useState } from 'react';
 import { PageHead } from '@/shared/components/ui';
 import SystemTimeline from '@/features/admin/components/SystemTimeline';
 import { ListStatus } from '@/features/product/components/ListStatus';
@@ -7,9 +8,15 @@ import SystemLinks from '@/features/admin/components/SystemLinks';
 import SystemLoadTestPanel from '@/features/admin/components/SystemLoadTestPanel';
 import SystemScenarioPanel from '@/features/admin/components/SystemScenarioPanel';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
-import { useSystemMetricsQuery, useSystemStatusQuery } from '@/features/admin/hooks/useSystemQueries';
+import SystemMonitorPanel from '@/features/admin/components/SystemMonitorPanel';
+import { useLoadTestQuery, useSystemMetricsQuery, useSystemStatusQuery } from '@/features/admin/hooks/useSystemQueries';
+import { SCENARIO_SERVICES } from '@/features/admin/monitor';
 
 export default function SystemDashboard() {
+  const [scenario, setScenario] = useState('BROWSE');
+  const { data: loadTest } = useLoadTestQuery();
+  const running = loadTest?.load?.state === 'RUNNING';
+  const highlighted = SCENARIO_SERVICES[running ? loadTest.load.scenario : scenario] ?? [];
   const statusQuery = useSystemStatusQuery();
   const { data: metrics } = useSystemMetricsQuery(); // 실패해도 상태는 보여 준다 — 오류율만 '-'
   const status = statusQuery.data;
@@ -22,9 +29,10 @@ export default function SystemDashboard() {
       )}
       {status ? (
         <div className="grid gap-4">
-          <SystemLoadTestPanel />
+          <SystemLoadTestPanel scenario={scenario} onScenarioChange={setScenario} />
+          <SystemMonitorPanel />
           <SystemScenarioPanel services={status.services} chaosEnabled={status.chaosEnabled} />
-          <SystemServicePanel services={status.services} metrics={metrics} chaosEnabled={status.chaosEnabled} />
+          <SystemServicePanel services={status.services} metrics={metrics} chaosEnabled={status.chaosEnabled} highlighted={highlighted} />
           <div className="grid xl:grid-cols-2 gap-4 items-start">
             <SystemFeaturePanel features={status.features} />
             <SystemTimeline />
