@@ -148,4 +148,12 @@ describe('부하테스트 그래프', () => {
     expect(screen.getByText('7건')).toBeTruthy();
     expect(screen.getByRole('figure', { name: '초당 요청' }).querySelector('polyline')).toBeTruthy();
   });
+
+  it('시작 직후에는 첫 점부터 1분 창, 5분이 넘으면 최근 5분만 그린다', () => {
+    const { rerender } = render(<LoadTestChart label="p95" points={[{ t: 0, v: 1 }, { t: 30_000, v: 1 }]} format={String} />);
+    const xs = () => screen.getByRole('figure', { name: 'p95' }).querySelector('polyline').getAttribute('points').split(' ').map((p) => Number(p.split(',')[0]));
+    expect(xs()).toEqual([0, 150]);   // 30초 / 1분 창 = 절반
+    rerender(<LoadTestChart label="p95" points={[{ t: 0, v: 1 }, { t: 300_000, v: 1 }, { t: 600_000, v: 1 }]} format={String} />);
+    expect(xs()).toEqual([-300, 0, 300]);   // 최근 5분만 화면 안
+  });
 });

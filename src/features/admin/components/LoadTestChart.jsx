@@ -1,14 +1,19 @@
-// 부하테스트 그래프 한 칸 — 최근 5분 창에 선 그래프(SVG, 라이브러리 없음). 담당 구지훈(11/16)
-// 점은 서버가 5초 간격으로 준다([{ t: epoch ms, v }]). y 축은 0 부터, 최댓값은 floor 이상으로 잡아 작은 값이 과장돼 보이지 않게
-const WINDOW_MS = 5 * 60 * 1000;
+// 부하테스트 그래프 한 칸 — 선 그래프(SVG, 라이브러리 없음). 담당 구지훈(11/16)
+// 점은 서버가 1초 간격으로 준다([{ t: epoch ms, v }]). 가로축은 첫 점부터 채우고 창 길이는 1 ~ 5분(시작 직후에도 오른쪽 끝에 몰리지 않게).
+// y 축은 0 부터, 최댓값은 floor 이상으로 잡아 작은 값이 과장돼 보이지 않게
+const MIN_WINDOW_MS = 60 * 1000;
+const MAX_WINDOW_MS = 5 * 60 * 1000;
 const W = 300;
 const H = 80;
 
 export default function LoadTestChart({ label, points = [], format, floor = 1, tone = 'text-ink' }) {
   const last = points.at(-1);
+  const first = points[0]?.t ?? 0;
   const end = last?.t ?? 0;
+  const span = Math.min(MAX_WINDOW_MS, Math.max(MIN_WINDOW_MS, end - first));
+  const begin = Math.max(first, end - span);
   const max = Math.max(floor, ...points.map((p) => p.v)) * 1.15;
-  const xy = points.map((p) => [((p.t - (end - WINDOW_MS)) / WINDOW_MS) * W, H - (p.v / max) * H]);
+  const xy = points.map((p) => [((p.t - begin) / span) * W, H - (p.v / max) * H]);
   const line = xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 
   return (
