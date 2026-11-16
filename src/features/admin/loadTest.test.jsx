@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { axiosInstance } from '@/shared/api/axiosInstance';
@@ -8,6 +9,12 @@ import { useToastStore } from '@/shared/stores/toastStore';
 
 // 관리자 화면 부하테스트 — 계약 backend admin.md 8절. 서버를 흉내 내는 작은 상태 하나로 시작 · 조절 · 중지 · 계정 준비를 확인한다
 const URL = '/api/admin/system/loadtest';
+
+// 시나리오는 화면(SystemDashboard)이 들고 있다 — 테스트에서도 같은 방식으로
+function ControlledPanel() {
+  const [scenario, setScenario] = useState('BROWSE');
+  return <SystemLoadTestPanel scenario={scenario} onScenarioChange={setScenario} />;
+}
 let server;
 
 function resetServer({ enabled = true, load = null, accounts = null } = {}) {
@@ -67,7 +74,7 @@ describe('부하테스트 패널', () => {
   });
   const renderPanel = () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    return render(<QueryClientProvider client={queryClient}><SystemLoadTestPanel /></QueryClientProvider>);
+    return render(<QueryClientProvider client={queryClient}><ControlledPanel /></QueryClientProvider>);
   };
   const lastToast = () => useToastStore.getState().current?.msg;
 
@@ -83,8 +90,7 @@ describe('부하테스트 패널', () => {
     expect(await screen.findByText(/실행 중 \d\d:\d\d/)).toBeTruthy();
     expect(screen.getByText('120명')).toBeTruthy();
     expect(screen.getByText('150건')).toBeTruthy();
-    expect(screen.getByText('87ms')).toBeTruthy();
-    expect(screen.getByText('0.0%')).toBeTruthy();
+    expect(screen.getByLabelText('시나리오가 쓰는 서비스').textContent).toContain('review');
     expect(lastToast()).toContain('80명');
   });
 
@@ -149,11 +155,11 @@ describe('부하테스트 그래프', () => {
     expect(screen.getByRole('figure', { name: '초당 요청' }).querySelector('polyline')).toBeTruthy();
   });
 
-  it('시작 직후에는 첫 점부터 1분 창, 5분이 넘으면 최근 5분만 그린다', () => {
+  it('시작 직후에는 첫 점부터 30초 창, 3분이 넘으면 최근 3분만 그린다', () => {
     const { rerender } = render(<LoadTestChart label="p95" points={[{ t: 0, v: 1 }, { t: 30_000, v: 1 }]} format={String} />);
     const xs = () => screen.getByRole('figure', { name: 'p95' }).querySelector('polyline').getAttribute('points').split(' ').map((p) => Number(p.split(',')[0]));
-    expect(xs()).toEqual([0, 150]);   // 30초 / 1분 창 = 절반
+    expect(xs()).toEqual([0, 300]);   // 30초 = 최소 창 전부
     rerender(<LoadTestChart label="p95" points={[{ t: 0, v: 1 }, { t: 300_000, v: 1 }, { t: 600_000, v: 1 }]} format={String} />);
-    expect(xs()).toEqual([-300, 0, 300]);   // 최근 5분만 화면 안
+    expect(xs()).toEqual([-700, -200, 300]);   // 최근 3분만 화면 안
   });
 });
