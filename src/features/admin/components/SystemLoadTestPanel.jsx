@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { toast } from '@/shared/stores/toastStore';
 import LoadTestChart from '@/features/admin/components/LoadTestChart';
+import { serviceShortName } from '@/features/admin/constants';
+import { SCENARIO_SERVICES } from '@/features/admin/monitor';
 import {
   useLoadTestQuery, usePrepareAccountsMutation, useScaleLoadTestMutation, useStartLoadTestMutation, useStopLoadTestMutation,
 } from '@/features/admin/hooks/useSystemQueries';
 
 // 부하테스트 패널(11/16, 발표 시연) — 담당 구지훈. 시나리오를 고르고 시작하면 클러스터 안 k6 가 부하를 보내고,
-// 실행 중에는 슬라이더를 놓을 때마다 사용자 수를 바꾼다. 계약 backend admin.md 8절
+// 실행 중에는 슬라이더를 놓을 때마다 사용자 수를 바꾼다. 계약 backend admin.md 8절.
+// 그래프는 부하 생성기(k6) 쪽 2칸만 — 서버 쪽 현황은 아래 실시간 모니터링 패널(실제 트래픽 포함)
 const SCENARIOS = [
   { value: 'BROWSE', label: '둘러보기 (조회)' },
   { value: 'REVIEWS', label: '리뷰 조회 폭주' },
@@ -22,13 +25,13 @@ const elapsed = (startedAt) => {
   return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 };
 
-export default function SystemLoadTestPanel() {
+// scenario 는 화면이 들고 있어 아래 서비스 상태 카드에 같은 서비스를 강조한다
+export default function SystemLoadTestPanel({ scenario = 'BROWSE', onScenarioChange = () => {} }) {
   const { data } = useLoadTestQuery();
   const start = useStartLoadTestMutation();
   const scale = useScaleLoadTestMutation();
   const stop = useStopLoadTestMutation();
   const accounts = usePrepareAccountsMutation();
-  const [scenario, setScenario] = useState('BROWSE');
   const [durationSec, setDurationSec] = useState(300);
   const [vus, setVus] = useState(50);
 
@@ -82,10 +85,16 @@ export default function SystemLoadTestPanel() {
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <label className="flex items-center gap-2 text-base">
             <span className="text-mute">시나리오</span>
-            <select className="field w-auto" value={scenario} disabled={running} onChange={(e) => setScenario(e.target.value)}>
+            <select className="field w-auto" value={scenario} disabled={running} onChange={(e) => onScenarioChange(e.target.value)}>
               {SCENARIOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </label>
+          <span className="flex flex-wrap items-center gap-1 text-sm" aria-label="시나리오가 쓰는 서비스">
+            <span className="text-mute">사용 서비스</span>
+            {(SCENARIO_SERVICES[running ? load.scenario : scenario] ?? []).map((s) => (
+              <span key={s} className="px-1.5 py-0.5 border border-ink font-bold">{serviceShortName(s)}</span>
+            ))}
+          </span>
           <label className="flex items-center gap-2 text-base">
             <span className="text-mute">최대 시간</span>
             <select className="field w-auto" value={durationSec} disabled={running} onChange={(e) => setDurationSec(Number(e.target.value))}>
@@ -108,11 +117,9 @@ export default function SystemLoadTestPanel() {
         </div>
         {running && <p className="text-sm text-mute -mt-2">실행 중에는 슬라이더를 놓는 순간 사용자 수가 바뀌어요. 0명이면 요청을 멈추고 대기해요.</p>}
 
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          <LoadTestChart label="동시 사용자" points={series.vus} floor={10} format={(v) => `${Math.round(v)}명`} tone="text-rust" />
-          <LoadTestChart label="초당 요청" points={series.rps} floor={10} format={(v) => `${v.toFixed(0)}건`} />
-          <LoadTestChart label="응답 시간 p95" points={series.p95Ms} floor={100} format={(v) => `${v.toFixed(0)}ms`} />
-          <LoadTestChart label="에러율" points={series.errorRate} floor={0.05} format={(v) => `${(v * 100).toFixed(1)}%`} tone="text-rust" />
+        <div className="grid sm:grid-cols-2 gap-3">
+          <LoadTestChart label="동시 사용자 (부하)" points={series.vus} floor={10} format={(v) => `${Math.round(v)}명`} tone="text-rust" />
+          <LoadTestChart label="초당 요청 (부하)" points={series.rps} floor={10} format={(v) => `${v.toFixed(0)}건`} />
         </div>
       </div>
     </section>

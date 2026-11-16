@@ -11,22 +11,29 @@ const STATE = {
 };
 const stateOf = (service) => STATE[service.state] ?? { label: service.state, card: 'border-line bg-paper', pill: 'bg-sand text-ink-2' };
 
+// 파드 수 색(11/16 피드백) — 다 준비되면 초록, 하나도 없으면 빨강, 일부면 주황. 빠진 파드는 빨간 빈 원
+const podTone = (ready, desired) => {
+  if (ready >= desired) return 'text-moss';
+  return ready === 0 ? 'text-rust' : 'text-amber';
+};
+
 function PodDots({ ready, desired }) {
+  const tone = podTone(ready, desired);
   return (
-    <span role="img" aria-label={`파드 ${desired}개 중 ${ready}개 준비`} className="inline-flex items-center gap-2 whitespace-nowrap">
+    <span role="img" aria-label={`파드 ${desired}개 중 ${ready}개 준비`} className="inline-flex items-center gap-2 whitespace-nowrap" data-tone={tone}>
       <span className="text-xl leading-none tracking-wider">
-        {'●'.repeat(ready)}<span className="text-mute">{'○'.repeat(desired - ready)}</span>
+        <span className={tone}>{'●'.repeat(ready)}</span><span className="text-rust">{'○'.repeat(Math.max(0, desired - ready))}</span>
       </span>
-      <span className="text-lg tabular-nums text-ink-2">{ready}/{desired}</span>
+      <span className={`text-lg tabular-nums font-bold ${tone}`}>{ready}/{desired}</span>
     </span>
   );
 }
 
-function ServiceCard({ service, errorRate, chaosEnabled, onKill }) {
+function ServiceCard({ service, errorRate, chaosEnabled, onKill, highlighted }) {
   const state = stateOf(service);
   const name = serviceShortName(service.name);
   return (
-    <li className={`border-2 p-3 ${state.card}`}>
+    <li className={`border-2 p-3 ${state.card} ${highlighted ? 'outline outline-2 outline-offset-2 outline-ink' : ''}`} data-highlighted={highlighted || undefined}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-2xl font-bold">{name}</span>
         <span className={`px-2 py-0.5 text-lg font-bold whitespace-nowrap ${state.pill}`}>{state.label}</span>
@@ -54,8 +61,8 @@ function FixedService({ service, errorRate }) {
   );
 }
 
-// 복구 중에는 내리기를 막는다
-export default function SystemServicePanel({ services, metrics, chaosEnabled = false }) {
+// 복구 중에는 내리기를 막는다. highlighted = 부하테스트 시나리오가 쓰는 서비스(카드 바깥 테두리)
+export default function SystemServicePanel({ services, metrics, chaosEnabled = false, highlighted = [] }) {
   const [killTarget, setKillTarget] = useState(null);
   const errorRateOf = Object.fromEntries((metrics?.services ?? []).map((m) => [m.name, m.errorRate]));
   const killable = services.filter((s) => s.killable);
@@ -67,7 +74,7 @@ export default function SystemServicePanel({ services, metrics, chaosEnabled = f
         {!chaosEnabled && <p className="text-sm text-mute">내리기 기능이 꺼져 있어요. 시연 때만 켭니다.</p>}
       </div>
       <ul aria-label="내릴 수 있는 서비스" className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {killable.map((s) => <ServiceCard key={s.name} service={s} errorRate={errorRateOf[s.name]} chaosEnabled={chaosEnabled} onKill={setKillTarget} />)}
+        {killable.map((s) => <ServiceCard key={s.name} service={s} errorRate={errorRateOf[s.name]} chaosEnabled={chaosEnabled} onKill={setKillTarget} highlighted={highlighted.includes(s.name)} />)}
       </ul>
       {fixed.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-3">
