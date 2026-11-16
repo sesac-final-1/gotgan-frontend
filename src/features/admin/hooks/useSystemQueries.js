@@ -41,8 +41,8 @@ export function useKillOneEachMutation() {
   });
 }
 
-// ── 부하테스트(11/16) — 실행 중(부하 · 계정 준비)엔 2초, 아니면 10초마다 상태 · 그래프를 다시 받는다
-export const LOADTEST_RUNNING_POLL_MS = 2_000;
+// ── 부하테스트(11/16) — 실행 중(부하 · 계정 준비)엔 1초(k6 가 1초마다 지표 전송), 아니면 10초마다 상태 · 그래프를 다시 받는다
+export const LOADTEST_RUNNING_POLL_MS = 1_000;
 export const LOADTEST_IDLE_POLL_MS = 10_000;
 const isRunning = (data) => data?.load?.state === 'RUNNING' || data?.accounts?.state === 'RUNNING';
 
