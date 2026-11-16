@@ -94,7 +94,7 @@
 ### 1-3. 이슈 · PR
 
 - 이슈 제목: `[요구사항 ID] 작업` — 예: `[ORD-06] 결제 검증`
-- PR 제목: 커밋 메시지 형식과 동일
+- PR 제목: gitmoji + 커밋 메시지 형식 — 예: `✨ feat(product): 판매자 상품 목록에 상위 카테고리 id 추가` · `🐛 fix(order): 호출 실패 응답에서 서비스 이름 제거`
 - PR 본문 템플릿(`.github/pull_request_template.md`, 세 저장소 같음):
   - 🚀 개요 — 관련 요구사항 ID · 이슈 링크 · 무엇을 · 왜 바꿨나
   - 🛠️ 작업 내용 — 변경마다 이전 → 이후 · 이유 · 파일 표
@@ -184,7 +184,7 @@ gotgan-frontend/src/
 │   ├── components/ui/            #   목업 공통 컴포넌트 (Pill · Price · Modal · Kpi · BarChart …)
 │   ├── components/common/        #   PostcodeSearch(우편번호 검색) · DataTable · SearchInput · BlockPager · SortableHeader · MockNav(개발 모드 전용)
 │   ├── layouts/                  #   ShopLayout · MyPageLayout · ConsoleLayout
-│   ├── hooks/  stores/  utils/   #   utils: format · safeHtml(DOMPurify) · fileType(업로드 형식 확인) · postcode · imageFallback
+│   ├── hooks/  stores/  utils/   #   utils: format · safeHtml(DOMPurify) · fileType(업로드 형식 확인) · postcode · imageFallback · collection
 ├── test/setup.js                 # Vitest 공통 설정
 └── styles/index.css              # Tailwind 진입 · @theme 디자인 토큰
 ```
