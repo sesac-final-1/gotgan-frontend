@@ -118,7 +118,7 @@ export default function SystemLoadTestPanel({ scenario = 'BROWSE', onScenarioCha
         {running && <p className="text-sm text-mute -mt-2">실행 중에는 슬라이더를 놓는 순간 사용자 수가 바뀌어요. 0명이면 요청을 멈추고 대기해요.</p>}
 
         <div className="grid sm:grid-cols-2 gap-3">
-          <LoadTestChart label="동시 사용자 (부하)" points={series.vus} floor={10} format={(v) => `${Math.round(v)}명`} tone="text-rust" />
+          <LoadTestChart label="동시 사용자 (부하)" points={series.vus} floor={10} format={(v) => `${Math.round(v)}명`} />
           <LoadTestChart label="초당 요청 (부하)" points={series.rps} floor={10} format={(v) => `${v.toFixed(0)}건`} />
         </div>
       </div>
