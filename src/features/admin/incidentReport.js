@@ -23,39 +23,39 @@ const COLORS = ['#b4532a', '#2f6f8f', '#7a5c99', '#3f7d4e', '#c08a1e', '#8c3b5e'
 const SERVICE_ORDER = Object.keys(SERVICE_LABEL);
 export const serviceColor = (name) => COLORS[Math.max(0, SERVICE_ORDER.indexOf(name)) % COLORS.length];
 
+// 시각은 언제나 한국 시간(KST, UTC+9 고정 · 서머타임 없음) — 보는 사람 PC 시간대와 상관없이 같은 보고서가 나오게
+const KST_OFFSET = 9 * HOUR;
+const DAY = 24 * HOUR;
+const kst = (ms) => new Date(ms + KST_OFFSET);   // getUTC* 로 읽으면 KST 값
+
 /** 기간 버튼 — now 기준 { key, label, from, to }. 어제 퇴근 후 = 전날 18:00 ~ 오늘 09:00(아직 9시 전이면 지금까지) */
 export function presets(now = new Date()) {
   const t = now.getTime();
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const evening = new Date(today.getTime() - 6 * HOUR);           // 전날 18:00
-  const morning = Math.min(today.getTime() + 9 * HOUR, t);         // 오늘 09:00
+  const today = Math.floor((t + KST_OFFSET) / DAY) * DAY - KST_OFFSET;   // 오늘 00:00 KST
   return [
     { key: '1h', label: '최근 1시간', from: t - HOUR, to: t },
-    { key: 'today', label: '오늘', from: today.getTime(), to: t },
-    { key: 'overnight', label: '어제 퇴근 후', from: evening.getTime(), to: morning },
-    { key: '24h', label: '최근 24시간', from: t - 24 * HOUR, to: t },
+    { key: 'today', label: '오늘', from: today, to: t },
+    { key: 'overnight', label: '어제 퇴근 후', from: today - 6 * HOUR, to: Math.min(today + 9 * HOUR, t) },
+    { key: '24h', label: '최근 24시간', from: t - DAY, to: t },
   ];
 }
 
 const pad = (n) => String(n).padStart(2, '0');
 export const formatDayTime = (ms) => {
-  const d = new Date(ms);
-  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const d = kst(ms);
+  return `${pad(d.getUTCMonth() + 1)}/${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 };
 export const formatTime = (ms) => {
-  const d = new Date(ms);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const d = kst(ms);
+  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 };
-export const formatSeconds = (ms) => {
-  const d = new Date(ms);
-  return `${formatTime(ms)}:${pad(d.getSeconds())}`;
-};
-/** datetime-local 입력값 ↔ ms */
+export const formatSeconds = (ms) => `${formatTime(ms)}:${pad(kst(ms).getUTCSeconds())}`;
+/** datetime-local 입력값(KST) ↔ ms */
 export const toLocalInput = (ms) => {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const d = kst(ms);
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 };
+export const fromLocalInput = (value) => new Date(`${value}:00+09:00`).getTime();
 
 /**
  * 시간대별 막대 배치 — 화면(SVG 요소)과 내려받기(SVG 문자열)가 같은 값을 쓴다.
@@ -176,12 +176,9 @@ export function buildReportHtml(report, generatedAt = new Date()) {
 ${opsSection(report, period)}${devSection(report)}</body></html>`;
 }
 
-/** 파일 이름 — 장애리포트_1117-1050_1117-1130.html */
+/** 파일 이름 — 장애리포트_1117-1050_1117-1130.html (KST) */
 export function reportFileName(report) {
-  const d = (ms) => {
-    const x = new Date(ms);
-    return `${pad(x.getMonth() + 1)}${pad(x.getDate())}-${pad(x.getHours())}${pad(x.getMinutes())}`;
-  };
+  const d = (ms) => formatDayTime(ms).replace('/', '').replace(' ', '-').replace(':', '');
   return `장애리포트_${d(report.fromMs)}_${d(report.toMs)}.html`;
 }
 

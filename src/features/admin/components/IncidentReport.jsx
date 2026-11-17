@@ -9,7 +9,7 @@ import { ListStatus } from '@/features/product/components/ListStatus';
 import { useIncidentReportQuery } from '@/features/admin/hooks/useSystemQueries';
 import {
   EVENT_LABEL, KIND_LABEL, barLayout, downloadReport, formatDayTime, formatSeconds, issueCount, issueWindow, presets,
-  serviceColor, serviceLabel, toLocalInput,
+  fromLocalInput, serviceColor, serviceLabel, toLocalInput,
 } from '@/features/admin/incidentReport';
 
 function PeriodPicker({ preset, onPreset, custom, onCustom }) {
@@ -26,7 +26,7 @@ function PeriodPicker({ preset, onPreset, custom, onCustom }) {
       <span className="text-mute">~</span>
       <input type="datetime-local" className="field field-sm w-auto" value={to} onChange={(e) => setTo(e.target.value)} aria-label="끝" />
       <button type="button" className={`btn btn-sm ${preset === 'custom' ? 'btn-ink' : 'btn-line'}`}
-        onClick={() => onCustom({ from: new Date(from).getTime(), to: new Date(to).getTime() })}>조회</button>
+        onClick={() => onCustom({ from: fromLocalInput(from), to: fromLocalInput(to) })}>조회</button>
     </div>
   );
 }
