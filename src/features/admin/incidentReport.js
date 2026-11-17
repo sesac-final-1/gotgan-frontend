@@ -86,8 +86,12 @@ export function barLayout(buckets = [], { width = 960, height = 180, pad: p = 28
   return { width, height, pad: p, max, rects, ticks };
 }
 
-/** 이슈의 대표 건수 — 종류마다 다른 값 */
-export const issueCount = (issue) => ({ ATTACK: issue.suspicious, TRAFFIC: issue.rateLimited })[issue.kind] ?? issue.serverErrors;
+/** 이슈의 대표 건수 — 공격 의심은 탐색 요청, 요청 급증은 429(없으면 그 시간 전체 요청), 나머지는 5xx */
+export const issueCount = (issue) => {
+  if (issue.kind === 'ATTACK') return issue.suspicious;
+  if (issue.kind === 'TRAFFIC') return issue.rateLimited || issue.requests || 0;
+  return issue.serverErrors;
+};
 
 /** 이슈 기간 문자열 */
 export const issueWindow = (issue) => `${formatDayTime(issue.startMs)} ~ ${formatTime(issue.endMs)}`;

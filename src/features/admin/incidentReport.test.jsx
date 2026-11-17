@@ -68,6 +68,8 @@ describe('장애 분석 리포트 — 규칙', () => {
     const [error, attack] = report().issues;
     expect(issueCount(error)).toBe(827);
     expect(issueCount(attack)).toBe(3);
+    expect(issueCount({ kind: 'TRAFFIC', rateLimited: 0, requests: 5200 })).toBe(5200);
+    expect(issueCount({ kind: 'TRAFFIC', rateLimited: 15, requests: 5200 })).toBe(15);
     expect(reportFileName(report())).toBe('장애리포트_1117-1050_1117-1130.html');
     expect(escapeHtml('<a href="x">&\'')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&#39;');
   });
