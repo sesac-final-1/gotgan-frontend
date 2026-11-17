@@ -54,7 +54,7 @@ export default function SystemScenarioPanel({ services, chaosEnabled }) {
             </>
           )}
         >
-          <p className="text-sm">{names} 파드를 1개씩 지웁니다. 각 서비스에 1개가 남아 있어 쇼핑몰은 계속 동작해요.</p>
+          <p className="text-sm">{names} 파드를 1개씩 지웁니다. 각 서비스에 남은 파드가 받아서 쇼핑몰은 계속 동작해요.</p>
           <p className="mt-2 text-sm text-ink-2">하나라도 정상이 아니면 아무것도 지우지 않아요. 내린 뒤 1분 동안은 같은 서비스를 다시 내릴 수 없어요.</p>
         </Modal>
       )}
