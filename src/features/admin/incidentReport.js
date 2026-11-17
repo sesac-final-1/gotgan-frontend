@@ -1,6 +1,7 @@
-// 장애 분석 리포트 — 기간 선택 · 막대 배치 · 내려받기 파일 생성. 담당 구지훈(11/17 피드백, 계약 backend admin.md 10절)
-// 내려받기는 HTML 한 파일: 1장 운영팀(요약 문장 · 시간대별 막대 · 이슈 표 · 이벤트), 2장 개발자(원인 근거 · 로그 traceId · 구간 표 · JSON).
-// 브라우저로 바로 열리고 그대로 인쇄하면 PDF. 서버 값은 모두 escape 해서 넣는다(로그 · 경로는 공격자가 넣을 수 있는 값)
+// 장애 분석 리포트: 기간 선택, 요약 계산, 막대 배치, 내려받기 파일 생성. 담당 구지훈(11/17 피드백, 계약 backend admin.md 10절)
+// 화면과 내려받기는 같은 구성: 1 한눈에 보기, 2 이슈(요약표 + 이슈별 개조식), 3 운영 이벤트 요약표, 4 시간대별 건수, 5 개발자 상세.
+// 파드 시작, 종료 같은 원본 이벤트는 요약표로 묶고 하나하나는 개발자 상세에만 둔다.
+// 내려받기는 HTML 한 파일(브라우저로 열고 인쇄하면 PDF). 서버 값은 모두 escape(로그와 경로는 공격자가 넣을 수 있는 값)
 
 const HOUR = 3_600_000;
 
@@ -23,7 +24,7 @@ const COLORS = ['#b4532a', '#2f6f8f', '#7a5c99', '#3f7d4e', '#c08a1e', '#8c3b5e'
 const SERVICE_ORDER = Object.keys(SERVICE_LABEL);
 export const serviceColor = (name) => COLORS[Math.max(0, SERVICE_ORDER.indexOf(name)) % COLORS.length];
 
-// 시각은 언제나 한국 시간(KST, UTC+9 고정 · 서머타임 없음) — 보는 사람 PC 시간대와 상관없이 같은 보고서가 나오게
+// 시각은 언제나 한국 시간(KST, UTC+9 고정, 서머타임 없음) — 보는 사람 PC 시간대와 상관없이 같은 보고서가 나오게
 const KST_OFFSET = 9 * HOUR;
 const DAY = 24 * HOUR;
 const kst = (ms) => new Date(ms + KST_OFFSET);   // getUTC* 로 읽으면 KST 값
@@ -96,6 +97,78 @@ export const issueCount = (issue) => {
 /** 이슈 기간 문자열 */
 export const issueWindow = (issue) => `${formatDayTime(issue.startMs)} ~ ${formatTime(issue.endMs)}`;
 
+/** 이슈 길이(분) */
+export const issueMinutes = (issue) => Math.max(1, Math.round((issue.endMs - issue.startMs) / 60_000));
+
+/** 이슈 영향 한 줄: "상품, 5xx 913건" */
+export function issueImpact(issue) {
+  const where = issue.services.map(serviceLabel).join(', ');
+  const traffic = issue.rateLimited ? `429 ${issue.rateLimited}건` : `요청 ${issue.requests ?? 0}건`;
+  const what = { ATTACK: `탐색 요청 ${issue.suspicious}건`, TRAFFIC: traffic }[issue.kind] ?? `5xx ${issue.serverErrors}건`;
+  return where ? `${where}, ${what}` : what;
+}
+
+/** 한눈에 보기 — 상태 배지와 숫자 카드. 실제 장애 = 의도한 시험이 아닌 이슈 */
+export function overview(report) {
+  const s = report.summary;
+  const real = s.issues - s.intendedIssues;
+  return {
+    status: real > 0 ? 'bad' : 'ok',
+    statusText: real > 0 ? `실제 장애 ${real}건` : '실제 장애 없음',
+    cards: [
+      { label: '이슈', value: s.issues, sub: `의도한 시험 ${s.intendedIssues}` },
+      { label: '응답 실패(5xx)', value: s.serverErrors },
+      { label: '공격 의심', value: s.suspicious },
+      { label: '요청 제한(429)', value: s.rateLimited },
+      { label: '전체 요청', value: s.requests },
+    ],
+  };
+}
+
+const tally = (map, key) => map.set(key, (map.get(key) ?? 0) + 1);
+const joinTally = (map) => [...map].map(([k, n]) => (n > 1 ? `${k} ${n}` : k)).join(', ');
+const servicesOf = (list) => {
+  const m = new Map();
+  list.forEach((e) => tally(m, serviceLabel(e.service)));
+  return joinTally(m);
+};
+const numbersIn = (list, re) => list.map((e) => Number(re.exec(e.detail)?.[1])).filter(Boolean);
+
+/**
+ * 운영 이벤트 요약표 — 원본 이벤트(파드 시작, 종료 하나하나)를 종류별 한 줄로 묶는다.
+ * [{ label, count, detail, alert }] 0건인 종류는 뺀다. alert = 원인 미상 종료, 재시작, 차단기처럼 확인이 필요한 줄
+ */
+export function summarizeEvents(events = []) {
+  const by = (type) => events.filter((e) => e.type === type);
+  const rows = [];
+  const chaos = by('CHAOS_KILL');
+  if (chaos.length) {
+    const secs = numbersIn(by('CHAOS_RECOVER'), /(\d+)초/);
+    const recovery = secs.length ? ` / 복구 평균 ${Math.round(secs.reduce((a, b) => a + b, 0) / secs.length)}초, 최장 ${Math.max(...secs)}초` : '';
+    rows.push({ label: '장애 주입', count: chaos.length, detail: servicesOf(chaos) + recovery });
+  }
+  const loads = by('LOADTEST_START');
+  if (loads.length) {
+    const peaks = numbersIn(by('LOADTEST_END'), /최대 (\d+)명/);
+    rows.push({ label: '부하테스트', count: loads.length, detail: peaks.length ? `최대 ${Math.max(...peaks)}명` : '' });
+  }
+  const deploys = by('DEPLOY');
+  if (deploys.length) rows.push({ label: '배포', count: deploys.length, detail: servicesOf(deploys) });
+  const stops = by('POD_STOP');
+  if (stops.length) {
+    const reasons = new Map();
+    stops.forEach((e) => tally(reasons, /\(([^)]+)\)$/.exec(e.detail)?.[1] ?? '원인 미상'));
+    rows.push({ label: '파드 종료', count: stops.length, detail: joinTally(reasons), alert: reasons.has('원인 미상') });
+  }
+  const starts = by('POD_START');
+  if (starts.length) rows.push({ label: '파드 시작', count: starts.length, detail: servicesOf(starts) });
+  const restarts = by('POD_RESTART');
+  if (restarts.length) rows.push({ label: '파드 재시작', count: restarts.length, detail: servicesOf(restarts), alert: true });
+  const circuits = by('CIRCUIT_OPEN');
+  if (circuits.length) rows.push({ label: '차단기 열림', count: circuits.length, detail: circuits.map((e) => e.detail).join(', '), alert: true });
+  return rows;
+}
+
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
@@ -116,57 +189,80 @@ function legend(report) {
 }
 
 const row = (cells) => `<tr>${cells.map((c) => `<td>${c}</td>`).join('')}</tr>`;
+const table = (head, rows) => `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+const mute = (text) => `<p class="mute">${text}</p>`;
 
-function opsSection(report, period) {
-  const issues = report.issues.length
-    ? `<table><thead><tr><th>#</th><th>시간</th><th>종류</th><th>서비스</th><th>건수</th><th>원인</th><th>구분</th></tr></thead><tbody>${report.issues.map((i) => row([
-      i.no, escapeHtml(issueWindow(i)), KIND_LABEL[i.kind] ?? i.kind, escapeHtml(i.services.map(serviceLabel).join(', ') || '-'),
-      issueCount(i),
-      escapeHtml(i.causes.map((c) => c.label).join(', ')), i.intended ? '의도한 시험' : '<b class="bad">실제 장애</b>',
-    ])).join('')}</tbody></table><ol class="sentences">${report.issues.map((i) => `<li>${escapeHtml(i.sentence)}</li>`).join('')}</ol>`
-    : '<p>이 기간에는 이슈가 없습니다.</p>';
-  const events = report.events.length
-    ? `<table><thead><tr><th>시각</th><th>종류</th><th>서비스</th><th>내용</th></tr></thead><tbody>${report.events.map((e) => row([
-      formatSeconds(e.t), EVENT_LABEL[e.type] ?? e.type, escapeHtml(serviceLabel(e.service)), escapeHtml(e.detail),
-    ])).join('')}</tbody></table>`
-    : '<p>기록된 이벤트가 없습니다.</p>';
-  const s = report.summary;
-  return `<section><h2>1. 운영팀 보고</h2><p class="period">기간 ${escapeHtml(period)} · 구간 ${report.bucketSeconds / 60}분</p>
-<p class="headline">${escapeHtml(s.headline)}</p>
-<div class="kpis"><div><b>${s.issues}</b>이슈(의도한 시험 ${s.intendedIssues})</div><div><b>${s.serverErrors}</b>응답 실패(5xx)</div><div><b>${s.suspicious}</b>공격 의심 요청</div><div><b>${s.rateLimited}</b>요청 제한(429)</div><div><b>${s.requests}</b>전체 요청</div></div>
-<h3>시간대별 건수</h3>${chartSvg(report)}${legend(report)}
-<h3>이슈</h3>${issues}<h3>이벤트</h3>${events}</section>`;
+function summarySection(report, period) {
+  const o = overview(report);
+  const cards = o.cards.map((c) => `<div><span>${c.label}</span><b>${c.value.toLocaleString('ko-KR')}</b>${c.sub ? `<em>${c.sub}</em>` : ''}</div>`).join('');
+  return `<section><h2>1. 한눈에 보기</h2>
+<p class="meta">기간 ${escapeHtml(period)} / 구간 ${report.bucketSeconds / 60}분</p>
+<p class="status ${o.status}">${o.statusText}</p><div class="kpis">${cards}</div></section>`;
+}
+
+function issueCard(i) {
+  const causes = i.causes.map((c, k) => `<li><b>${k === 0 ? '원인' : '관련'}</b>${escapeHtml(c.label)}: ${escapeHtml(c.detail)}</li>`).join('');
+  return `<div class="issue${i.intended ? '' : ' real'}"><h4>#${i.no} ${KIND_LABEL[i.kind] ?? i.kind}<small>${escapeHtml(issueWindow(i))}, ${issueMinutes(i)}분</small></h4>
+<ul><li><b>영향</b>${escapeHtml(issueImpact(i))}</li>${causes}<li><b>구분</b>${i.intended ? '의도한 시험(장애 주입 또는 부하테스트)' : '실제 장애, 확인 필요'}</li></ul></div>`;
+}
+
+function issueSection(report) {
+  if (report.issues.length === 0) return `<section><h2>2. 이슈</h2>${mute('이 기간에는 이슈가 없습니다.')}</section>`;
+  const summary = table(['#', '시간', '길이', '종류', '영향', '주 원인', '구분'], report.issues.map((i) => row([
+    i.no, escapeHtml(issueWindow(i)), `${issueMinutes(i)}분`, KIND_LABEL[i.kind] ?? i.kind, escapeHtml(issueImpact(i)),
+    escapeHtml(i.causes[0]?.label ?? '-'), i.intended ? '의도한 시험' : '<b class="bad">실제 장애</b>',
+  ])));
+  return `<section><h2>2. 이슈</h2>${summary}${report.issues.map(issueCard).join('')}</section>`;
+}
+
+function eventSection(report) {
+  const rows = summarizeEvents(report.events);
+  if (rows.length === 0) return `<section><h2>3. 운영 이벤트 요약</h2>${mute('기록된 이벤트가 없습니다.')}</section>`;
+  const body = rows.map((r) => row([r.alert ? `<b class="bad">${r.label}</b>` : r.label, r.count, escapeHtml(r.detail)]));
+  return `<section><h2>3. 운영 이벤트 요약</h2>${table(['종류', '건수', '내용'], body)}${mute('이벤트 하나하나는 5. 개발자 상세에 있습니다.')}</section>`;
+}
+
+function chartSection(report) {
+  return `<section><h2>4. 시간대별 건수</h2>${chartSvg(report)}${legend(report)}</section>`;
 }
 
 function devSection(report) {
-  const issues = report.issues.map((i) => `<h4>#${i.no} ${escapeHtml(issueWindow(i))} · ${KIND_LABEL[i.kind] ?? i.kind}</h4>
-<ul>${i.causes.map((c) => `<li><code>${escapeHtml(c.code)}</code> ${escapeHtml(c.label)} — ${escapeHtml(c.detail)}</li>`).join('')}</ul>
-${i.logs.length ? `<table class="logs"><thead><tr><th>시각</th><th>서비스</th><th>레벨</th><th>메시지</th><th>traceId</th></tr></thead><tbody>${i.logs.map((l) => row([
-    formatSeconds(l.timestampMs), escapeHtml(serviceLabel(l.service)), escapeHtml(l.level), escapeHtml(l.title), `<code>${escapeHtml(l.traceId ?? '-')}</code>`,
-  ])).join('')}</tbody></table>` : '<p class="mute">근거 로그 없음</p>'}`).join('');
+  const logs = report.issues.map((i) => `<h4>#${i.no} ${escapeHtml(issueWindow(i))}</h4>${i.logs.length
+    ? table(['시각', '서비스', '레벨', '메시지', 'traceId'], i.logs.map((l) => row([
+      formatSeconds(l.timestampMs), escapeHtml(serviceLabel(l.service)), escapeHtml(l.level), escapeHtml(l.title), `<code>${escapeHtml(l.traceId ?? '-')}</code>`,
+    ])))
+    : mute('근거 로그 없음')}`).join('');
   const busy = report.buckets.filter((b) => b.serverErrors || b.suspicious || b.rateLimited || b.dbErrors || b.errorLogs);
   const buckets = busy.length
-    ? `<table><thead><tr><th>구간 시작</th><th>요청</th><th>5xx</th><th>서비스별 5xx</th><th>429</th><th>404</th><th>401·403</th><th>탐색</th><th>DB 오류</th><th>에러 로그</th></tr></thead><tbody>${busy.map((b) => row([
+    ? table(['구간 시작', '요청', '5xx', '서비스별 5xx', '429', '404', '401/403', '탐색', 'DB 오류', '에러 로그'], busy.map((b) => row([
       formatDayTime(b.t), b.requests, b.serverErrors, escapeHtml(Object.entries(b.byService).map(([k, v]) => `${serviceLabel(k)} ${v}`).join(', ') || '-'),
       b.rateLimited, b.notFound, b.unauthorized, b.suspicious, b.dbErrors, b.errorLogs,
-    ])).join('')}</tbody></table>`
-    : '<p class="mute">이상 신호가 있는 구간이 없습니다.</p>';
+    ])))
+    : mute('이상 신호가 있는 구간이 없습니다.');
   const suspicious = report.suspicious.length
-    ? `<table class="logs"><tbody>${report.suspicious.map((l) => row([formatSeconds(l.timestampMs), escapeHtml(l.title)])).join('')}</tbody></table>`
-    : '<p class="mute">탐색 요청 로그 없음</p>';
-  return `<section class="dev"><h2>2. 개발자 상세</h2>
-<h3>이슈별 원인 근거 · 로그</h3>${issues || '<p class="mute">이슈 없음</p>'}
+    ? table(['시각', '내용'], report.suspicious.map((l) => row([formatSeconds(l.timestampMs), escapeHtml(l.title)])))
+    : mute('탐색 요청 로그 없음');
+  const events = report.events.length
+    ? table(['시각', '종류', '서비스', '내용'], report.events.map((e) => row([
+      formatSeconds(e.t), EVENT_LABEL[e.type] ?? e.type, escapeHtml(serviceLabel(e.service)), escapeHtml(e.detail),
+    ])))
+    : mute('이벤트 없음');
+  return `<section class="dev"><h2>5. 개발자 상세</h2>
+<h3>이슈별 근거 로그</h3>${logs || mute('이슈 없음')}
 <h3>이상 신호가 있는 구간</h3>${buckets}
 <h3>탐색 요청 로그 (게이트웨이)</h3>${suspicious}
+<h3>전체 이벤트</h3>${events}
 <h3>원본 데이터 (JSON)</h3><pre>${escapeHtml(JSON.stringify(report, null, 2))}</pre></section>`;
 }
 
 const STYLE = `body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#1f1f1f;max-width:1040px;margin:24px auto;padding:0 16px;line-height:1.5}
-h1{font-size:24px;margin:0}h2{font-size:20px;border-bottom:2px solid #1f1f1f;padding-bottom:4px;margin-top:36px}h3{font-size:16px;margin-top:24px}h4{font-size:14px;margin:16px 0 4px}
-.period,.mute{color:#666;font-size:13px}.headline{font-size:17px;font-weight:700;background:#f6f1e7;padding:12px 14px}
-.kpis{display:flex;flex-wrap:wrap;gap:8px}.kpis div{border:1px solid #ddd;padding:8px 12px;font-size:13px;min-width:120px}.kpis b{display:block;font-size:20px}
-table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}th,td{border:1px solid #ddd;padding:4px 6px;text-align:left;vertical-align:top}th{background:#f3f3f3}
-.logs td{font-family:Consolas,monospace;font-size:12px;word-break:break-all}.bad{color:#b4532a}.sentences li{margin:4px 0}
+h1{font-size:24px;margin:0}h2{font-size:19px;border-bottom:2px solid #1f1f1f;padding-bottom:4px;margin-top:32px}h3{font-size:15px;margin-top:20px}h4{font-size:14px;margin:0 0 6px}
+.meta,.mute{color:#666;font-size:13px}small{color:#666;font-weight:400;margin-left:8px}
+.status{display:inline-block;font-weight:700;padding:6px 12px;margin:4px 0 10px}.status.ok{background:#e7f2ea;color:#2f6b3f}.status.bad{background:#f8e3dc;color:#b4532a}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.kpis div{border:1px solid #ddd;padding:8px 12px}.kpis span{display:block;font-size:12px;color:#666}.kpis b{display:block;font-size:22px}.kpis em{font-style:normal;font-size:12px;color:#666}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}th,td{border:1px solid #ddd;padding:5px 7px;text-align:left;vertical-align:top}th{background:#f3f3f3}
+.issue{border:1px solid #ddd;border-left:4px solid #9aa0a6;padding:8px 12px;margin:8px 0}.issue.real{border-left-color:#b4532a}.issue ul{margin:0;padding-left:18px}.issue li{margin:2px 0;font-size:13px}.issue li b{display:inline-block;min-width:40px;color:#444}
+.dev td{font-size:12px;word-break:break-all}.bad{color:#b4532a}code{font-family:Consolas,monospace;font-size:12px}
 .legend span{display:inline-flex;align-items:center;gap:4px;margin-right:12px;font-size:12px}.legend i{width:10px;height:10px;display:inline-block}
 pre{background:#f6f6f6;padding:12px;font-size:11px;overflow:auto;max-height:480px;white-space:pre-wrap}
 @media print{.dev{break-before:page}pre{max-height:none}}`;
@@ -176,8 +272,8 @@ export function buildReportHtml(report, generatedAt = new Date()) {
   const period = `${formatDayTime(report.fromMs)} ~ ${formatDayTime(report.toMs)}`;
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>곳간 장애 분석 리포트 ${escapeHtml(period)}</title><style>${STYLE}</style></head><body>
-<h1>곳간 장애 분석 리포트</h1><p class="period">만든 시각 ${formatDayTime(generatedAt.getTime())} · 자료 Prometheus · Loki · 장애 주입 기록 · 원인은 같은 시간대 근거로 고른 규칙 기반 추정</p>
-${opsSection(report, period)}${devSection(report)}</body></html>`;
+<h1>곳간 장애 분석 리포트</h1><p class="meta">만든 시각 ${formatDayTime(generatedAt.getTime())} / 자료: Prometheus, Loki, 장애 주입 기록 / 원인은 같은 시간대 근거로 고른 규칙 기반 추정</p>
+${summarySection(report, period)}${issueSection(report)}${eventSection(report)}${chartSection(report)}${devSection(report)}</body></html>`;
 }
 
 /** 파일 이름 — 장애리포트_1117-1050_1117-1130.html (KST) */
