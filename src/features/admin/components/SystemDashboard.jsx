@@ -9,6 +9,8 @@ import SystemLoadTestPanel from '@/features/admin/components/SystemLoadTestPanel
 import SystemScenarioPanel from '@/features/admin/components/SystemScenarioPanel';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import SystemMonitorPanel from '@/features/admin/components/SystemMonitorPanel';
+import SystemVisitors from '@/features/admin/components/SystemVisitors';
+import { SCENARIO_LABEL } from '@/features/admin/loadTest';
 import { useLoadTestQuery, useSystemMetricsQuery, useSystemStatusQuery } from '@/features/admin/hooks/useSystemQueries';
 import { SCENARIO_SERVICES } from '@/features/admin/monitor';
 
@@ -24,12 +26,19 @@ export default function SystemDashboard() {
   return (
     <div>
       <PageHead title="시스템 상태" desc="장애 발생 시 기능별 영향 범위와 복구 소요 시간을 확인합니다." right={<SystemLinks />} />
+      {running && (
+        <a href="#loadtest" role="status" className="sticky top-0 z-10 mb-3 flex items-center gap-2 px-4 py-2 bg-rust text-paper font-bold">
+          <span className="inline-block w-2 h-2 rounded-full bg-paper animate-pulse" aria-hidden="true" />
+          부하테스트 진행 중: {SCENARIO_LABEL[loadTest.load.scenario] ?? loadTest.load.scenario}. 그래프와 숫자에 가상 사용자 요청이 섞여 있어요.
+        </a>
+      )}
       {statusQuery.isError && status && (
         <p role="alert" className="mb-3 px-4 py-3 bg-rust-soft text-lg font-bold text-rust">연결 끊김 — 마지막으로 받은 상태를 보여 주고 있어요.</p>
       )}
       {status ? (
         <div className="grid gap-4">
-          <SystemLoadTestPanel scenario={scenario} onScenarioChange={setScenario} />
+          <SystemVisitors />
+          <div id="loadtest"><SystemLoadTestPanel scenario={scenario} onScenarioChange={setScenario} /></div>
           <SystemMonitorPanel />
           <SystemScenarioPanel services={status.services} chaosEnabled={status.chaosEnabled} />
           <SystemServicePanel services={status.services} metrics={metrics} chaosEnabled={status.chaosEnabled} highlighted={highlighted} />

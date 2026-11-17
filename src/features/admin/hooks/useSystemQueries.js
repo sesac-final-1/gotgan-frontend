@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
 import {
-  fetchIncidentReport, fetchLoadTest, fetchMonitorCalls, fetchMonitorErrors, fetchMonitorOverview, fetchMonitorSummary, fetchMonitorTrace,
+  fetchIncidentReport, fetchLoadTest, fetchMonitorCalls, fetchMonitorVisitors, fetchMonitorErrors, fetchMonitorOverview, fetchMonitorSummary, fetchMonitorTrace,
   fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService,
   prepareLoadTestAccounts, scaleLoadTest, startLoadTest, stopLoadTest,
 } from '@/features/admin/api/systemApi';
@@ -98,3 +98,7 @@ export function useIncidentReportQuery(range) {
     staleTime: 60_000,
   });
 }
+
+// 현재 접속자 — 5초마다 다시 센다(서버는 최근 120초 안에 요청한 사람을 센다)
+export const VISITORS_POLL_MS = 5_000;
+export const useVisitorsQuery = () => useQuery(monitorQuery('visitors', () => fetchMonitorVisitors(), VISITORS_POLL_MS));

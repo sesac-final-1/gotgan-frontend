@@ -63,3 +63,6 @@ export const fetchMonitorSummary = async () => (await axiosInstance.get(`${MONIT
 // { summary, buckets, issues, events, suspicious, fromMs, toMs, bucketSeconds }
 export const fetchIncidentReport = async (from, to) =>
   (await axiosInstance.get(`${BASE}/report`, { params: { from: new Date(from).toISOString(), to: new Date(to).toISOString() } })).data.data;
+
+// { visitors, members, windowSeconds } 최근 120초 안에 요청한 접속자(회원 + 비회원)와 로그인 회원. 부하테스트 요청은 서버가 뺀다. Redis 실패면 null
+export const fetchMonitorVisitors = async () => (await axiosInstance.get(`${MONITOR}/visitors`)).data.data;
