@@ -18,7 +18,7 @@ const SCENARIOS = [
   { value: 'MIXED', label: '혼합 (둘러보기 70%, 장바구니 30%)' },
 ];
 const DURATIONS = [60, 180, 300, 600];
-const STATE_LABEL = { RUNNING: '실행 중', DONE: '완료', FAILED: '실패' };
+const STATE_LABEL = { RUNNING: '실행 중', DONE: '완료', STOPPED: '중지됨', FAILED: '실패' };
 
 const errorMessage = (err, fallback) => err.response?.data?.message ?? fallback;
 
