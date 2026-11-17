@@ -45,11 +45,13 @@ const MONITOR = `${BASE}/monitor`;
 // { serverTime, total: { rps, avgMs, errorRate }, services: [{ name, series, db }] } — 점 [{ t, v }]
 export const fetchMonitorOverview = async () => (await axiosInstance.get(`${MONITOR}/overview`)).data.data;
 
-// [{ traceId, timestampMs, method, path, service, status, durationMs }] 최신순
-export const fetchMonitorCalls = async () => (await axiosInstance.get(`${MONITOR}/calls`)).data.data;
+// [{ traceId, timestampMs, method, path, service, status, durationMs }] 최신순. 액추에이터는 서버가 뺀다, service 가 있으면 그 서비스만
+export const fetchMonitorCalls = async (service) =>
+  (await axiosInstance.get(`${MONITOR}/calls`, service ? { params: { service } } : undefined)).data.data;
 
-// [{ kind: RESPONSE | LOG, timestampMs, service, level, title, status, traceId }] 최신순
-export const fetchMonitorErrors = async () => (await axiosInstance.get(`${MONITOR}/errors`)).data.data;
+// [{ kind: RESPONSE | LOG, timestampMs, service, level, title, status, traceId }] 최신순. service 가 있으면 그 서비스만
+export const fetchMonitorErrors = async (service) =>
+  (await axiosInstance.get(`${MONITOR}/errors`, service ? { params: { service } } : undefined)).data.data;
 
 // { traceId, durationMs, spans: [{ id, parentId, service, name, kind, startMs, durationMs, status, error }] }
 export const fetchMonitorTrace = async (traceId) => (await axiosInstance.get(`${MONITOR}/traces/${encodeURIComponent(traceId)}`)).data.data;

@@ -75,9 +75,10 @@ function Empty({ text }) {
   return <p className="py-6 text-center text-sm text-mute">{text}</p>;
 }
 
-function CallsTab({ onTrace }) {
-  const { data = [] } = useMonitorCallsQuery(true);
-  if (data.length === 0) return <Empty text="최근 1분 동안 들어온 요청이 없어요." />;
+function CallsTab({ onTrace, service }) {
+  const { data = [] } = useMonitorCallsQuery(true, service);
+  const target = service ? `${serviceShortName(service)}로 ` : '';
+  if (data.length === 0) return <Empty text={`최근 1분 동안 ${target}들어온 요청이 없어요.`} />;
   return (
     <table className="tbl" aria-label="최근 호출">
       <thead><tr><th>시각</th><th>API</th><th>서비스</th><th>상태</th><th className="text-right">소요</th></tr></thead>
@@ -100,9 +101,10 @@ function CallsTab({ onTrace }) {
   );
 }
 
-function ErrorsTab({ onTrace }) {
-  const { data = [] } = useMonitorErrorsQuery(true);
-  if (data.length === 0) return <Empty text="최근 10분 동안 장애가 없어요." />;
+function ErrorsTab({ onTrace, service }) {
+  const { data = [] } = useMonitorErrorsQuery(true, service);
+  const target = service ? `${serviceShortName(service)} ` : '';
+  if (data.length === 0) return <Empty text={`최근 10분 동안 ${target}장애가 없어요.`} />;
   return (
     <table className="tbl" aria-label="최근 장애">
       <thead><tr><th>시각</th><th>구분</th><th>서비스</th><th>내용</th><th>상태</th></tr></thead>
@@ -176,6 +178,7 @@ function SummaryTab() {
 export default function SystemMonitorPanel() {
   const [tab, setTab] = useState('overview');
   const [traceId, setTraceId] = useState(null);
+  const [service, setService] = useState('');   // '' = 전체 서비스
   const { data: overview } = useMonitorOverviewQuery();
   const alerting = hasErrors(overview?.total?.errorRate);
 
@@ -193,10 +196,20 @@ export default function SystemMonitorPanel() {
         ))}
       </div>
       <div className="px-5 py-4">
+        {(tab === 'calls' || tab === 'errors') && (
+          <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
+            <span className="text-mute">서비스</span>
+            <select className="field field-sm w-auto" value={service} onChange={(e) => setService(e.target.value)} aria-label="서비스 필터">
+              <option value="">전체 서비스</option>
+              {(overview?.services ?? []).map((s) => <option key={s.name} value={s.name}>{serviceShortName(s.name)}</option>)}
+            </select>
+            <span className="text-mute">상태 확인, 지표 수집(/actuator) 요청은 항상 빼고 보여요.</span>
+          </div>
+        )}
         {tab === 'overview' && <OverviewTab overview={overview} />}
         {tab === 'services' && <ServicesTab overview={overview} />}
-        {tab === 'calls' && <CallsTab onTrace={setTraceId} />}
-        {tab === 'errors' && <ErrorsTab onTrace={setTraceId} />}
+        {tab === 'calls' && <CallsTab onTrace={setTraceId} service={service || undefined} />}
+        {tab === 'errors' && <ErrorsTab onTrace={setTraceId} service={service || undefined} />}
         {tab === 'summary' && <SummaryTab />}
       </div>
       {traceId && <SystemTraceModal traceId={traceId} onClose={() => setTraceId(null)} />}
