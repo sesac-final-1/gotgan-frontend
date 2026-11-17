@@ -4,7 +4,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 const STATUS_LABEL = { SCHEDULED: '지급예정', HELD: '지급보류', PAID: '지급완료' };
 const kstDate = (ymd) => (ymd ? new Date(`${ymd}T00:00:00+09:00`) : null);
 
-// 정산서 요약(목록 · 상세 머리) → 화면 필드. 지급일 = 지급 완료면 paidAt, 아니면 예정일(다음 주 목요일)
+// 정산서 요약(목록, 상세 머리) → 화면 필드. 지급일 = 지급 완료면 paidAt, 아니면 예정일(다음 주 목요일)
 export const toSellerSettlement = (s) => ({
   id: s.id,
   week: s.week,
@@ -28,7 +28,7 @@ export const toSellerSettlement = (s) => ({
 const fetchCategoryNames = async () =>
   Object.fromEntries((await axiosInstance.get('/api/categories')).data.data.map((c) => [c.id, c.name]));
 
-// GET /api/seller/settlements → { summary, rows }. 요약: 다음 지급 · 최근 8주 지급 · 이번 주 정산 예정 · 적용 수수료율(%)
+// GET /api/seller/settlements → { summary, rows }. 요약: 다음 지급, 최근 8주 지급, 이번 주 정산 예정, 적용 수수료율(%)
 export const fetchSellerSettlements = async () => {
   const [{ summary, settlements }, names] = await Promise.all([
     axiosInstance.get('/api/seller/settlements').then((r) => r.data.data),
@@ -45,7 +45,7 @@ export const fetchSellerSettlements = async () => {
   };
 };
 
-// GET /api/seller/settlements/{id} — 건별 상품주문(이월 표시) · 상태 이력. 관리자 상세와 같은 모양
+// GET /api/seller/settlements/{id} — 건별 상품주문(이월 표시), 상태 이력. 관리자 상세와 같은 모양
 export const toSettlementDetail = (d) => ({
   ...toSellerSettlement(d.settlement),
   items: d.items.map((i) => ({

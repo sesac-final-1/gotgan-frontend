@@ -1,4 +1,4 @@
-// 보완 재제출 — 담당 박지연. 계약: backend docs/api/store.md 2-3절(PATCH /api/seller/apply/{id}/resubmit) · 2-2절 submitted
+// 보완 재제출 — 담당 박지연. 계약: backend docs/api/store.md 2-3절(PATCH /api/seller/apply/{id}/resubmit), 2-2절 submitted
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCategoriesQuery } from '@/features/product/hooks/useCategoriesQuery';
@@ -32,7 +32,7 @@ export default function ShopSellerResubmit({ me, onCancel }) {
   const currentFiles = (type) => me.submitted.documents.filter((d) => d.docType === type).map((d) => d.originalName).join(', ');
   const changedCount = Object.keys(request).length + needDocs.length;
 
-  // 화면 검사 — 신청 폼과 같은 수준(빈칸 · 형식 4칸 · 상품 · 서류 개수). 나머지는 서버 400 메시지로
+  // 화면 검사 — 신청 폼과 같은 수준(빈칸, 형식 4칸, 상품, 서류 개수). 나머지는 서버 400 메시지로
   const problem = () => {
     if (REQUIRED.some((k) => !String(form[k]).trim())) return '필수 항목을 비울 수 없어요';
     const bad = formatProblem(FORMAT_FIELDS, form);
@@ -59,7 +59,7 @@ export default function ShopSellerResubmit({ me, onCancel }) {
       onSuccess: () => { toast('보완 내용을 제출했어요. 다시 심사해 드릴게요.'); window.scrollTo(0, 0); }, // me 가 다시 조회되며 "심사대기" 화면으로
       onError: (e) => {
         toast(e.response?.data?.message ?? e.message ?? '제출하지 못했어요. 잠시 후 다시 시도해 주세요.');
-        if (e.response?.data?.code === 'APPLY_INVALID_STATUS') void qc.invalidateQueries({ queryKey: queryKeys.store.myApplication() }); // 기한 지남 · 이미 처리됨 → 상태 화면
+        if (e.response?.data?.code === 'APPLY_INVALID_STATUS') void qc.invalidateQueries({ queryKey: queryKeys.store.myApplication() }); // 기한 지남, 이미 처리됨 → 상태 화면
       },
     });
   };
@@ -69,7 +69,7 @@ export default function ShopSellerResubmit({ me, onCancel }) {
     <div className="max-w-[760px] mx-auto px-4 pt-10">
       <div className="eyebrow">Supplement</div>
       <h1 className="mt-2 text-[28px] font-bold tracking-tight">보완 제출</h1>
-      <p className="mt-2 text-ink-2 text-sm">접수번호 <b className="num">{me.applicationNo}</b> · {me.supplementDueAt ? `${ymd(me.supplementDueAt)}까지` : ''} 제출해 주세요. 제출한 내용이 채워져 있어요 — 틀린 칸만 고치면 돼요.</p>
+      <p className="mt-2 text-ink-2 text-sm">접수번호 <b className="num">{me.applicationNo}</b>, {me.supplementDueAt ? `${ymd(me.supplementDueAt)}까지` : ''} 제출해 주세요. 제출한 내용이 채워져 있어요 — 틀린 칸만 고치면 돼요.</p>
       <div className="mt-6 bg-cream p-5 text-[13px] leading-relaxed">
         <b>보완 요청</b>
         <p className="mt-1 text-ink-2">{me.statusReason}</p>
@@ -79,7 +79,7 @@ export default function ShopSellerResubmit({ me, onCancel }) {
         <h2 className="text-[18px] font-bold">다시 낼 서류</h2>
         {needDocs.length === 0
           ? <p className="text-[13px] text-mute">다시 낼 서류는 없어요. 아래에서 고칠 내용만 수정해 주세요.</p>
-          : <p className="text-[13px] text-mute">PDF, JPG, PNG (최대 10MB) · 상품 사진은 JPG, PNG{bizChanged && ' · 사업자 정보를 바꿔 사업자등록증도 다시 내야 해요'}</p>}
+          : <p className="text-[13px] text-mute">PDF, JPG, PNG (최대 10MB), 상품 사진은 JPG, PNG{bizChanged && ', 사업자 정보를 바꿔 사업자등록증도 다시 내야 해요'}</p>}
         {needDocs.map((t) => (
           <Doc key={t.value} type={t} files={docs[t.value]} current={currentFiles(t.value)}
             onPick={(f) => setDocs({ ...docs, [t.value]: t.multiple ? [...docs.PRODUCT_PHOTO, ...f].slice(0, PRODUCT_PHOTO_MAX) : f })}
@@ -89,7 +89,7 @@ export default function ShopSellerResubmit({ me, onCancel }) {
 
       <section className="mt-10 space-y-5">
         <h2 className="text-[18px] font-bold">판매자 정보</h2>
-        <Field label="사업자 구분" req hint="사업자 구분 · 대표자명 · 사업자등록번호를 바꾸면 사업자등록증도 다시 내야 해요.">
+        <Field label="사업자 구분" req hint="사업자 구분, 대표자명, 사업자등록번호를 바꾸면 사업자등록증도 다시 내야 해요.">
           <div className="grid grid-cols-2 gap-2">
             {BIZ_TYPES.map((t) => <button key={t.value} type="button" onClick={() => setForm({ ...form, bizType: t.value })} className={cx('h-11 border text-sm', form.bizType === t.value ? 'border-ink border-2 font-bold' : 'border-line-2')}>{t.label}</button>)}
           </div>
@@ -109,10 +109,10 @@ export default function ShopSellerResubmit({ me, onCancel }) {
       </section>
 
       <section className="mt-10 space-y-5">
-        <h2 className="text-[18px] font-bold">스토어 · 상품</h2>
+        <h2 className="text-[18px] font-bold">스토어, 상품</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="스토어 이름" req><input className="field" value={form.storeName} onChange={set('storeName')} /></Field>
-          <Field label="스토어 주소" req hint="영소문자 · 숫자 · 하이픈 3~30자"><input className="field" value={form.slug} onChange={set('slug')} aria-label="스토어 주소" /></Field>
+          <Field label="스토어 주소" req hint="영소문자, 숫자, 하이픈 3~30자"><input className="field" value={form.slug} onChange={set('slug')} aria-label="스토어 주소" /></Field>
         </div>
         <Field label="대표 카테고리" req>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

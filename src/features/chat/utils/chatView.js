@@ -5,7 +5,7 @@ export const MAX_LENGTH = 1000;
 
 // 문맥 카드 머리 — 어떤 화면에서 무엇을 두고 묻는지 (chat.md 문맥 카드)
 const CONTEXT_LABEL = {
-  PRODUCT: '상품 문의', ORDER: '주문 · 결제 문의', ORDER_ITEM: '주문 상품 문의', SETTLEMENT: '정산 문의',
+  PRODUCT: '상품 문의', ORDER: '주문, 결제 문의', ORDER_ITEM: '주문 상품 문의', SETTLEMENT: '정산 문의',
   STORE: '스토어 문의', REPORT: '신고 처리 문의', CHAT_ROOM: '스토어 톡 도움 요청',
 };
 export const contextLabel = (type) => CONTEXT_LABEL[type] ?? '문의 대상';
@@ -43,11 +43,11 @@ export function validateContent(text) {
   return null;
 }
 
-/** 상담방 닫힘 · 읽기 전용 안내 */
+/** 상담방 닫힘, 읽기 전용 안내 */
 export function roomNotice(room, side) {
   if (room?.status === 'RESOLVED') return side === 'ADMIN' ? '종료된 상담이에요. 다시 열거나 답장하면 이어집니다.' : '종료된 상담이에요. 메시지를 보내면 다시 열려요.';
   return null;
 }
 
-// 방 열기 · 상태 변경 실패 안내 — 서버 오류 봉투의 message(예: 정지 스토어 409, 내 스토어 400), 없으면 공통 문구
+// 방 열기, 상태 변경 실패 안내 — 서버 오류 봉투의 message(예: 정지 스토어 409, 내 스토어 400), 없으면 공통 문구
 export const failMessage = (e) => e?.response?.data?.message ?? '채팅을 열지 못했어요. 잠시 후 다시 시도해 주세요.';

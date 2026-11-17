@@ -40,13 +40,13 @@ const agreeAll = () => fireEvent.click(screen.getByText('전체 동의'));
 const submit = () => fireEvent.click(screen.getByRole('button', { name: '가입하기' }));
 
 describe('signupSchema', () => {
-  it('서버 · realm 정책과 같은 비밀번호 규칙 · 확인 일치 · 이메일과 다름 · 휴대폰 형식', () => {
+  it('서버, realm 정책과 같은 비밀번호 규칙, 확인 일치, 이메일과 다름, 휴대폰 형식', () => {
     expect(signupSchema.safeParse(VALID).success).toBe(true);
     const issue = (patch) => signupSchema.safeParse({ ...VALID, ...patch }).error.issues[0];
     expect(issue({ password: 'short!', passwordConfirm: 'short!' }).message).toContain('8자 이상');
     expect(issue({ password: 'nospecial123', passwordConfirm: 'nospecial123' }).message).toContain('특수문자');
     expect(issue({ passwordConfirm: 'Other!pass1' })).toMatchObject({ path: ['passwordConfirm'] });
-    // 이메일과 같은 비밀번호(대소문자 무시) — 영문 · 특수문자(. @) 규칙은 통과해도 막는다
+    // 이메일과 같은 비밀번호(대소문자 무시) — 영문, 특수문자(. @) 규칙은 통과해도 막는다
     expect(issue({ email: 'gotgan.user@mail.com', password: 'GOTGAN.USER@MAIL.COM', passwordConfirm: 'GOTGAN.USER@MAIL.COM' }))
       .toMatchObject({ path: ['password'] });
     expect(issue({ phone: '02-123-4567' })).toMatchObject({ path: ['phone'] });
@@ -54,7 +54,7 @@ describe('signupSchema', () => {
 });
 
 describe('authApi 가입', () => {
-  it('중복확인 · 가입은 envelope 의 data', async () => {
+  it('중복확인, 가입은 envelope 의 data', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { email: 'a@b.com', available: true } } });
     vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { userId: 9, login: null } } });
     await expect(checkEmailAvailability('a@b.com')).resolves.toEqual({ email: 'a@b.com', available: true });
@@ -64,7 +64,7 @@ describe('authApi 가입', () => {
 });
 
 describe('ShopSignup', () => {
-  it('중복확인 → 필수 약관 → 가입 · 자동 로그인 → 첫 화면 (비밀번호 확인 · 공백은 보내지 않음)', async () => {
+  it('중복확인 → 필수 약관 → 가입, 자동 로그인 → 첫 화면 (비밀번호 확인, 공백은 보내지 않음)', async () => {
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { email: 'new@gotgan.com', available: true } } });
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({
       data: { data: { userId: 9, login: { accessToken: 'at', expiresIn: 1800, user: USER } } } });
@@ -94,7 +94,7 @@ describe('ShopSignup', () => {
     expect(useAuthStore.getState().user).toBeNull();
   });
 
-  it('이미 가입된 이메일 · 중복확인 안 함 · 확인 후 이메일 변경 · 필수 약관 미동의는 가입 요청 없음', async () => {
+  it('이미 가입된 이메일, 중복확인 안 함, 확인 후 이메일 변경, 필수 약관 미동의는 가입 요청 없음', async () => {
     const get = vi.spyOn(axiosInstance, 'get')
       .mockResolvedValueOnce({ data: { data: { email: 'new@gotgan.com', available: false } } })
       .mockResolvedValueOnce({ data: { data: { email: 'new@gotgan.com', available: true } } });

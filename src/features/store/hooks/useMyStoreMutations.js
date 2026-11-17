@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
 import { updateMyStore, closeMyStore } from '@/features/store/api/storeApi';
 
-// 내 스토어 변경 — 담당 박지연. 끝나면 store 전체(내 스토어 · 공개 스토어 홈 · 목록)를 다시 불러온다
+// 내 스토어 변경 — 담당 박지연. 끝나면 store 전체(내 스토어, 공개 스토어 홈, 목록)를 다시 불러온다
 
 function useMyStoreMutation(mutationFn) {
   const qc = useQueryClient();

@@ -13,7 +13,7 @@ vi.mock('@microsoft/fetch-event-source', () => ({ fetchEventSource: vi.fn(() => 
 
 // admin-service 알림 센터 응답 흉내 (admin.md 5절)
 const ITEMS = [
-  { id: 'a1', type: 'ORDER_PAID', title: '결제가 완료됐어요', body: '머그 · 28,000원', link: '/mypage/orders/N1', read: false, createdAt: '2026-10-27T10:00:00+09:00' },
+  { id: 'a1', type: 'ORDER_PAID', title: '결제가 완료됐어요', body: '머그, 28,000원', link: '/mypage/orders/N1', read: false, createdAt: '2026-10-27T10:00:00+09:00' },
   { id: 'a2', type: 'SETTLEMENT_PAID', title: '정산금이 지급됐어요', body: null, link: '/seller/settlements', read: true, createdAt: '2026-10-26T10:00:00+09:00' },
 ];
 
@@ -81,7 +81,7 @@ describe('알림 벨', () => {
     await waitFor(() => expect(axiosInstance.get).toHaveBeenCalledWith('/api/notifications/unread-count'));
   });
 
-  it('판매자 새 주문 알림(ORDER_NEW)이 오면 판매자 주문 목록 · 대시보드를 다시 불러온다 (O-13)', async () => {
+  it('판매자 새 주문 알림(ORDER_NEW)이 오면 판매자 주문 목록, 대시보드를 다시 불러온다 (O-13)', async () => {
     renderBell();
     await screen.findByRole('button', { name: '알림 1개' });
     const [, options] = fetchEventSource.mock.calls[0];
@@ -94,7 +94,7 @@ describe('알림 벨', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['store', 'seller', 'dashboard'] });
   });
 
-  it('반품 · 교환 요청 알림(CLAIM_REQUESTED)이 오면 판매자 주문 · 클레임 목록 · 대시보드를 다시 불러온다 (Q-구-15)', async () => {
+  it('반품, 교환 요청 알림(CLAIM_REQUESTED)이 오면 판매자 주문, 클레임 목록, 대시보드를 다시 불러온다 (Q-구-15)', async () => {
     renderBell();
     await screen.findByRole('button', { name: '알림 1개' });
     const [, options] = fetchEventSource.mock.calls[0];
@@ -107,7 +107,7 @@ describe('알림 벨', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['store', 'seller', 'dashboard'] });
   });
 
-  it('로그인하지 않으면 조회 · 연결하지 않음', async () => {
+  it('로그인하지 않으면 조회, 연결하지 않음', async () => {
     useAuthStore.setState({ accessToken: null, user: null });
     renderBell();
     expect(screen.getByRole('button', { name: '알림 0개' })).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('알림 벨', () => {
 
 describe('ago — 알림 시각', () => {
   const now = new Date('2026-10-27T12:00:00+09:00');
-  it('방금 · N분 전 · N시간 전 · 하루 넘으면 월.일', () => {
+  it('방금, N분 전, N시간 전, 하루 넘으면 월.일', () => {
     expect(ago(new Date('2026-10-27T11:59:40+09:00'), now)).toBe('방금');
     expect(ago(new Date('2026-10-27T11:15:00+09:00'), now)).toBe('45분 전');
     expect(ago(new Date('2026-10-27T03:00:00+09:00'), now)).toBe('9시간 전');

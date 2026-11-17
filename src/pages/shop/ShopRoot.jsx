@@ -5,7 +5,7 @@ import { useCart } from '@/features/order/hooks/useCart';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 
-// 쇼핑몰 레이아웃에 데이터 연결 — 카테고리(product) · 장바구니 수(order) · 로그인 상태(auth) · 알림 벨(notification)
+// 쇼핑몰 레이아웃에 데이터 연결 — 카테고리(product), 장바구니 수(order), 로그인 상태(auth), 알림 벨(notification)
 export default function ShopRoot() {
   const { data: categories = [] } = useCategoriesQuery();
   const { cartCount } = useCart();

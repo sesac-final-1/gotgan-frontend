@@ -1,4 +1,4 @@
-// 헤더 알림 벨 — 담당 구지훈. 쇼핑몰 · 판매자센터 · 관리자 헤더 공용 (dark = 콘솔 먹색 헤더)
+// 헤더 알림 벨 — 담당 구지훈. 쇼핑몰, 판매자센터, 관리자 헤더 공용 (dark = 콘솔 먹색 헤더)
 // 안 읽은 수 + 펼치면 최신 20개, 누르면 읽음 처리 후 그 화면으로. 실시간 연결(SSE)은 벨이 있는 동안 하나
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';

@@ -24,9 +24,9 @@ export default function ShopFees() {
 
       <h2 className="mt-10 text-[18px] font-bold border-b border-ink pb-3">정산 방식</h2>
       <ul className="mt-4 space-y-2 text-[14px] text-ink-2 leading-relaxed">
-        <li>· 지급액 = 구매확정 매출 − 판매수수료 − 결제수수료 (각 수수료는 원 단위 내림)</li>
-        <li>· 주 1회 정산 — 월요일부터 일요일까지 구매확정된 상품주문을 모아 다음 주 목요일에 지급</li>
-        <li>· 이용 정지 · 폐점 스토어의 정산은 자동으로 지급 보류</li>
+        <li>, 지급액 = 구매확정 매출 − 판매수수료 − 결제수수료 (각 수수료는 원 단위 내림)</li>
+        <li>, 주 1회 정산 — 월요일부터 일요일까지 구매확정된 상품주문을 모아 다음 주 목요일에 지급</li>
+        <li>, 이용 정지, 폐점 스토어의 정산은 자동으로 지급 보류</li>
       </ul>
 
       <div className="mt-6 border border-ink p-6">

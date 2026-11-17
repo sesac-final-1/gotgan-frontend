@@ -1,14 +1,14 @@
 import { Client, ReconnectionTimeMode } from '@stomp/stompjs';
 
 /**
- * 채팅 실시간 연결 (STOMP, 담당 구지훈 · chat.md 6 · 6-1절) — 앱 전체에서 연결 하나를 같이 쓴다.
+ * 채팅 실시간 연결 (STOMP, 담당 구지훈, chat.md 6, 6-1절) — 앱 전체에서 연결 하나를 같이 쓴다.
  * 연결은 항상 열려 있어 서버 자원을 쓰므로 "필요할 때만 열고, 안 쓰면 바로 닫는다":
  * - 채팅 화면이 방을 구독할 때만 연결. 마지막 구독이 풀리면 RELEASE_GRACE_MS 뒤 끊음(채팅 화면끼리 이동할 때 다시 연결하지 않게)
  * - 페이지를 떠나면(pagehide) 바로 끊고, 뒤로 가기 캐시로 돌아오면(pageshow) 다시 연결
  * - 탭이 가려지면 연결은 두고 방 구독만 해제 — 서버는 "보고 있지 않음"으로 알림을 보낸다. 다시 보이면 재구독하고 'connected' 를 다시 알려
  *   화면이 REST 로 빈 곳을 채운다 (잦은 탭 전환마다 재연결 비용을 들이지 않게 — 10/27 결정)
  * - 끊기면 1초부터 두 배씩 최대 30초 + 무작위 지연으로 재연결 (서버 재시작 때 한꺼번에 몰리지 않게)
- * - 토큰 만료로 닫히면(4401 · UNAUTHORIZED) 토큰을 새로 받아 재연결, 연결 수 초과(4429) · 차단(USER_BLOCKED)이면 재연결하지 않음
+ * - 토큰 만료로 닫히면(4401, UNAUTHORIZED) 토큰을 새로 받아 재연결, 연결 수 초과(4429), 차단(USER_BLOCKED)이면 재연결하지 않음
  * - 하트비트 10초 — 서버도 같은 값으로 끊긴 연결을 정리한다
  */
 export const RELEASE_GRACE_MS = 3_000;
@@ -17,7 +17,7 @@ const BASE_DELAY_MS = 1_000;
 const MAX_DELAY_MS = 30_000;
 const ERRORS_DESTINATION = '/user/queue/errors';
 
-/** 첫 재연결 지연 — attempt 0 이면 1초 근처. 절반~전부 사이 무작위. 이후 두 배 · 최대 30초는 라이브러리 EXPONENTIAL 이 맡는다 */
+/** 첫 재연결 지연 — attempt 0 이면 1초 근처. 절반~전부 사이 무작위. 이후 두 배, 최대 30초는 라이브러리 EXPONENTIAL 이 맡는다 */
 export const reconnectDelay = (attempt, random = Math.random) =>
   Math.round(Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** attempt) * (0.5 + random() * 0.5));
 
@@ -27,7 +27,7 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
   const statusListeners = new Set();
   const errorListeners = new Set();
   let client = null;
-  let status = 'idle'; // idle · connecting · connected · disconnected · stopped
+  let status = 'idle'; // idle, connecting, connected, disconnected, stopped
   let needsRefresh = false;
   let releaseTimer = null;
   let hidden = doc.visibilityState === 'hidden';
@@ -65,7 +65,7 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
       heartbeatIncoming: HEARTBEAT_MS,
       heartbeatOutgoing: HEARTBEAT_MS,
       reconnectDelay: reconnectDelay(0),
-      // client.reconnectDelay 를 나중에 바꿔도 다음 재연결엔 안 먹는다(activate · 연결 성공 때만 읽음, 7.x) — 11/6 chat 장애 시험에서 0.7초 간격 유지 확인
+      // client.reconnectDelay 를 나중에 바꿔도 다음 재연결엔 안 먹는다(activate, 연결 성공 때만 읽음, 7.x) — 11/6 chat 장애 시험에서 0.7초 간격 유지 확인
       reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
       maxReconnectDelay: MAX_DELAY_MS,
       beforeConnect: async () => {
@@ -104,7 +104,7 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
       onWebSocketClose: (event) => {
         if (!client) return;
         if (event?.code === 4429) {
-          stop('stopped'); // 다른 탭 · 기기의 연결이 더 새로움 — 다시 붙으면 서로 밀어내므로 멈춘다
+          stop('stopped'); // 다른 탭, 기기의 연결이 더 새로움 — 다시 붙으면 서로 밀어내므로 멈춘다
           return;
         }
         if (event?.code === 4401) needsRefresh = true;
@@ -179,7 +179,7 @@ export function createChatSocket({ url, getToken, refreshToken, createClient = (
     get status() {
       return status;
     },
-    /** 로그아웃 · 테스트 정리 */
+    /** 로그아웃, 테스트 정리 */
     dispose() {
       rooms.clear();
       stop();

@@ -1,4 +1,4 @@
-// 화면 공통 포맷 · 클래스 유틸 (목업 lib/format.js 이식)
+// 화면 공통 포맷, 클래스 유틸 (목업 lib/format.js 이식)
 export const won = (n) => `${Math.round(n).toLocaleString('ko-KR')}원`;
 export const comma = (n) => Math.round(n).toLocaleString('ko-KR');
 export const pct = (r, d = 0) => `${(r * 100).toFixed(d)}%`;

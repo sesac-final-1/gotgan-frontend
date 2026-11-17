@@ -7,7 +7,7 @@ describe('formatProblem — 서버와 같은 형식 규칙', () => {
     expect(formatProblem(['bizRegNo'], { bizRegNo: '1234567890' })).toBe('사업자등록번호는 000-00-00000 형식입니다.');
     expect(formatProblem(['managerPhone'], { managerPhone: '02-000-0000' })).toBe('휴대폰 번호는 010-0000-0000 형식입니다.');
     expect(formatProblem(['managerEmail'], { managerEmail: 'seller' })).toBe('이메일 형식이 올바르지 않습니다.');
-    expect(formatProblem(['slug'], { slug: '-bad' })).toContain('영소문자 · 숫자 · 하이픈 3~30자');
+    expect(formatProblem(['slug'], { slug: '-bad' })).toContain('영소문자, 숫자, 하이픈 3~30자');
     expect(formatProblem(['slug'], { slug: 'admin' })).toBe('사용할 수 없는 스토어 주소입니다.');
     expect(formatProblem(['slug'], { slug: '12345' })).toBe('스토어 주소는 숫자만으로 만들 수 없습니다.');
     expect(formatProblem(['slug'], { slug: 'store-24' })).toBeNull();
@@ -63,7 +63,7 @@ describe('보완 재제출 — 바뀐 칸만', () => {
     expect(bizChanged).toBe(false);
   });
 
-  it('사업자 구분 · 대표자 · 사업자번호 중 하나라도 바뀌면 bizChanged → 사업자등록증도 필수', () => {
+  it('사업자 구분, 대표자, 사업자번호 중 하나라도 바뀌면 bizChanged → 사업자등록증도 필수', () => {
     const changed = buildResubmitRequest(ME, { ...toResubmitForm(ME), bizRegNo: '000-00-00002' });
     expect(changed).toEqual({ request: { bizRegNo: '000-00-00002' }, bizChanged: true });
     expect(buildResubmitRequest(ME, { ...toResubmitForm(ME), bizType: 'CORPORATE' }).bizChanged).toBe(true);
@@ -72,14 +72,14 @@ describe('보완 재제출 — 바뀐 칸만', () => {
     expect(requiredDocTypes(ME, false)).toEqual(['ECOMMERCE_REG']);
     expect(requiredDocTypes(ME, true)).toEqual(['ECOMMERCE_REG', 'BUSINESS_REG']);
     expect(requiredDocTypes({ ...ME, requestedDocs: ['BUSINESS_REG'] }, true)).toEqual(['BUSINESS_REG']); // 중복 없음
-    expect(requiredDocTypes({ ...ME, requestedDocs: null }, false)).toEqual([]); // 옛 보완요청 · 내용 보완
+    expect(requiredDocTypes({ ...ME, requestedDocs: null }, false)).toEqual([]); // 옛 보완요청, 내용 보완
   });
 });
 
 describe('resubmitConfirmMessage — 제출 전 확인 문구', () => {
   it('바꾼 칸 이름(화면 라벨) + 다시 낸 서류, 없으면 확인만', () => {
     expect(resubmitConfirmMessage({ companyName: 'x', settlementAccount: {} }, ['통신판매업 신고증']))
-      .toBe('바꾼 항목: 상호명 · 정산 계좌 · 통신판매업 신고증(다시 냄)\n제출하면 다시 심사받습니다. 제출할까요?');
+      .toBe('바꾼 항목: 상호명, 정산 계좌, 통신판매업 신고증(다시 냄)\n제출하면 다시 심사받습니다. 제출할까요?');
     expect(resubmitConfirmMessage({}, [])).toBe('바꾼 항목이 없어요. 확인만 제출할까요?');
   });
 });

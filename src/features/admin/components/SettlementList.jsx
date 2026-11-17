@@ -21,7 +21,7 @@ const errMsg = (err, fallback) => err.response?.data?.message ?? fallback;
 
 const DAY = 864e5;
 
-// 선택 체크박스 · 보류 사유 버튼은 컴포넌트 상태를 쓰므로 열 정의를 useMemo 로 (컨벤션 4-7)
+// 선택 체크박스, 보류 사유 버튼은 컴포넌트 상태를 쓰므로 열 정의를 useMemo 로 (컨벤션 4-7)
 function buildColumns({ sel, toggle, setHold, setDetailId }) {
   return [
     {
@@ -47,7 +47,7 @@ function buildColumns({ sel, toggle, setHold, setDetailId }) {
       cell: ({ row }) => (
         <span className="inline-flex gap-1">
           <button onClick={() => setDetailId(row.original.id)} className="btn btn-line btn-xs">상세</button>
-          {row.original.status === '지급보류' && <button onClick={() => setHold(row.original)} className="btn btn-line btn-xs">사유 · 해제</button>}
+          {row.original.status === '지급보류' && <button onClick={() => setHold(row.original)} className="btn btn-line btn-xs">사유, 해제</button>}
         </span>
       ),
     },
@@ -62,7 +62,7 @@ export default function SettlementList() {
   const holdMany = useHoldSettlementsMutation();
   const release = useReleaseSettlementHoldMutation();
   const aggregate = useAggregateSettlementsMutation();
-  const [detailId, setDetailId] = useState(null); // 지급 전 확인 — 건별 상품주문 · 이력
+  const [detailId, setDetailId] = useState(null); // 지급 전 확인 — 건별 상품주문, 이력
   const { data: detail } = useAdminSettlementQuery(detailId);
   const [sel, setSel] = useState(() => new Set());
   const [hold, setHold] = useState(null);
@@ -82,7 +82,7 @@ export default function SettlementList() {
   const handlePay = () => {
     pay.mutate(selectedIds(), {
       onSuccess: ({ success, failed }) => {
-        toast(failed.length ? `${success.length}건 지급 · ${failed.length}건 실패 — ${failed[0].message}` : `${success.length}건 지급 실행 (펌뱅킹 이체 요청)`);
+        toast(failed.length ? `${success.length}건 지급, ${failed.length}건 실패 — ${failed[0].message}` : `${success.length}건 지급 실행 (펌뱅킹 이체 요청)`);
         setSel(new Set());
       },
       onError: (err) => toast(errMsg(err, '지급을 실행하지 못했어요. 잠시 후 다시 시도해 주세요.')),
@@ -92,7 +92,7 @@ export default function SettlementList() {
     holdMany.mutate({ ids: selectedIds(), reason: holdReason.trim() }, {
       onSuccess: (results) => {
         const failed = results.filter((r) => r.status === 'rejected');
-        toast(failed.length ? `${results.length - failed.length}건 보류 · ${failed.length}건 실패 — ${errMsg(failed[0].reason, '')}` : `${results.length}건 지급보류 처리`);
+        toast(failed.length ? `${results.length - failed.length}건 보류, ${failed.length}건 실패 — ${errMsg(failed[0].reason, '')}` : `${results.length}건 지급보류 처리`);
         setSel(new Set());
         setHoldOpen(false);
         setHoldReason('');
@@ -101,7 +101,7 @@ export default function SettlementList() {
   };
   const handleAggregate = () => {
     aggregate.mutate(week, {
-      onSuccess: (r) => toast(`${r.week} 집계 — 새 정산서 ${r.created} · 다시 계산 ${r.updated} · 자동 보류 ${r.autoHeld} · 이월 ${r.carriedOver}건`),
+      onSuccess: (r) => toast(`${r.week} 집계 — 새 정산서 ${r.created}, 다시 계산 ${r.updated}, 자동 보류 ${r.autoHeld}, 이월 ${r.carriedOver}건`),
       onError: (err) => toast(errMsg(err, '집계하지 못했어요. 잠시 후 다시 시도해 주세요.')),
     });
   };
@@ -114,14 +114,14 @@ export default function SettlementList() {
 
   return (
     <div>
-      <PageHead title="정산 관리" desc="구매확정일 기준 주간 정산 · 지급액 = 구매확정 매출 − 판매수수료(카테고리별) − 결제수수료(2.2%) · 환불은 구매확정 전에 끝나 정산에 들어오지 않음" />
+      <PageHead title="정산 관리" desc="구매확정일 기준 주간 정산, 지급액 = 구매확정 매출 − 판매수수료(카테고리별) − 결제수수료(2.2%), 환불은 구매확정 전에 끝나 정산에 들어오지 않음" />
       <div className="panel p-4 flex flex-wrap items-center gap-3">
         <span className="text-[13px] font-semibold">정산 주차</span>
         <select value={week} onChange={(e) => { setWeek(e.target.value); setSel(new Set()); }} className="field field-sm h-9 w-auto">
           {weeks.map(({ key, start: w }) => <option key={key} value={key}>{ymd(w)} ~ {ymd(new Date(w.getTime() + 6 * DAY)).slice(5)} (지급 {ymd(new Date(w.getTime() + 10 * DAY)).slice(5)})</option>)}
         </select>
         <button onClick={handleAggregate} disabled={aggregate.isPending} className="btn btn-line btn-sm ml-auto">{aggregate.isPending ? '집계 중…' : '이 주차 지금 집계'}</button>
-        <span className="text-[11.5px] text-mute w-full sm:w-auto">자동 집계: 매주 월 03:00 · 클러스터 기동 시 지난주 — 여러 번 눌러도 스토어 × 주차 1건</span>
+        <span className="text-[11.5px] text-mute w-full sm:w-auto">자동 집계: 매주 월 03:00, 클러스터 기동 시 지난주 — 여러 번 눌러도 스토어 × 주차 1건</span>
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
         <Kpi label="구매확정 매출" value={shortWon(tot('gross'))} unit="원" />
@@ -135,14 +135,14 @@ export default function SettlementList() {
           <span className="text-ink-2 mr-2">선택 <b className="num text-ink">{sel.size}</b>건</span>
           <button disabled={!sel.size || pay.isPending} onClick={handlePay} className="btn btn-ink btn-xs">지급 실행</button>
           <button disabled={!sel.size} onClick={() => setHoldOpen(true)} className="btn btn-line btn-xs">지급 보류</button>
-          <span className="text-mute">지급 대기 {payable.length}건 · {won(payable.reduce((a, s) => a + s.payout, 0))}</span>
-          <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="스토어 · 상태" className="ml-auto" />
+          <span className="text-mute">지급 대기 {payable.length}건, {won(payable.reduce((a, s) => a + s.payout, 0))}</span>
+          <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="스토어, 상태" className="ml-auto" />
         </div>
       </div>
       <div className="mt-3">
         <DataTable table={table} loading={isLoading} error={isError} />
       </div>
-      <Modal open={detailId != null} onClose={() => setDetailId(null)} title={`정산 상세 · ${detail ? `${detail.storeName ?? ''} ${detail.week}` : ''}`} width={600}
+      <Modal open={detailId != null} onClose={() => setDetailId(null)} title={`정산 상세, ${detail ? `${detail.storeName ?? ''} ${detail.week}` : ''}`} width={600}
         footer={detail && (
           <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: detail.storeId, context: { type: 'SETTLEMENT', id: detail.id } }}>
             <MessagesSquare size={14} /> 판매자와 상담
@@ -150,7 +150,7 @@ export default function SettlementList() {
         )}>
         {detail ? <SettlementDetailBody d={detail} /> : <p className="text-mute py-6 text-center">불러오는 중…</p>}
       </Modal>
-      <Modal open={!!hold} onClose={() => setHold(null)} title="지급 보류 사유 · 해제" width={440}
+      <Modal open={!!hold} onClose={() => setHold(null)} title="지급 보류 사유, 해제" width={440}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setHold(null)}>닫기</button><button className="btn btn-ink btn-sm" disabled={release.isPending} onClick={handleReleaseHold}>보류 해제</button></>}>
         <p className="text-[14px]">{hold?.holdReason}</p>
       </Modal>

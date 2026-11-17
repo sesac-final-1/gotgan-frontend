@@ -1,5 +1,5 @@
-// 우편번호 검색 — 카카오(구 Daum) 우편번호 서비스. 키 · 사용량 제한 없음, 상업 이용 무료 (https://postcode.map.kakao.com/guide)
-// 배송지(user) · 주문서 직접 입력(order) · 입점 신청 사업장 주소(store) 에서 같이 쓴다
+// 우편번호 검색 — 카카오(구 Daum) 우편번호 서비스. 키, 사용량 제한 없음, 상업 이용 무료 (https://postcode.map.kakao.com/guide)
+// 배송지(user), 주문서 직접 입력(order), 입점 신청 사업장 주소(store) 에서 같이 쓴다
 export const POSTCODE_SCRIPT_URL = 'https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
 
 // 생성자 — 2025 개편 후 kakao.Postcode, 이전 이름 daum.Postcode 도 대비
@@ -27,7 +27,7 @@ export function loadPostcode() {
 
 /**
  * 검색 결과 → { zip, addr } — 가이드 샘플과 같은 규칙:
- * 사용자가 고른 종류(R 도로명 · J 지번) 주소, 도로명이면 참고항목(법정동 · 공동주택 건물명)을 괄호로 덧붙인다
+ * 사용자가 고른 종류(R 도로명, J 지번) 주소, 도로명이면 참고항목(법정동, 공동주택 건물명)을 괄호로 덧붙인다
  */
 export function toPostcodeAddress(data) {
   const road = data.userSelectedType !== 'J';

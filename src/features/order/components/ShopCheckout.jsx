@@ -1,4 +1,4 @@
-// 주문서 · 결제 — 담당 이경석 (목업 레이아웃 유지 · 표 아님). 주문 상품 · 금액은 장바구니 응답의 선택된 구매 가능 줄 (서버 계산)
+// 주문서, 결제 — 담당 이경석 (목업 레이아웃 유지, 표 아님). 주문 상품, 금액은 장바구니 응답의 선택된 구매 가능 줄 (서버 계산)
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router';
@@ -64,7 +64,7 @@ export default function ShopCheckout() {
   const paying = createOrder.isPending || payOrder.isPending;
 
   // 주문 생성 → 결제창 → 결제 확인 (payOrder). 금액은 서버 응답 기준 — 화면 합계는 안내용
-  // 결제창 취소 · 실패 · 결과 모름은 주문이 결제 대기로 남고 15분 뒤 서버가 정리 → 안내만 하고 주문서에 머문다
+  // 결제창 취소, 실패, 결과 모름은 주문이 결제 대기로 남고 15분 뒤 서버가 정리 → 안내만 하고 주문서에 머문다
   const pay = async (earn) => {
     if (!addr) { toast('배송지를 먼저 등록해 주세요'); return; }
     const memo = memoChoice === MEMO_CUSTOM ? memoText : memoChoice;
@@ -116,7 +116,7 @@ export default function ShopCheckout() {
                 {g.items.map((l) => (
                   <div key={l.productOptionId} className="flex gap-3 p-3 border-t border-line text-[13px]">
                     <img src={l.imageUrl} alt="" className="w-14 h-16 object-cover bg-cream" />
-                    <div className="flex-1"><div className="font-medium">{l.productName}</div><div className="text-mute">{l.optionName || '단일상품'} · {l.quantity}개</div></div>
+                    <div className="flex-1"><div className="font-medium">{l.productName}</div><div className="text-mute">{l.optionName || '단일상품'}, {l.quantity}개</div></div>
                     <div className="font-bold num">{won(l.lineAmt)}</div>
                   </div>
                 ))}
@@ -138,7 +138,7 @@ export default function ShopCheckout() {
                 {point > 0 && <button onClick={() => setPoint(0)} className="btn btn-ghost shrink-0">취소</button>}
               </div>
               <span />
-              <span className="text-[12px] text-mute -mt-1">1P = 1원 · 사용 후 잔여 {comma(myPointBalance - point)}P</span>
+              <span className="text-[12px] text-mute -mt-1">1P = 1원, 사용 후 잔여 {comma(myPointBalance - point)}P</span>
             </div>
             <div className="mt-4 bg-cream p-4 text-[13px] space-y-1.5">
               <div className="flex justify-between"><span className="text-ink-2">상품금액 + 배송비</span><span className="num">{won(productAmt + shippingFee)}</span></div>
@@ -154,15 +154,15 @@ export default function ShopCheckout() {
                 <button key={label} onClick={() => setMethod(label)} className={cx('h-12 border text-[14px]', method === label ? 'border-ink border-2 font-bold' : 'border-line-2 hover:border-ink')}>{label}</button>
               ))}
             </div>
-            <p className="text-[12px] text-mute mt-2">카드사 · 할부는 결제창에서 고릅니다</p>
+            <p className="text-[12px] text-mute mt-2">카드사, 할부는 결제창에서 고릅니다</p>
           </Section>
 
           <section className="border-t border-ink pt-5 text-[13px] space-y-2">
             <Checkbox checked={agree} onChange={setAgree} label="주문 내용을 확인했으며, 아래 내용에 모두 동의합니다." />
             <ul className="pl-7 text-mute space-y-1 text-[12px]">
-              <li>(필수) 개인정보 수집·이용 및 판매자 제3자 제공 동의</li>
+              <li>(필수) 개인정보 수집, 이용 및 판매자 제3자 제공 동의</li>
               <li>(필수) 전자결제대행 이용 동의</li>
-              <li>곳간은 통신판매중개자이며, 상품·거래 책임은 각 판매자에게 있습니다.</li>
+              <li>곳간은 통신판매중개자이며, 상품, 거래 책임은 각 판매자에게 있습니다.</li>
             </ul>
           </section>
         </div>
@@ -179,7 +179,7 @@ export default function ShopCheckout() {
         <div className="space-y-2">
           {myAddresses.map((a) => (
             <button key={a.id} onClick={() => { setAddrId(a.id); setAddrModal(false); }} className={cx('w-full text-left border p-4 text-[13px]', addr?.id === a.id ? 'border-ink border-2' : 'border-line-2')}>
-              <div className="font-bold">{a.label} · {a.name}{a.main && <span className="ml-2 text-point text-[11px]">기본</span>}</div>
+              <div className="font-bold">{a.label}, {a.name}{a.main && <span className="ml-2 text-point text-[11px]">기본</span>}</div>
               <div className="text-ink-2 mt-1">{a.addr} {a.detail}</div>
             </button>
           ))}

@@ -50,8 +50,8 @@ function renderDashboard() {
 
 const tile = (label) => screen.getByText(label).closest('a');
 
-describe('판매자 대시보드 — GET /api/seller/dashboard + 주문 · 리뷰 · 문의 API', () => {
-  it('할 일은 주문 상태별 수 · 미답변 문의, 카드는 대시보드 통계, 최근 주문 · 새 리뷰 · 재고 부족', async () => {
+describe('판매자 대시보드 — GET /api/seller/dashboard + 주문, 리뷰, 문의 API', () => {
+  it('할 일은 주문 상태별 수, 미답변 문의, 카드는 대시보드 통계, 최근 주문, 새 리뷰, 재고 부족', async () => {
     const get = mockApi();
     renderDashboard();
 
@@ -82,12 +82,12 @@ describe('판매자 대시보드 — GET /api/seller/dashboard + 주문 · 리�
     expect(within(screen.getByText('달아요').parentElement).queryByText('블라인드')).toBeNull();
   });
 
-  it('못 받은 영역(unavailable)은 그 카드만 안내 · 다음 지급 없음 · 30일 결제 없음', async () => {
+  it('못 받은 영역(unavailable)은 그 카드만 안내, 다음 지급 없음, 30일 결제 없음', async () => {
     mockApi({ dash: { ...DASH, product: null, orderDaily: null, settlement: null, unavailable: ['orderDaily', 'product', 'settlement'] } });
     renderDashboard();
 
     await screen.findByText('박영철 대표님, 좋은 하루예요');
-    expect(screen.getAllByText('일시적으로 불러올 수 없어요').length).toBeGreaterThanOrEqual(2); // 차트 · 상품 현황 (+ 정산 카드 부제)
+    expect(screen.getAllByText('일시적으로 불러올 수 없어요').length).toBeGreaterThanOrEqual(2); // 차트, 상품 현황 (+ 정산 카드 부제)
     expect(screen.getByText('52,000')).toBeInTheDocument(); // 주문 영역은 정상
     cleanup();
 

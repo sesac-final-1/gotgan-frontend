@@ -22,8 +22,8 @@ function resetServer({ chaosEnabled = true } = {}) {
     chaosEnabled,
     services: [svcOf('order-service', 2), svcOf('review-service', 1), svcOf('gateway-service', 2, false)],
     features: [
-      { key: 'CART_ORDER', label: '장바구니 · 주문', state: 'UP', causes: [] },
-      { key: 'REVIEW', label: '리뷰 · 문의', state: 'UP', causes: [] },
+      { key: 'CART_ORDER', label: '장바구니, 주문', state: 'UP', causes: [] },
+      { key: 'REVIEW', label: '리뷰, 문의', state: 'UP', causes: [] },
     ],
   };
 }
@@ -133,20 +133,20 @@ describe('사용자 기능 패널', () => {
 
   it('멈춘 기능에 원인 서비스를 짧은 이름으로 함께 보여 주고 계산 값임을 알린다', () => {
     render(<SystemFeaturePanel features={[
-      { key: 'BROWSE', label: '둘러보기 · 상품 상세', state: 'UP', causes: [] },
-      { key: 'ORDER', label: '주문 · 결제', state: 'DOWN', causes: ['order-service', 'payment-service'] },
+      { key: 'BROWSE', label: '둘러보기, 상품 상세', state: 'UP', causes: [] },
+      { key: 'ORDER', label: '주문, 결제', state: 'DOWN', causes: ['order-service', 'payment-service'] },
     ]} />);
     const [browse, order] = within(screen.getAllByRole('list').at(-1)).getAllByRole('listitem');
     expect(browse.textContent).toContain('정상');
-    expect(order.textContent).toContain('중단 · order, payment');
+    expect(order.textContent).toContain('중단, order, payment');
     expect(screen.getByText(/의존 관계로 계산/)).toBeTruthy();
     const legend = screen.getByRole('list', { name: '상태 설명' }).textContent;
     for (const word of ['정상', '일부 동작', '중단']) expect(legend).toContain(word);
   });
 
   it('일부 장애(DEGRADED)도 원인과 함께 표시한다', () => {
-    render(<SystemFeaturePanel features={[{ key: 'CART_ORDER', label: '장바구니 · 주문', state: 'DEGRADED', causes: ['order-service'] }]} />);
-    expect(screen.getByText('장바구니 · 주문').closest('li').textContent).toContain('일부 · order');
+    render(<SystemFeaturePanel features={[{ key: 'CART_ORDER', label: '장바구니, 주문', state: 'DEGRADED', causes: ['order-service'] }]} />);
+    expect(screen.getByText('장바구니, 주문').closest('li').textContent).toContain('일부, order');
   });
 });
 
@@ -183,7 +183,7 @@ describe('서비스 내리기', () => {
     open('order');
     fireEvent.click(screen.getByRole('button', { name: '전부 내리기' }));
     await waitFor(() => expect(rowOf('order').textContent).toContain('중단'));
-    expect(screen.getByText('장바구니 · 주문').closest('li').textContent).toContain('중단 · order');
+    expect(screen.getByText('장바구니, 주문').closest('li').textContent).toContain('중단, order');
   });
 
   it('레플리카 1 서비스는 1개 선택 없이 내리기만 있다', async () => {
@@ -211,7 +211,7 @@ describe('서비스 내리기', () => {
     expect(rowOf('order').textContent).toContain('정상');
   });
 
-  it('내리기가 꺼져 있으면 버튼을 막고 안내한다 · gateway 는 내릴 수 없다', async () => {
+  it('내리기가 꺼져 있으면 버튼을 막고 안내한다, gateway 는 내릴 수 없다', async () => {
     resetServer({ chaosEnabled: false });
     await renderPage();
     expect(screen.getByRole('button', { name: 'order 내리기' }).disabled).toBe(true);
@@ -221,7 +221,7 @@ describe('서비스 내리기', () => {
   });
 });
 
-describe('타임라인 · 바로가기', () => {
+describe('타임라인, 바로가기', () => {
   let queryClient;
   afterEach(() => {
     cleanup();
@@ -234,7 +234,7 @@ describe('타임라인 · 바로가기', () => {
     render(<QueryClientProvider client={queryClient}><SystemTimeline /></QueryClientProvider>);
   };
 
-  it('내린 시각 · 복구 시각 · 걸린 시간을 서울 시각으로 보여 준다', async () => {
+  it('내린 시각, 복구 시각, 걸린 시간을 서울 시각으로 보여 준다', async () => {
     renderTimeline(async () => [
       { eventId: '2', service: 'review-service', scope: 'ALL', killedAt: '2026-11-09T05:10:00Z', recoveredAt: null, recoverySeconds: null },
       { eventId: '1', service: 'order-service', scope: 'ONE', killedAt: '2026-11-09T05:03:11Z', recoveredAt: '2026-11-09T05:04:02Z', recoverySeconds: 51 },
@@ -244,7 +244,7 @@ describe('타임라인 · 바로가기', () => {
     expect(rows[0].textContent).toContain('복구 기다리는 중');
     expect(rows[1].textContent).toContain('14:03:11');
     expect(rows[1].textContent).toContain('1개 내림');
-    expect(rows[1].textContent).toContain('14:04:02 복구 · 51초');
+    expect(rows[1].textContent).toContain('14:04:02 복구, 51초');
   });
 
   it('없으면 빈 안내, 실패하면 실패 안내를 보여 준다', async () => {
@@ -282,9 +282,9 @@ describe('시나리오 — 레플리카 2 서비스 1개씩 내리기', () => {
   };
   const button = () => screen.getByRole('button', { name: '구매 경로 장애 주입' });
 
-  it('대상은 내릴 수 있고 레플리카 2 이상인 서비스만(review · gateway 제외)', () => {
+  it('대상은 내릴 수 있고 레플리카 2 이상인 서비스만(review, gateway 제외)', () => {
     renderPanel();
-    expect(screen.getByText('order · user')).toBeTruthy();
+    expect(screen.getByText('order, user')).toBeTruthy();
     expect(button().disabled).toBe(false);
   });
 
@@ -292,7 +292,7 @@ describe('시나리오 — 레플리카 2 서비스 1개씩 내리기', () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { services: [{ service: 'order-service' }, { service: 'user-service' }] } } });
     renderPanel();
     fireEvent.click(button());
-    expect(screen.getByText(/order · user 파드를 1개씩 지웁니다/)).toBeTruthy();
+    expect(screen.getByText(/order, user 파드를 1개씩 지웁니다/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '장애 주입' }));
     await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('2개 서비스에 장애를 주입했어요 — 파드 1개씩 제거'));
     expect(post).toHaveBeenCalledWith(`${BASE}/scenarios/kill-one-each`, {});

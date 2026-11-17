@@ -1,5 +1,5 @@
-// 장바구니 — 담당 이경석 (GET /api/carts · 목업 레이아웃 유지 · 표 아님)
-// 스토어별 묶음 · 배송비 · 무료배송까지 남은 금액은 서버 계산 (선택된 구매 가능 줄 기준). 수량 · 선택은 서버에 저장된다
+// 장바구니 — 담당 이경석 (GET /api/carts, 목업 레이아웃 유지, 표 아님)
+// 스토어별 묶음, 배송비, 무료배송까지 남은 금액은 서버 계산 (선택된 구매 가능 줄 기준). 수량, 선택은 서버에 저장된다
 import { Link, useNavigate } from 'react-router';
 import { X, Minus, Plus, ChevronRight } from 'lucide-react';
 import { useCart } from '@/features/order/hooks/useCart';
@@ -49,7 +49,7 @@ export default function ShopCart() {
                   <span className="text-[12px] text-ink-2">
                     {g.productAmt === 0 ? '선택한 상품 없음'
                       : g.shippingFee === 0 ? '무료배송'
-                        : <>배송비 {won(g.shippingFee)}{g.amountToFree > 0 && <> · <span className="text-point">{won(g.amountToFree)} 더 담으면 무료배송</span></>}</>}
+                        : <>배송비 {won(g.shippingFee)}{g.amountToFree > 0 && <>, <span className="text-point">{won(g.amountToFree)} 더 담으면 무료배송</span></>}</>}
                   </span>
                 </div>
                 {g.items.map((l) => (

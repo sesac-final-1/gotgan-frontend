@@ -12,8 +12,8 @@ function PagerButton({ label, disabled, onClick, children }) {
   );
 }
 
-// 블록 페이저: << (이전 10페이지 묶음) · < (이전 페이지) · 1~10 · > (다음 페이지) · >> (다음 묶음 첫 페이지, 10 → 11)
-// pageIndex 는 0부터. 클라이언트 페이징 · 서버 페이징(manualPagination) 모두 같은 화면 (컨벤션 4-7)
+// 블록 페이저: << (이전 10페이지 묶음), < (이전 페이지), 1~10, > (다음 페이지), >> (다음 묶음 첫 페이지, 10 → 11)
+// pageIndex 는 0부터. 클라이언트 페이징, 서버 페이징(manualPagination) 모두 같은 화면 (컨벤션 4-7)
 export function BlockPager({ pageIndex, pageCount, onPage, className = '' }) {
   if (pageCount <= 1) return null;
   const blockStart = Math.floor(pageIndex / BLOCK) * BLOCK;

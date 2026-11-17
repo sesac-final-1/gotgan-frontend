@@ -8,7 +8,7 @@ import SystemMonitorPanel from '@/features/admin/components/SystemMonitorPanel';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import { formatClock, hasErrors, isLatencySpike, isServerError, SCENARIO_SERVICES } from '@/features/admin/monitor';
 
-// 실시간 모니터링 — 계약 backend admin.md 9절. 탭 · 이상 표시(빨간 배경 · 빨간 줄) · 트레이스 · 서비스 카드 색
+// 실시간 모니터링 — 계약 backend admin.md 9절. 탭, 이상 표시(빨간 배경, 빨간 줄), 트레이스, 서비스 카드 색
 const M = '/api/admin/system/monitor';
 const pts = (...vs) => vs.map((v, i) => ({ t: i * 5000, v }));
 const normal = { rps: pts(10, 12, 11), avgMs: pts(30, 32, 31), errors: pts(0, 0, 0) };
@@ -97,7 +97,7 @@ describe('실시간 모니터링 패널', () => {
     return render(<QueryClientProvider client={queryClient}><SystemMonitorPanel /></QueryClientProvider>);
   };
 
-  it('정상이면 빨간 배경이 없고, 에러 · 응답 급등이면 그래프와 서비스 칸에 표시한다', async () => {
+  it('정상이면 빨간 배경이 없고, 에러, 응답 급등이면 그래프와 서비스 칸에 표시한다', async () => {
     renderPanel();
     expect(await screen.findByText('3 / 30')).toBeTruthy();
     expect(document.querySelectorAll('[data-alert]').length).toBe(0);
@@ -130,7 +130,7 @@ describe('실시간 모니터링 패널', () => {
     expect(screen.getByRole('list', { name: '구간' }).children).toHaveLength(2);
   });
 
-  it('장애 탭 — 5xx 응답은 빨간 줄, WARN 로그는 일반, 분석 탭 — 에러 API · 느린 API · 상태 코드', async () => {
+  it('장애 탭 — 5xx 응답은 빨간 줄, WARN 로그는 일반, 분석 탭 — 에러 API, 느린 API, 상태 코드', async () => {
     renderPanel();
     fireEvent.click(screen.getByRole('tab', { name: '장애' }));
     const rows = await screen.findAllByRole('row');
@@ -153,7 +153,7 @@ describe('실시간 모니터링 패널', () => {
   });
 });
 
-describe('서비스 카드 색 · 시나리오 강조', () => {
+describe('서비스 카드 색, 시나리오 강조', () => {
   afterEach(cleanup);
   const svc = (name, state, ready, desired) => ({ name, state, ready, desired, killable: true, pods: [] });
 
@@ -169,7 +169,7 @@ describe('서비스 카드 색 · 시나리오 강조', () => {
   });
 });
 
-describe('호출 · 장애 서비스 필터', () => {
+describe('호출, 장애 서비스 필터', () => {
   let queryClient;
   beforeEach(() => {
     state = { overview: overview() };
@@ -185,7 +185,7 @@ describe('호출 · 장애 서비스 필터', () => {
   });
   afterEach(() => { cleanup(); queryClient?.clear(); vi.restoreAllMocks(); });
 
-  it('서비스를 고르면 그 서비스로 다시 조회하고, 탭이 호출 · 장애일 때만 보인다', async () => {
+  it('서비스를 고르면 그 서비스로 다시 조회하고, 탭이 호출, 장애일 때만 보인다', async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={queryClient}><SystemMonitorPanel /></QueryClientProvider>);
     expect(screen.queryByRole('combobox', { name: '서비스 필터' })).toBeNull();

@@ -1,5 +1,5 @@
 // 역할 가드 — 담당 이경석 (컨벤션 4-3). authStore.user.roles 로만 판단(토큰 디코딩 안 함), isAuthReady 전에는 판단하지 않는다
-// 프론트 가드는 UX 장치 — 실제 접근 제어는 게이트웨이 · 서비스
+// 프론트 가드는 UX 장치 — 실제 접근 제어는 게이트웨이, 서비스
 import { Link, Navigate, useLocation } from 'react-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { homePathFor } from '@/features/auth/constants';

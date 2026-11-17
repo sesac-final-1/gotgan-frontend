@@ -6,7 +6,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import ShopSellerApply from '@/features/store/components/ShopSellerApply';
 import { fileOf } from '@/test/fileOf';
 
-// 입점 신청 화면 — 내 신청 상태(store.md 2-2절)에 따라 폼 · 심사대기 · 보완요청 · 반려 · 승인, 제출은 서류 업로드 → POST /api/seller/apply (2 · 2-1절)
+// 입점 신청 화면 — 내 신청 상태(store.md 2-2절)에 따라 폼, 심사대기, 보완요청, 반려, 승인, 제출은 서류 업로드 → POST /api/seller/apply (2, 2-1절)
 let queryClient;
 afterEach(async () => {
   if (queryClient) await waitFor(() => expect(queryClient.isFetching()).toBe(0));
@@ -58,12 +58,12 @@ describe('내 신청 상태', () => {
     expect(await screen.findByRole('heading', { name: '판매자 정보' })).toBeInTheDocument();
   });
 
-  it('입점 혜택은 실제 정책만 — 수수료는 카테고리별 6%–11% · 결제 2.2%, 메인 노출 약속 없음, 수수료 안내는 새 탭', async () => {
+  it('입점 혜택은 실제 정책만 — 수수료는 카테고리별 6%–11%, 결제 2.2%, 메인 노출 약속 없음, 수수료 안내는 새 탭', async () => {
     stubGet(null);
     renderApply();
     await screen.findByRole('heading', { name: '판매자 정보' });
 
-    expect(screen.getByText(/판매수수료 상위 카테고리별 6%–11% · 결제수수료 2\.2%/)).toBeInTheDocument();
+    expect(screen.getByText(/판매수수료 상위 카테고리별 6%–11%, 결제수수료 2\.2%/)).toBeInTheDocument();
     expect(screen.queryByText(/50%/)).not.toBeInTheDocument(); // 없는 정책 "첫 3개월 50%"
     expect(screen.queryByText(/메인 노출/)).not.toBeInTheDocument(); // 없는 기능 "신규 스토어 메인 노출 2주"
     const link = screen.getByRole('link', { name: '수수료 안내' });
@@ -71,7 +71,7 @@ describe('내 신청 상태', () => {
     expect(link).toHaveAttribute('target', '_blank'); // 같은 탭이면 작성 중인 신청서가 사라짐
   });
 
-  it('심사대기 → 접수번호 · 스토어명 · 타임라인', async () => {
+  it('심사대기 → 접수번호, 스토어명, 타임라인', async () => {
     stubGet(application('PENDING'));
     renderApply();
     expect(await screen.findByText('입점 신청을 심사하고 있습니다')).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe('내 신청 상태', () => {
     expect(screen.getByText(/신청자/)).toBeInTheDocument();
   });
 
-  it('보완요청 → 사유 · 다시 낼 서류 · 기한, 제출 내용(submitted)이 오면 "보완 제출하기" 버튼', async () => {
+  it('보완요청 → 사유, 다시 낼 서류, 기한, 제출 내용(submitted)이 오면 "보완 제출하기" 버튼', async () => {
     stubGet(application('SUPPLEMENT', { statusReason: '신고증 사본이 흐립니다', supplementDueAt: '2026-10-30T10:00:00+09:00', requestedDocs: ['ECOMMERCE_REG'],
       history: [{ fromStatus: null, toStatus: 'PENDING', actor: 'APPLICANT', reason: null, changedAt: '2026-10-22T14:05:11+09:00' },
         { fromStatus: 'PENDING', toStatus: 'SUPPLEMENT', actor: 'ADMIN', reason: '신고증 사본이 흐립니다', changedAt: '2026-10-23T10:00:00+09:00' }] }));
@@ -107,7 +107,7 @@ describe('내 신청 상태', () => {
     expect(screen.queryByRole('button', { name: '다시 신청하기' })).toBeNull();
   });
 
-  it('승인 → 판매자센터 링크 · 재로그인 안내', async () => {
+  it('승인 → 판매자센터 링크, 재로그인 안내', async () => {
     stubGet(application('APPROVED', { storeId: 3 }));
     renderApply();
     expect(await screen.findByText('입점이 승인되었습니다')).toBeInTheDocument();
@@ -124,7 +124,7 @@ async function fillAll() {
   type('담당자 휴대폰', '010-0000-1234'); type('담당자 이메일', 'seller@example.com'); type('사업장 주소', '서울시 성동구 성수이로 00');
   fireEvent.click(screen.getByRole('button', { name: '다음 단계' }));
 
-  await screen.findByRole('heading', { name: '스토어 · 카테고리 · 판매 예정 상품' });
+  await screen.findByRole('heading', { name: '스토어, 카테고리, 판매 예정 상품' });
   type('스토어 이름', '곳간상회');
   fireEvent.change(screen.getByLabelText('스토어 주소'), { target: { value: 'gotgan-store' } });
   fireEvent.click(screen.getByRole('button', { name: /식품/ }));
@@ -141,13 +141,13 @@ async function fillAll() {
   fireEvent.change(screen.getByLabelText('통신판매업 신고증'), { target: { files: [file('신고증.pdf', 'application/pdf')] } });
   fireEvent.change(screen.getByLabelText('정산 계좌 통장 사본'), { target: { files: [file('통장.jpg', 'image/jpeg')] } });
   fireEvent.change(screen.getByLabelText('대표 상품 사진'), { target: { files: [file('1.jpg', 'image/jpeg')] } });
-  expect(screen.getByText(/1\.jpg · 1장/)).toBeInTheDocument();
+  expect(screen.getByText(/1\.jpg, 1장/)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '추가' })).toBeInTheDocument(); // 한 장씩 골라도 이어서 올릴 수 있다
   fireEvent.change(screen.getByLabelText('대표 상품 사진'), { target: { files: [file('2.jpg', 'image/jpeg'), file('3.png', 'image/png')] } });
-  expect(screen.getByText(/1\.jpg, 2\.jpg, 3\.png · 3장/)).toBeInTheDocument();
+  expect(screen.getByText(/1\.jpg, 2\.jpg, 3\.png, 3장/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '다음 단계' }));
 
-  await screen.findByRole('heading', { name: '정산 계좌 · 약관' });
+  await screen.findByRole('heading', { name: '정산 계좌, 약관' });
   type('은행', '국민은행'); type('계좌번호', '000000-00-000000'); type('예금주', '홍길동');
   for (const t of ['(필수) 곳간 판매자 이용약관', '(필수) 전자금융거래 이용약관', '(필수) 개인정보 수집 및 이용 동의']) fireEvent.click(screen.getByLabelText(t));
 }
@@ -162,7 +162,7 @@ describe('신청 폼', () => {
     expect(screen.getByRole('heading', { name: '판매자 정보' })).toBeInTheDocument();
   });
 
-  it('형식이 틀린 칸(사업자번호 · 휴대폰 · 이메일 · 스토어 주소)은 그 단계에서 서버와 같은 문구로 막는다', async () => {
+  it('형식이 틀린 칸(사업자번호, 휴대폰, 이메일, 스토어 주소)은 그 단계에서 서버와 같은 문구로 막는다', async () => {
     stubGet(null);
     renderApply();
     await screen.findByRole('heading', { name: '판매자 정보' });
@@ -177,18 +177,18 @@ describe('신청 폼', () => {
     expect(useToastStore.getState().current.msg).toBe('이메일 형식이 올바르지 않습니다.');
     type('담당자 이메일', 'seller@example.com'); next();
 
-    await screen.findByRole('heading', { name: '스토어 · 카테고리 · 판매 예정 상품' });
+    await screen.findByRole('heading', { name: '스토어, 카테고리, 판매 예정 상품' });
     type('스토어 이름', '곳간상회');
     const slug = (v) => fireEvent.change(screen.getByLabelText('스토어 주소'), { target: { value: v } });
     slug('-bad'); next();
-    expect(useToastStore.getState().current.msg).toContain('영소문자 · 숫자 · 하이픈 3~30자');
+    expect(useToastStore.getState().current.msg).toContain('영소문자, 숫자, 하이픈 3~30자');
     slug('admin'); next();
     expect(useToastStore.getState().current.msg).toBe('사용할 수 없는 스토어 주소입니다.');
     expect(screen.getByText(`${window.location.host}/store/`)).toBeInTheDocument(); // 없는 도메인이 아니라 지금 사이트 주소
-    expect(screen.getByRole('heading', { name: '스토어 · 카테고리 · 판매 예정 상품' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '스토어, 카테고리, 판매 예정 상품' })).toBeInTheDocument();
   });
 
-  it('4단계 입력 → 서류 presign · S3 PUT 6건 → POST /api/seller/apply(계약 본문) → 심사대기 화면', async () => {
+  it('4단계 입력 → 서류 presign, S3 PUT 6건 → POST /api/seller/apply(계약 본문) → 심사대기 화면', async () => {
     let me = null;
     stubGet(() => me);
     const post = vi.spyOn(axiosInstance, 'post').mockImplementation(async (url, body) => {
@@ -224,7 +224,7 @@ describe('신청 폼', () => {
     });
   });
 
-  it('409 — 주소 중복이면 서버 메시지 토스트 · 2단계로, 스토어가 이미 있으면 판매자센터로', async () => {
+  it('409 — 주소 중복이면 서버 메시지 토스트, 2단계로, 스토어가 이미 있으면 판매자센터로', async () => {
     stubGet(null);
     const reject = (code, message) => Promise.reject({ response: { status: 409, data: { code, message } } });
     vi.spyOn(axiosInstance, 'post').mockImplementation(async (url) => (url === '/api/seller/apply/documents/presign'
@@ -236,7 +236,7 @@ describe('신청 폼', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '입점 신청하기' }));
     await waitFor(() => expect(useToastStore.getState().current.msg).toBe('이미 사용 중인 스토어 주소입니다.'));
-    expect(await screen.findByRole('heading', { name: '스토어 · 카테고리 · 판매 예정 상품' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '스토어, 카테고리, 판매 예정 상품' })).toBeInTheDocument();
 
     // 1인 1스토어 — 이미 스토어가 있으면 판매자센터로
     axiosInstance.post.mockImplementation(async (url) => (url === '/api/seller/apply/documents/presign'
@@ -245,7 +245,7 @@ describe('신청 폼', () => {
     fireEvent.click(screen.getByRole('button', { name: '다음 단계' }));
     await screen.findByRole('heading', { name: '서류 제출' });
     fireEvent.click(screen.getByRole('button', { name: '다음 단계' }));
-    await screen.findByRole('heading', { name: '정산 계좌 · 약관' });
+    await screen.findByRole('heading', { name: '정산 계좌, 약관' });
     fireEvent.click(screen.getByRole('button', { name: '입점 신청하기' }));
     expect(await screen.findByText('판매자센터 화면')).toBeInTheDocument();
   });

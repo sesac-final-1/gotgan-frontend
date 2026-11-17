@@ -1,4 +1,4 @@
-// 자주 묻는 질문 — 구매자 · 판매자 탭 (프론트 정적 데이터, 고객센터 FAQ 와 같은 모양)
+// 자주 묻는 질문 — 구매자, 판매자 탭 (프론트 정적 데이터, 고객센터 FAQ 와 같은 모양)
 import { useState } from 'react';
 import { Link } from 'react-router';
 import AccordionList from '@/features/support/components/AccordionList';

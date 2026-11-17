@@ -1,4 +1,4 @@
-// 상품 상세 · Q&A 영역 — 담당 이경석. 탭 숫자는 상품 상세가 같은 쿼리(첫 페이지 totalElements)로 읽는다
+// 상품 상세, Q&A 영역 — 담당 이경석. 탭 숫자는 상품 상세가 같은 쿼리(첫 페이지 totalElements)로 읽는다
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Lock } from 'lucide-react';
@@ -14,7 +14,7 @@ export default function ShopProductQna({ p }) {
   const navigate = useNavigate();
   const loggedIn = useAuthStore((s) => !!s.user);
   const [page, setPage] = useState(0);
-  const [target, setTarget] = useState(null); // { productId } 작성 · { inquiry } 수정
+  const [target, setTarget] = useState(null); // { productId } 작성, { inquiry } 수정
   const { data, isLoading, isError } = useProductInquiriesQuery(p.id, page);
   const remove = useDeleteInquiryMutation();
   const list = data?.content ?? [];
@@ -42,7 +42,7 @@ export default function ShopProductQna({ p }) {
           <li key={q.id} className="py-4 border-b border-line text-[13.5px]">
             <div className="flex items-center gap-2 text-[12px] text-mute">
               <Pill tone={q.answered ? 'mute' : 'line'}>{q.answered ? '답변완료' : '답변대기'}</Pill>
-              {q.writer} · {ymd(q.date)}
+              {q.writer}, {ymd(q.date)}
               {q.mine && (
                 <span className="ml-auto flex gap-2">
                   {!q.answered && <button onClick={() => setTarget({ inquiry: q })} className="underline">수정</button>}

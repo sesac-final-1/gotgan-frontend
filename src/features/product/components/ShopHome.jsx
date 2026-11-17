@@ -1,5 +1,5 @@
-// 쇼핑몰 메인 — 담당 구지훈(화면) · 상품 데이터 API 박지연 (10/27 역할 분담)
-// 상품은 실제 API(GET /api/products) — 상위 카테고리별 신상품 8개(PRD-14) · 전체 신상품. 이번 주의 가게는 공개 스토어 목록(GET /api/stores)
+// 쇼핑몰 메인 — 담당 구지훈(화면), 상품 데이터 API 박지연 (10/27 역할 분담)
+// 상품은 실제 API(GET /api/products) — 상위 카테고리별 신상품 8개(PRD-14), 전체 신상품. 이번 주의 가게는 공개 스토어 목록(GET /api/stores)
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
@@ -15,10 +15,10 @@ import { cx, comma } from '@/shared/utils/format';
 import { safeHtml } from '@/shared/utils/safeHtml';
 
 const BANNERS = [
-  { img: '/images/banner/b1-1.jpg', kicker: 'LIVING · 리빙 기획전', title: '해가 짧아지는 계절,\n방 안을 데우는 물건들', sub: '조명 · 패브릭 · 캔들 모아보기', to: '/products?cat=2' },
-  { img: '/images/banner/b2-1.jpg', kicker: 'STORE PICK · 오롯이 리넨', title: '간절기에도\n리넨을 입는 이유', sub: '성수동 작업실에서 직접 만든 F/W 리넨', to: '/store/11' },
-  { img: '/images/banner/b3-1.jpg', kicker: 'FOOD · 로스터리 하루', title: '볶은 지 3일,\n가장 맛있는 원두만', sub: '월·목 로스팅 / 화·금 발송', to: '/store/17' },
-  { img: '/images/banner/b4-1.jpg', kicker: 'HANDMADE · 토담공방', title: '같은 모양은\n하나도 없습니다', sub: '전주 공방의 손빚음 식기', to: '/store/2' },
+  { img: '/images/banner/b1-1.jpg', kicker: 'LIVING, 리빙 기획전', title: '해가 짧아지는 계절,\n방 안을 데우는 물건들', sub: '조명, 패브릭, 캔들 모아보기', to: '/products?cat=2' },
+  { img: '/images/banner/b2-1.jpg', kicker: 'STORE PICK, 오롯이 리넨', title: '간절기에도\n리넨을 입는 이유', sub: '성수동 작업실에서 직접 만든 F/W 리넨', to: '/store/11' },
+  { img: '/images/banner/b3-1.jpg', kicker: 'FOOD, 로스터리 하루', title: '볶은 지 3일,\n가장 맛있는 원두만', sub: '월, 목 로스팅 / 화, 금 발송', to: '/store/17' },
+  { img: '/images/banner/b4-1.jpg', kicker: 'HANDMADE, 토담공방', title: '같은 모양은\n하나도 없습니다', sub: '전주 공방의 손빚음 식기', to: '/store/2' },
 ];
 
 const EMPTY = [];
@@ -60,7 +60,7 @@ export default function ShopHome() {
   const [pickedCat, setPickedCat] = useState(null);
   const newCat = pickedCat ?? categories[0]?.id; // 처음엔 첫 번째 상위 카테고리
 
-  // 목록 API 는 노출 가능한 상품만 준다(판매중지 · 스토어 정지 제외)
+  // 목록 API 는 노출 가능한 상품만 준다(판매중지, 스토어 정지 제외)
   const freshQuery = useProductSearchQuery({ sort: 'NEW', size: 24 });
   const catQuery = useProductSearchQuery({ categoryId: newCat, sort: 'NEW', size: 8 });
   const { data: freshPage } = freshQuery;
@@ -118,7 +118,7 @@ export default function ShopHome() {
           <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-14 grid lg:grid-cols-[1.1fr_1fr] gap-10 items-center">
             <div className="relative">
               <img src={featured.cover ?? FEATURED_COVER} data-fallback="store" alt="" className="w-full aspect-[16/10] object-cover" />
-              <div className="absolute left-4 bottom-4 bg-white px-3 py-2 text-[12px]"><span className="font-bold">{featured.name}</span> · 전북 전주 · 입점 {Math.round((Date.now() - featured.since) / 864e5 / 30)}개월</div>
+              <div className="absolute left-4 bottom-4 bg-white px-3 py-2 text-[12px]"><span className="font-bold">{featured.name}</span>, 전북 전주, 입점 {Math.round((Date.now() - featured.since) / 864e5 / 30)}개월</div>
             </div>
             <div>
               <div className="eyebrow">Store of the week</div>
@@ -156,13 +156,13 @@ export default function ShopHome() {
           <div className="p-8 md:p-10 bg-ink text-white">
             <div className="eyebrow text-white/50">For sellers</div>
             <h2 className="mt-3 text-[28px] font-bold leading-tight">작은 가게도<br />곳간에선 잘 팔립니다</h2>
-            <p className="mt-4 text-sm text-white/70">카테고리별 판매수수료 6~11% · 매주 목요일 정산</p>
+            <p className="mt-4 text-sm text-white/70">카테고리별 판매수수료 6~11%, 매주 목요일 정산</p>
             <Link to="/seller/apply" className="btn btn-point mt-7">입점 신청하기 <ArrowRight size={16} /></Link>
           </div>
           <ol className="grid sm:grid-cols-3">
             {[
               ['01', '입점 신청', '카테고리와 판매 예정 상품, 사업자 서류를 제출합니다.'],
-              ['02', '심사 (영업일 3일)', '서류 · 상품 적합성 검토 후 승인/보완 요청을 드립니다.'],
+              ['02', '심사 (영업일 3일)', '서류, 상품 적합성 검토 후 승인/보완 요청을 드립니다.'],
               ['03', '스토어 오픈', '판매자센터에서 상품을 등록하면 바로 판매가 시작됩니다.'],
             ].map(([n, t, d], k) => (
               <li key={n} className={cx('p-7 md:p-8', k && 'border-t sm:border-t-0 sm:border-l border-line')}>

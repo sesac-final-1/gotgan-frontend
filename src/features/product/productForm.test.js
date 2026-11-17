@@ -20,7 +20,7 @@ const valid = (patch = {}) => ({
 });
 
 describe('옵션 조합', () => {
-  it('그룹 값의 곱 · 공백 · 중복 · 빈 값 정리, 이름이나 값이 비면 그룹이 아님', () => {
+  it('그룹 값의 곱, 공백, 중복, 빈 값 정리, 이름이나 값이 비면 그룹이 아님', () => {
     const groups = [{ name: ' 컬러 ', values: '오트밀, 화이트,, 오트밀' }, { name: '사이즈', values: 'M,L' }, { name: '', values: 'X' }];
 
     expect(activeGroups(groups)).toEqual([{ name: '컬러', values: ['오트밀', '화이트'] }, { name: '사이즈', values: ['M', 'L'] }]);
@@ -34,11 +34,11 @@ describe('옵션 조합', () => {
 });
 
 describe('initialForm', () => {
-  it('새 상품 — 첫 상위 카테고리 · 첫 하위, 빈 그룹 1개 · 판매중', () => {
+  it('새 상품 — 첫 상위 카테고리, 첫 하위, 빈 그룹 1개, 판매중', () => {
     expect(initialForm(null, CATEGORIES)).toMatchObject({ cat: 1, catId: 101, name: '', groups: [{ name: '', values: '' }], rows: {}, images: [], status: '판매중' });
   });
 
-  it('수정 — 옵션 이름 · 값으로 그룹을 되살리고, 조합마다 옵션 id · 추가금 · 재고', () => {
+  it('수정 — 옵션 이름, 값으로 그룹을 되살리고, 조합마다 옵션 id, 추가금, 재고', () => {
     const f = initialForm(SRC, CATEGORIES);
 
     expect(f.groups).toEqual([{ name: '컬러', values: '오트밀' }, { name: '사이즈', values: 'M, L' }]);
@@ -46,7 +46,7 @@ describe('initialForm', () => {
     expect(rowOf(f.rows, ['화이트', 'M'])).toEqual({ productOptionId: null, extraPrice: 0, stock: 0, on: true }); // 새 조합
   });
 
-  it('옵션 없는 상품(값 null 1개) — 그룹 없음 · 빈 키 행', () => {
+  it('옵션 없는 상품(값 null 1개) — 그룹 없음, 빈 키 행', () => {
     const f = initialForm({ ...SRC, option1Name: null, option2Name: null, options: [{ productOptionId: 20, option1Value: null, option2Value: null, extraPrice: 0, stock: 5 }] }, CATEGORIES);
 
     expect(f.groups).toEqual([]);
@@ -75,7 +75,7 @@ describe('validateForm', () => {
 });
 
 describe('buildProductRequest — 13절 요청', () => {
-  it('수정 — 기존 조합은 옵션 id, 새 조합은 null, 판매 체크를 푼 조합은 빠짐 · 이미지는 key 순서대로', () => {
+  it('수정 — 기존 조합은 옵션 id, 새 조합은 null, 판매 체크를 푼 조합은 빠짐, 이미지는 key 순서대로', () => {
     const f = initialForm(SRC, CATEGORIES);
     f.groups = [{ name: '컬러', values: '오트밀, 화이트' }, { name: '사이즈', values: 'M, L' }];
     f.rows[comboKey(['오트밀', 'L'])].on = false;
@@ -95,7 +95,7 @@ describe('buildProductRequest — 13절 요청', () => {
     });
   });
 
-  it('옵션 없는 새 상품 · 판매중지로 등록 — 값 null 옵션 1개 · STOPPED · 앞뒤 공백 제거', () => {
+  it('옵션 없는 새 상품, 판매중지로 등록 — 값 null 옵션 1개, STOPPED, 앞뒤 공백 제거', () => {
     const f = valid({ name: ' 햇감귤 ', status: '판매중지', rows: { [comboKey([])]: { productOptionId: null, extraPrice: 0, stock: 40, on: true } } });
 
     expect(buildProductRequest(f)).toMatchObject({
@@ -107,7 +107,7 @@ describe('buildProductRequest — 13절 요청', () => {
 });
 
 describe('allStockZero — 등록 전 품절 확인', () => {
-  it('판매할 조합 재고가 모두 0이면 true, 하나라도 있으면 false · 판매 체크를 푼 조합은 보지 않음', () => {
+  it('판매할 조합 재고가 모두 0이면 true, 하나라도 있으면 false, 판매 체크를 푼 조합은 보지 않음', () => {
     const groups = [{ name: '컬러', values: '빨강, 파랑' }];
     expect(allStockZero(valid({ groups }))).toBe(true); // 새 조합 기본값 0
     expect(allStockZero(valid({ groups, rows: { [comboKey(['파랑'])]: { productOptionId: null, extraPrice: 0, stock: 3, on: true } } }))).toBe(false);
@@ -116,7 +116,7 @@ describe('allStockZero — 등록 전 품절 확인', () => {
 });
 
 describe('buildCopyRequest — 상품 복사(12절 → 13절 등록)', () => {
-  it('이름 뒤 (복사) · 판매중지 · 옵션은 새 조합(id null) · 재고 0 · 이미지 키 재사용 · 나머지 그대로', () => {
+  it('이름 뒤 (복사), 판매중지, 옵션은 새 조합(id null), 재고 0, 이미지 키 재사용, 나머지 그대로', () => {
     expect(buildCopyRequest(SRC)).toEqual({
       categoryId: 301, name: '리넨 셔츠 (복사)', price: 89000, discountRate: 15, description: '<p>리넨</p>', material: '리넨 100%', origin: '대한민국',
       option1Name: '컬러', option2Name: '사이즈',

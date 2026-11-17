@@ -8,7 +8,7 @@ import ChatInbox from '@/features/chat/components/ChatInbox';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 import { getChatSocket, resetChatSocket } from '@/features/chat/hooks/useChatRoomSocket';
 
-// 실시간 연결은 가짜 — 화면이 구독한 방 · 보낸 메시지를 기록하고, 테스트가 서버 프레임 · 연결 상태를 흉내 낸다
+// 실시간 연결은 가짜 — 화면이 구독한 방, 보낸 메시지를 기록하고, 테스트가 서버 프레임, 연결 상태를 흉내 낸다
 const fake = vi.hoisted(() => ({ handlers: new Map(), status: [], errors: [], sent: [], typing: [], connected: true }));
 vi.mock('@/features/chat/realtime/chatSocket', () => ({
   createChatSocket: vi.fn(() => ({
@@ -79,7 +79,7 @@ afterEach(() => {
 });
 
 describe('채팅함', () => {
-  it('목록 → 방을 열면 그 방만 구독하고 메시지 · 읽음 처리, 실시간 새 메시지 · 상대 읽음 표시', async () => {
+  it('목록 → 방을 열면 그 방만 구독하고 메시지, 읽음 처리, 실시간 새 메시지, 상대 읽음 표시', async () => {
     renderAt('/mypage/chats/7', <ChatInbox kind="buyer" basePath="/mypage/chats" />, '/mypage/chats/:roomId');
 
     expect((await screen.findAllByText('스토어 #5')).length).toBeGreaterThan(0);
@@ -100,7 +100,7 @@ describe('채팅함', () => {
     expect(screen.getByText(/다시 연결하는 중/)).toBeInTheDocument();
   });
 
-  it('보내기 — Enter 로 보내고 입력을 비움, 빈 메시지 · 연결 전은 안내만, 서버 오류는 토스트', async () => {
+  it('보내기 — Enter 로 보내고 입력을 비움, 빈 메시지, 연결 전은 안내만, 서버 오류는 토스트', async () => {
     renderAt('/mypage/chats/7', <ChatInbox kind="buyer" basePath="/mypage/chats" />, '/mypage/chats/:roomId');
     const input = await screen.findByPlaceholderText(/메시지 입력/);
 
@@ -125,7 +125,7 @@ describe('채팅함', () => {
     expect(useToastStore.getState().current.msg).toMatch('1~1000자');
   });
 
-  it('입력 중 — 입력하면 3초에 한 번 신호, 상대 TYPING 을 받으면 5초 동안 표시 · 메시지가 오면 사라짐', async () => {
+  it('입력 중 — 입력하면 3초에 한 번 신호, 상대 TYPING 을 받으면 5초 동안 표시, 메시지가 오면 사라짐', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(100_000);
     renderAt('/mypage/chats/7', <ChatInbox kind="buyer" basePath="/mypage/chats" />, '/mypage/chats/:roomId');
     const input = await screen.findByPlaceholderText(/메시지 입력/);
@@ -176,7 +176,7 @@ describe('채팅함', () => {
     expect(screen.queryByText('구매자 신고')).not.toBeInTheDocument();
   });
 
-  it('관리자: 상담 종료 버튼 · 탭 이동 · 도움 요청된 스토어 톡은 읽기 전용', async () => {
+  it('관리자: 상담 종료 버튼, 탭 이동, 도움 요청된 스토어 톡은 읽기 전용', async () => {
     useAuthStore.setState({ user: { userId: 1, name: '관리자', roles: ['ADMIN'] } });
     rooms = [{ ...ROOMS[1], counterpart: { name: '회원 #10', role: 'BUYER' } }];
     renderAt('/admin/chats/9', <ChatInbox kind="admin" basePath="/admin/chats" />, '/admin/chats/:roomId');
@@ -199,7 +199,7 @@ describe('채팅함', () => {
     cleanup();
   });
 
-  it('방을 고르기 전 · 없는 방 안내, 방이 없으면 빈 목록', async () => {
+  it('방을 고르기 전, 없는 방 안내, 방이 없으면 빈 목록', async () => {
     rooms = [];
     renderAt('/mypage/chats', <ChatInbox kind="buyer" basePath="/mypage/chats" />, '/mypage/chats/:roomId');
     expect(await screen.findByText('대화가 없어요')).toBeInTheDocument();
@@ -211,7 +211,7 @@ describe('채팅함', () => {
 });
 
 describe('OpenChatButton', () => {
-  it('방을 열고 그 방으로 이동 · 로그인 전이면 로그인 화면', async () => {
+  it('방을 열고 그 방으로 이동, 로그인 전이면 로그인 화면', async () => {
     const queryClient = new QueryClient();
     const view = (
       <QueryClientProvider client={queryClient}>

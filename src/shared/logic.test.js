@@ -25,7 +25,7 @@ describe('queryKeys', () => {
 });
 
 describe('axiosInstance', () => {
-  it('같은 출처 /api · 쿠키 전송', () => {
+  it('같은 출처 /api, 쿠키 전송', () => {
     expect(axiosInstance.defaults.baseURL).toBe('');
     expect(axiosInstance.defaults.withCredentials).toBe(true);
   });
@@ -48,7 +48,7 @@ describe('toast', () => {
 });
 
 describe('ratingSummary', () => {
-  it('평균 · 별점 분포', () => {
+  it('평균, 별점 분포', () => {
     const s = ratingSummary([{ rating: 5 }, { rating: 4 }, { rating: 5 }]);
     expect(s.total).toBe(3);
     expect(s.avg).toBeCloseTo(4.67, 2);
@@ -61,7 +61,7 @@ describe('ratingSummary', () => {
 });
 
 describe('업무 상수', () => {
-  it('등급 · 다음 등급 · 5% 적립', () => {
+  it('등급, 다음 등급, 5% 적립', () => {
     expect(gradeById.GOLD.label).toBe('골드');
     expect(nextGrade(0).id).toBe('SILVER');
     expect(nextGrade(500000).id).toBe('GOLD');
@@ -69,7 +69,7 @@ describe('업무 상수', () => {
     expect(earnOf(12345)).toBe(617);
   });
 
-  it('주문 상태 · 클레임 · 수수료', () => {
+  it('주문 상태, 클레임, 수수료', () => {
     expect(FLOW.at(-1)).toBe('구매확정');
     expect(CLAIMS.every((c) => CLAIM_TYPE[c] && STATUS_TONE[c])).toBe(true);
     expect(PAYMENT_FEE).toBe(0.022);

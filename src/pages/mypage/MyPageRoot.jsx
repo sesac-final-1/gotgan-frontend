@@ -6,7 +6,7 @@ import { useWritableReviewsQuery } from '@/features/review/hooks/useMyReviewsQue
 import { openClaimCount } from '@/features/order/utils/orderView';
 import { gradeById, nextGrade } from '@/features/user/constants';
 
-// 마이페이지 레이아웃에 데이터 연결 — 회원 · 등급(user) · 포인트(user) · 작성 가능 리뷰 수(review) · 클레임 건수(order)
+// 마이페이지 레이아웃에 데이터 연결 — 회원, 등급(user), 포인트(user), 작성 가능 리뷰 수(review), 클레임 건수(order)
 export default function MyPageRoot() {
   const { data: me } = useMeQuery();
   const { data: points } = useMyPointsQuery();

@@ -9,7 +9,7 @@ export function bootstrap() {
   installImageFallback();
   setAuthHandlers({
     getAccessToken: () => useAuthStore.getState().accessToken,
-    refresh: refreshAndStore, // single-flight 는 인터셉터가 refreshOnce 로 — 부팅 · 소셜 콜백과 같은 대기열
+    refresh: refreshAndStore, // single-flight 는 인터셉터가 refreshOnce 로 — 부팅, 소셜 콜백과 같은 대기열
     onAuthFailed: () => useAuthStore.getState().clearAuth(),
   });
   return restoreSession();

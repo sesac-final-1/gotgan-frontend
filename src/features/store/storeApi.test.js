@@ -17,7 +17,7 @@ const HOME = {
 };
 
 describe('fetchStores — GET /api/stores 를 화면 필드로', () => {
-  it('id 숫자 · storeName → name · categoryId → cat · 등급 한글 · 운영중 고정 · cover null · since Date', async () => {
+  it('id 숫자, storeName → name, categoryId → cat, 등급 한글, 운영중 고정, cover null, since Date', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [SUMMARY] } });
 
     const list = await fetchStores();
@@ -40,7 +40,7 @@ describe('fetchStore — GET /api/stores/{id} 를 스토어 홈 필드로', () =
     expect(get).toHaveBeenCalledWith(url);
   });
 
-  it('운영 중 — 판매자 정보 · 배송 안내를 목업 이름으로, 대표 이미지 → cover', async () => {
+  it('운영 중 — 판매자 정보, 배송 안내를 목업 이름으로, 대표 이미지 → cover', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: HOME } });
 
     const s = await fetchStore(1);
@@ -50,12 +50,12 @@ describe('fetchStore — GET /api/stores/{id} 를 스토어 홈 필드로', () =
       owner: '박영철', bizNo: '000-00-00006', phone: '064-0000-0006', shipFee: 3000, freeOver: 30000, courier: '우체국택배', dispatch: '수확일 기준 당일 발송' });
   });
 
-  it('무료배송 기준 없음(null) → freeOver 0, 택배사 · 출고 안내 미정 → 빈 문자열 (목업과 같은 의미)', () => {
+  it('무료배송 기준 없음(null) → freeOver 0, 택배사, 출고 안내 미정 → 빈 문자열 (목업과 같은 의미)', () => {
     const s = toStoreHome({ ...HOME, freeShippingThreshold: null, courier: null, dispatchNote: null });
     expect(s).toMatchObject({ shipFee: 3000, freeOver: 0, courier: '', dispatch: '' });
   });
 
-  it('정지 · 폐점 — 이름 · 상태만 오고 나머지 null → 상태 한글, 빈 값은 기본값', () => {
+  it('정지, 폐점 — 이름, 상태만 오고 나머지 null → 상태 한글, 빈 값은 기본값', () => {
     const s = toStoreHome({ storeId: 15, storeName: '볕드는집', status: 'SUSPENDED', slug: null, categoryId: null, intro: null, imageUrl: null,
       color: null, grade: null, createdAt: null, ownerName: null, bizRegNo: null, csPhone: null, shippingFee: null, freeShippingThreshold: null, courier: null, dispatchNote: null });
     expect(s).toMatchObject({ id: 15, name: '볕드는집', status: '정지', intro: '', cover: null, since: null, owner: '', shipFee: 0, freeOver: 0 });
@@ -64,7 +64,7 @@ describe('fetchStore — GET /api/stores/{id} 를 스토어 홈 필드로', () =
 });
 
 describe('fetchMyStore — GET /api/seller/store (13-1절) 를 화면 필드로', () => {
-  it('스토어 홈과 같은 이름 + 상태 사유 · 이미지 키, 무료배송 없음(null)은 0 · 비어 있는 값은 빈 문자열', async () => {
+  it('스토어 홈과 같은 이름 + 상태 사유, 이미지 키, 무료배송 없음(null)은 0, 비어 있는 값은 빈 문자열', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: {
       storeId: 1, storeName: '산골농부 박씨네', slug: 'park-farm', status: 'ACTIVE', statusReason: null, intro: '<p>지리산 농장</p>',
       imageKey: 'stores/1/a.jpg', imageUrl: 'https://img/stores/1/a.jpg', color: '#5b6b4a', csPhone: '010-0000-0002',
@@ -86,10 +86,10 @@ describe('fetchMyStore — GET /api/seller/store (13-1절) 를 화면 필드로'
   });
 });
 
-describe('내 스토어 수정 · 대표 이미지 · 폐점', () => {
+describe('내 스토어 수정, 대표 이미지, 폐점', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('PUT /api/seller/store 본문 그대로 · 응답은 내 스토어 모양', async () => {
+  it('PUT /api/seller/store 본문 그대로, 응답은 내 스토어 모양', async () => {
     const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: { storeId: 1, storeName: '산골농부 박씨네', status: 'ACTIVE', color: '#2b2b2b', shippingFee: 0, freeShippingThreshold: null } } });
     const request = { color: '#2b2b2b', shippingFee: 0 };
 
@@ -97,7 +97,7 @@ describe('내 스토어 수정 · 대표 이미지 · 폐점', () => {
     expect(put).toHaveBeenCalledWith('/api/seller/store', request);
   });
 
-  it('대표 이미지 — 형식 · 크기로 발급받고 같은 Content-Type 으로 PUT 한 뒤 키, S3 가 거절하면 오류', async () => {
+  it('대표 이미지 — 형식, 크기로 발급받고 같은 Content-Type 으로 PUT 한 뒤 키, S3 가 거절하면 오류', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { key: 'stores/1/a.webp', uploadUrl: 'https://s3/a' } } });
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', fetchMock);
@@ -120,7 +120,7 @@ describe('내 스토어 수정 · 대표 이미지 · 폐점', () => {
 });
 
 describe('fetchStoreRating — GET /api/reviews/ratings/stores?ids=', () => {
-  it('스토어 하나의 평균 · 리뷰 수, 리뷰가 없으면 0', async () => {
+  it('스토어 하나의 평균, 리뷰 수, 리뷰가 없으면 0', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValueOnce({ data: { data: [{ storeId: 1, averageRating: 4.57, reviewCount: 12 }] } })
       .mockResolvedValueOnce({ data: { data: [] } });
 
@@ -139,7 +139,7 @@ describe('판매자 대시보드 — GET /api/seller/dashboard (15절)', () => {
     unavailable: [],
   };
 
-  it('영역별로 화면 이름 — 일별은 KST 자정 Date · 재고 부족 상품 · 다음 지급', async () => {
+  it('영역별로 화면 이름 — 일별은 KST 자정 Date, 재고 부족 상품, 다음 지급', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: DASH } });
 
     expect(await fetchSellerDashboard()).toEqual({
@@ -152,7 +152,7 @@ describe('판매자 대시보드 — GET /api/seller/dashboard (15절)', () => {
     expect(get).toHaveBeenCalledWith('/api/seller/dashboard');
   });
 
-  it('못 받은 영역은 null 그대로 · 다음 지급 없음은 null', () => {
+  it('못 받은 영역은 null 그대로, 다음 지급 없음은 null', () => {
     expect(toSellerDashboard({ order: null, orderDaily: null, product: null, settlement: { ...DASH.settlement, nextPayout: null }, unavailable: ['order', 'orderDaily', 'product'] }))
       .toEqual({ unavailable: ['order', 'orderDaily', 'product'], todaySales: null, daily: null, product: null,
         settlement: { pendingCount: 2, pendingPayout: 48000, nextPayout: null } });

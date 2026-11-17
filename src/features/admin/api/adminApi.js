@@ -5,8 +5,8 @@ import { toPointRow } from '@/features/user/api/userApi';
 import { toSettlementDetail } from '@/features/settlement/api/settlementApi';
 import { APPLICATION_STATUS_LABEL, STORE_STATUS_LABEL, STORE_GRADE_LABEL, BIZ_TYPE_LABEL, EXPECTED_SALES_LABEL, ACTOR_LABEL, DOC_TYPES } from '@/features/admin/constants';
 
-// GET /api/admin/dashboard — settlement · order · product 통계 조합, 한 곳이 실패하면 그 영역 null + unavailable[] (backend #95 · #112)
-// 일별 거래액: orderDaily [{date: 'YYYY-MM-DD', tradeAmt, orderCount}](최근 30일 · 빈 날 0) → 차트 모양 {date, amount, orders}
+// GET /api/admin/dashboard — settlement, order, product 통계 조합, 한 곳이 실패하면 그 영역 null + unavailable[] (backend #95, #112)
+// 일별 거래액: orderDaily [{date: 'YYYY-MM-DD', tradeAmt, orderCount}](최근 30일, 빈 날 0) → 차트 모양 {date, amount, orders}
 export const toDailyBars = (rows) =>
   rows?.map((r) => ({ date: new Date(`${r.date}T00:00:00+09:00`), amount: r.tradeAmt, orders: r.orderCount })) ?? null;
 export const fetchAdminDashboard = async () => {
@@ -14,7 +14,7 @@ export const fetchAdminDashboard = async () => {
   return { ...data, platformDaily: toDailyBars(data.orderDaily) };
 };
 
-// GET /api/admin/stores/{id} — store 1절 + 관리자 필드 · 상태 이력(backend #182) 그대로. 대표자 · 상호 · 사업자번호는 원래 신청서 값
+// GET /api/admin/stores/{id} — store 1절 + 관리자 필드, 상태 이력(backend #182) 그대로. 대표자, 상호, 사업자번호는 원래 신청서 값
 export const fetchAdminStore = async (storeId) => {
   const d = (await axiosInstance.get(`/api/admin/stores/${storeId}`)).data.data;
   return {
@@ -45,7 +45,7 @@ export const fetchAdminStore = async (storeId) => {
   };
 };
 
-// GET /api/admin/stores — store /internal/stores 그대로(backend #172, 개설 최신순 · 페이징 없음) + 스토어 평점(review #160, 1~100개)
+// GET /api/admin/stores — store /internal/stores 그대로(backend #172, 개설 최신순, 페이징 없음) + 스토어 평점(review #160, 1~100개)
 // 평점은 화면 보조 정보라 review 가 실패해도 목록은 보여 준다(평점 없음)
 export const fetchAdminStoreList = async () => {
   const rows = (await axiosInstance.get('/api/admin/stores')).data.data;
@@ -69,7 +69,7 @@ export const fetchAdminStoreList = async () => {
 };
 
 // PATCH /api/admin/stores/{id}/status {status: ACTIVE/SUSPENDED, reason(필수)} — store 9절 그대로 (backend #177).
-// 같은 상태는 200(멱등) · 폐점 스토어 409 · StoreStatusChanged 로 product 상품 숨김 · settlement 지급 보류
+// 같은 상태는 200(멱등), 폐점 스토어 409, StoreStatusChanged 로 product 상품 숨김, settlement 지급 보류
 export const changeStoreStatus = async ({ storeId, request }) =>
   (await axiosInstance.patch(`/api/admin/stores/${storeId}/status`, request)).data.data;
 
@@ -89,7 +89,7 @@ export const toAdminUser = (r) => ({
   spent: r.totalSpent,
   joined: toDate(r.joinedAt),
   lastLogin: toDate(r.lastLoginAt),
-  memo: r.statusReason ?? '', // 상세에만 — 마지막 정지 · 해제 사유
+  memo: r.statusReason ?? '', // 상세에만 — 마지막 정지, 해제 사유
   suspendedUntil: toDate(r.suspendedUntil), // 상세에만 — null 이면 영구(정지 중일 때)
   avatar: DEFAULT_AVATAR,
 });
@@ -104,14 +104,14 @@ export const fetchAdminUsers = async () => {
   }
 };
 
-// GET /api/admin/users/{id} — 목록 항목 + phone · statusReason · suspendedAt · suspendedUntil
+// GET /api/admin/users/{id} — 목록 항목 + phone, statusReason, suspendedAt, suspendedUntil
 export const fetchAdminUser = async (userId) => toAdminUser((await axiosInstance.get(`/api/admin/users/${userId}`)).data.data);
 
-// GET /api/admin/users/{id}/points — 최신 100건 (이력은 서버 페이징, 화면은 받은 것 안에서 검색 · 정렬). 행 모양은 내 포인트와 같음
+// GET /api/admin/users/{id}/points — 최신 100건 (이력은 서버 페이징, 화면은 받은 것 안에서 검색, 정렬). 행 모양은 내 포인트와 같음
 export const fetchAdminUserPoints = async (userId) =>
   (await axiosInstance.get(`/api/admin/users/${userId}/points`, { params: { size: 100 } })).data.data.history.content.map(toPointRow);
 
-// GET /api/admin/users/{id}/reviews — review 회원별 목록 그대로(삭제 제외 · 블라인드 포함, 최신순, backend #173). 상세 화면은 최근 5개
+// GET /api/admin/users/{id}/reviews — review 회원별 목록 그대로(삭제 제외, 블라인드 포함, 최신순, backend #173). 상세 화면은 최근 5개
 export const fetchAdminUserReviews = async (userId) =>
   (await axiosInstance.get(`/api/admin/users/${userId}/reviews`, { params: { size: 5 } })).data.data.content
     .map((r) => ({ ...r, createdAt: new Date(r.createdAt) }));
@@ -152,7 +152,7 @@ export const fetchAdminStoreSettlements = async (storeId) => {
 export const fetchAdminSettlementWeek = async (week) =>
   (await axiosInstance.get('/api/admin/settlements', { params: { week } })).data.data.settlements.map(toAdminSettlement);
 
-const BATCH_TIMEOUT_MS = 30_000; // 집계 · 일괄 지급만 오래 걸림 — 5,000건 약 11.6초(11/6 k6), gateway 이 경로 30초와 같게
+const BATCH_TIMEOUT_MS = 30_000; // 집계, 일괄 지급만 오래 걸림 — 5,000건 약 11.6초(11/6 k6), gateway 이 경로 30초와 같게
 
 // POST /api/admin/settlements/pay {ids} → {success[], failed[{id, code, message}]} — 건마다 따로 커밋
 export const paySettlements = async (ids) => (await axiosInstance.post('/api/admin/settlements/pay', { ids }, { timeout: BATCH_TIMEOUT_MS })).data.data;
@@ -161,15 +161,15 @@ export const paySettlements = async (ids) => (await axiosInstance.post('/api/adm
 export const holdSettlement = async ({ id, hold, reason }) =>
   (await axiosInstance.patch(`/api/admin/settlements/${id}/hold`, { hold, reason })).data.data;
 
-// GET /api/admin/settlements/{id} — 지급 전 확인: 건별 상품주문 · 수수료율 · 이월 · 상태 이력 (판매자 상세와 같은 모양)
+// GET /api/admin/settlements/{id} — 지급 전 확인: 건별 상품주문, 수수료율, 이월, 상태 이력 (판매자 상세와 같은 모양)
 export const fetchAdminSettlement = async (id) => toSettlementDetail((await axiosInstance.get(`/api/admin/settlements/${id}`)).data.data);
 
 // POST /api/admin/settlements/aggregate {week} → {week, created, updated, autoHeld, carriedOver} — 멱등(스토어 × 주차 1건)
 export const aggregateSettlements = async (week) => (await axiosInstance.post('/api/admin/settlements/aggregate', { week }, { timeout: BATCH_TIMEOUT_MS })).data.data;
 
 
-// 카테고리 · 수수료 — admin-service: product 카테고리(GET /api/admin/categories) + settlement 수수료(GET /api/admin/commissions) (backend #95)
-// 스토어 · 상품은 아직 목업이라 목업과 같은 문자열 id(food 등)로 넘긴다 — 시드 상위 1~6 은 고정 번호, 새 카테고리는 숫자 문자열
+// 카테고리, 수수료 — admin-service: product 카테고리(GET /api/admin/categories) + settlement 수수료(GET /api/admin/commissions) (backend #95)
+// 스토어, 상품은 아직 목업이라 목업과 같은 문자열 id(food 등)로 넘긴다 — 시드 상위 1~6 은 고정 번호, 새 카테고리는 숫자 문자열
 const CATEGORY_SLUG = { 1: 'food', 2: 'living', 3: 'fashion', 4: 'shoes-bags', 5: 'beauty', 6: 'digital' };
 export const toAdminCategory = (c, commission) => ({
   id: CATEGORY_SLUG[c.id] ?? String(c.id),
@@ -193,16 +193,16 @@ export const fetchAdminCategories = async () => {
   return tree.data.data.map((c) => toAdminCategory(c, byId[c.id]));
 };
 
-// POST /api/admin/categories — 상위는 commissionRate 필수(수수료 등록 후 켜짐), 하위는 parentId · PUT /{id} — 이름 · 정렬 · 사용 여부
+// POST /api/admin/categories — 상위는 commissionRate 필수(수수료 등록 후 켜짐), 하위는 parentId, PUT /{id} — 이름, 정렬, 사용 여부
 export const saveCategory = async ({ categoryId, request }) =>
   (categoryId ? await axiosInstance.put(`/api/admin/categories/${categoryId}`, request) : await axiosInstance.post('/api/admin/categories', request)).data.data;
 
 // PUT /api/admin/commissions — [{categoryId, rate(%)}], effectiveFrom 생략 = 다음 주 월요일부터
 export const reserveCommissions = async (rows) => (await axiosInstance.put('/api/admin/commissions', rows)).data.data;
 
-// GET /api/admin/stores/{storeId}/products — product 판매자 상품 목록과 같은 응답 그대로 (backend #110 · #112, 삭제 제외 · 상태 무관)
+// GET /api/admin/stores/{storeId}/products — product 판매자 상품 목록과 같은 응답 그대로 (backend #110, #112, 삭제 제외, 상태 무관)
 //   [{productId, name, categoryName, salePrice, imageUrl, totalStock, soldOut, status, statusReason, displayable, hiddenReason, createdAt}]
-// 관리자 스토어 상세 "등록 상품" 표 · 강제 판매중지(frontend #54)
+// 관리자 스토어 상세 "등록 상품" 표, 강제 판매중지(frontend #54)
 export const fetchAdminStoreProducts = async (storeId) => (await axiosInstance.get(`/api/admin/stores/${storeId}/products`)).data.data;
 
 // PATCH /api/admin/products/{productId}/block {blocked, reason} → {productId, status, statusReason} — 해제하면 STOPPED(판매자가 재개)
@@ -228,7 +228,7 @@ export const toApplicationRow = (r) => ({
 
 export const toApplication = (r) => ({
   ...toApplicationRow(r),
-  note: r.statusReason ?? '', // 보완요청 · 반려 사유
+  note: r.statusReason ?? '', // 보완요청, 반려 사유
   storeId: r.storeId,
   companyName: r.companyName,
   bizNo: r.bizRegNo,
@@ -246,17 +246,17 @@ export const toApplication = (r) => ({
   sameBizRegNo: { applications: r.sameBizRegNo?.applications ?? [], stores: r.sameBizRegNo?.stores ?? [] },
 });
 
-// GET /api/admin/applications — 전체 배열(페이징 없음), 탭 · 검색 · 정렬은 화면에서 (컨벤션 4-7)
+// GET /api/admin/applications — 전체 배열(페이징 없음), 탭, 검색, 정렬은 화면에서 (컨벤션 4-7)
 export const fetchApplications = async () => (await axiosInstance.get('/api/admin/applications')).data.data.map(toApplicationRow);
 
 // GET /api/admin/applications/{id} — 서류 링크는 presigned 10분, 만료되면 상세를 다시 조회
 export const fetchApplication = async (id) => toApplication((await axiosInstance.get(`/api/admin/applications/${id}`)).data.data);
 
-// PATCH /api/admin/applications/{id}/approve (본문 없음) · /reject {reason} · /supplement {message, requestedDocs[]}
+// PATCH /api/admin/applications/{id}/approve (본문 없음), /reject {reason}, /supplement {message, requestedDocs[]}
 export const decideApplication = async ({ id, action, body }) =>
   (await axiosInstance.patch(`/api/admin/applications/${id}/${action}`, body)).data.data;
 
-// 신고 — admin-service 가 직접 갖는 신고 · 조치 이력 (backend #106, docs/api/admin.md). 리뷰 블라인드 · 회원 정지도 여기서
+// 신고 — admin-service 가 직접 갖는 신고, 조치 이력 (backend #106, docs/api/admin.md). 리뷰 블라인드, 회원 정지도 여기서
 const at = (v) => (v ? new Date(v) : null);
 const toActionRow = (a) => a && { ...a, createdAt: at(a.createdAt) };
 
@@ -266,7 +266,7 @@ export const fetchAdminReports = async () =>
     ...t, id: `${t.targetType}-${t.targetId}`, lastReportedAt: at(t.lastReportedAt), lastAction: toActionRow(t.lastAction),
   }));
 
-// GET /api/admin/reports/{type}/{id} — 신고 · 조치 이력 + 대상 현재 값(못 불러오면 target null + targetError)
+// GET /api/admin/reports/{type}/{id} — 신고, 조치 이력 + 대상 현재 값(못 불러오면 target null + targetError)
 export const fetchAdminReport = async ({ type, id }) => {
   const d = (await axiosInstance.get(`/api/admin/reports/${type}/${id}`)).data.data;
   return { ...d, reports: d.reports.map((r) => ({ ...r, createdAt: at(r.createdAt) })), actions: d.actions.map(toActionRow) };

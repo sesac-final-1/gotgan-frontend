@@ -1,4 +1,4 @@
-// 상품 상세 · 리뷰 영역 — 담당 이경석
+// 상품 상세, 리뷰 영역 — 담당 이경석
 import { useState } from 'react';
 import { X, Camera } from 'lucide-react';
 import { useProductReviewSummaryQuery, useProductReviewsQuery } from '@/features/review/hooks/useProductReviews';
@@ -28,12 +28,12 @@ export default function ShopProductReviews({ p, store }) {
   const photos = photoPage?.content ?? [];
   const avg = summary?.averageRating ?? 0;
   const total = summary?.reviewCount ?? 0;
-  const fits = FIT_CATEGORIES.includes(p.catName) ? summary?.fits ?? [] : null; // 사이즈 체감은 의류 · 신발 상위 카테고리만
+  const fits = FIT_CATEGORIES.includes(p.catName) ? summary?.fits ?? [] : null; // 사이즈 체감은 의류, 신발 상위 카테고리만
 
   const canReport = useAuthStore((s) => !!s.user?.roles?.includes('BUYER')); // 리뷰 신고는 구매자(REV-12) — 판매자는 판매자센터의 '관리자 검토 요청'
   const [reportTarget, setReportTarget] = useState(null);
 
-  // 필터 · 정렬이 바뀌면 1페이지로
+  // 필터, 정렬이 바뀌면 1페이지로
   const changeStar = (star) => { setStarFilter(star); setPage(0); };
   const changePhotoOnly = (v) => { setPhotoOnly(v); setPage(0); };
   const changeSort = (s) => { setSort(s); setPage(0); };
@@ -112,7 +112,7 @@ export default function ShopProductReviews({ p, store }) {
               {canReport && !r.mine && <button onClick={() => setReportTarget({ type: 'REVIEW', id: r.id, label: '리뷰' })} className="text-[11.5px] text-mute hover:text-ink shrink-0">신고</button>}
             </div>
             <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-mute"><Stars value={r.rating} size={11} /> {ymd(r.date)}</div>
-            <div className="mt-3 text-[12px] text-mute">{r.option && <>옵션: {r.option}</>}{r.fit && <>{r.option && ' · '}사이즈 <b className="text-ink-2">{FIT_LABELS[r.fit]}</b></>}</div>
+            <div className="mt-3 text-[12px] text-mute">{r.option && <>옵션: {r.option}</>}{r.fit && <>{r.option && ', '}사이즈 <b className="text-ink-2">{FIT_LABELS[r.fit]}</b></>}</div>
             {r.title && <p className="mt-2 text-[14px] font-semibold">{r.title}</p>}
             <p className="mt-1 text-[14px] leading-relaxed text-ink-2">{r.body}</p>
             {r.photos.length > 0 && <div className="mt-3 flex gap-2">{r.photos.map((src) => <img key={src} src={src} alt="" className="w-28 h-28 object-cover" />)}</div>}

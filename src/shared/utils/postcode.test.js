@@ -16,12 +16,12 @@ describe('toPostcodeAddress — 가이드 샘플과 같은 주소 규칙', () =>
     expect(toPostcodeAddress(result())).toEqual({ zip: '06236', addr: '서울 강남구 테헤란로 152 (역삼동)' });
   });
 
-  it('공동주택이면 건물명도 참고항목에, 법정동이 동 · 로 · 가로 끝나지 않으면 빼기', () => {
+  it('공동주택이면 건물명도 참고항목에, 법정동이 동, 로, 가로 끝나지 않으면 빼기', () => {
     expect(toPostcodeAddress(result({ apartment: 'Y', buildingName: '래미안', bname: '역삼동' })).addr).toBe('서울 강남구 테헤란로 152 (역삼동, 래미안)');
     expect(toPostcodeAddress(result({ bname: '가산리' })).addr).toBe('서울 강남구 테헤란로 152');
   });
 
-  it('지번 선택 — 지번 주소, 참고항목 없음 · 비어 있으면 자동 매핑 주소', () => {
+  it('지번 선택 — 지번 주소, 참고항목 없음, 비어 있으면 자동 매핑 주소', () => {
     expect(toPostcodeAddress(result({ userSelectedType: 'J' })).addr).toBe('서울 강남구 역삼동 737');
     expect(toPostcodeAddress(result({ userSelectedType: 'J', jibunAddress: '', autoJibunAddress: '서울 강남구 역삼동 737-1' })).addr)
       .toBe('서울 강남구 역삼동 737-1');

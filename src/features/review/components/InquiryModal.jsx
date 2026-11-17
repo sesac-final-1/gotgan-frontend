@@ -1,5 +1,5 @@
-// 상품 문의 작성 · 수정 모달 — 담당 이경석. 상품 상세 Q&A · 마이페이지 내 문의가 같이 쓴다
-// target: { productId } 면 작성, { inquiry } 면 수정 (inquiry: id · content · secret)
+// 상품 문의 작성, 수정 모달 — 담당 이경석. 상품 상세 Q&A, 마이페이지 내 문의가 같이 쓴다
+// target: { productId } 면 작성, { inquiry } 면 수정 (inquiry: id, content, secret)
 import { useState } from 'react';
 import { Modal, Checkbox } from '@/shared/components/ui';
 import { toast } from '@/shared/stores/toastStore';

@@ -39,8 +39,8 @@ function renderAddresses(list, me = { id: 4, name: '구매자1', phone: '010-000
   return get;
 }
 
-describe('배송지 API · 스키마', () => {
-  it('목록 · 등록 · 수정 · 삭제 · 기본 지정 경로', async () => {
+describe('배송지 API, 스키마', () => {
+  it('목록, 등록, 수정, 삭제, 기본 지정 경로', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [HOME] } });
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: OFFICE } });
     const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: OFFICE } });
@@ -58,7 +58,7 @@ describe('배송지 API · 스키마', () => {
     expect(patch).toHaveBeenCalledWith('/api/users/me/addresses/11/main');
   });
 
-  it('스키마 — 우편번호 · 기본 주소는 검색으로, 휴대폰 형식', () => {
+  it('스키마 — 우편번호, 기본 주소는 검색으로, 휴대폰 형식', () => {
     const ok = { label: '집', name: '김', phone: '01012345678', zip: '06236', addr: '서울', detail: '', main: false };
     expect(addressSchema.safeParse(ok).success).toBe(true);
     expect(addressSchema.safeParse({ ...ok, zip: '' }).error.issues[0].message).toBe('주소 검색으로 주소를 선택해주세요');
@@ -67,16 +67,16 @@ describe('배송지 API · 스키마', () => {
 });
 
 describe('MyAddresses', () => {
-  it('기본 배송지는 삭제 · 기본으로 버튼 없음, 비어 있으면 안내', async () => {
+  it('기본 배송지는 삭제, 기본으로 버튼 없음, 비어 있으면 안내', async () => {
     renderAddresses([HOME, OFFICE]);
-    const home = (await screen.findByText(/집 · 김곳간/)).closest('div.border');
+    const home = (await screen.findByText(/집, 김곳간/)).closest('div.border');
     expect(within(home).queryByRole('button', { name: '삭제' })).toBeNull();
     expect(within(home).queryByRole('button', { name: '기본으로' })).toBeNull();
-    const office = screen.getByText(/회사 · 김곳간/).closest('div.border');
+    const office = screen.getByText(/회사, 김곳간/).closest('div.border');
     expect(within(office).getByRole('button', { name: '삭제' })).toBeInTheDocument();
   });
 
-  it('등록 — 주소 검색으로 우편번호 · 주소를 채우고 저장, 목록 다시 불러옴', async () => {
+  it('등록 — 주소 검색으로 우편번호, 주소를 채우고 저장, 목록 다시 불러옴', async () => {
     const get = renderAddresses([[HOME], [HOME, OFFICE]]);
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: OFFICE } });
     fireEvent.click(await screen.findByRole('button', { name: '+ 배송지 추가' }));
@@ -96,7 +96,7 @@ describe('MyAddresses', () => {
     expect(post).toHaveBeenCalledWith('/api/users/me/addresses', {
       label: '회사', name: '김곳간', phone: '01012345678', zip: '03187', addr: '서울 종로구 세종대로 175 (세종로)', detail: '3층', main: false });
     await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
-    expect(await screen.findByText(/회사 · 김곳간/)).toBeInTheDocument();
+    expect(await screen.findByText(/회사, 김곳간/)).toBeInTheDocument();
   });
 
   it('등록 — 연락처는 내 회원정보 휴대폰으로 미리 채워지고 바꿀 수 있음, 수정은 그 배송지 연락처', async () => {
@@ -108,7 +108,7 @@ describe('MyAddresses', () => {
     expect(phone).toHaveValue('010-1111-2222');
     fireEvent.click(screen.getByRole('button', { name: '취소' }));
 
-    const office = screen.getByText(/회사 · 김곳간/).closest('div.border');
+    const office = screen.getByText(/회사, 김곳간/).closest('div.border');
     fireEvent.click(within(office).getByRole('button', { name: '수정' }));
     expect(screen.getByLabelText('연락처')).toHaveValue('010-1234-5678');
   });
@@ -119,7 +119,7 @@ describe('MyAddresses', () => {
     expect(screen.getByLabelText('연락처')).toHaveValue('');
   });
 
-  it('5개면 추가 버튼 비활성 · 안내', async () => {
+  it('5개면 추가 버튼 비활성, 안내', async () => {
     const five = [HOME, ...[1, 2, 3, 4].map((n) => ({ ...OFFICE, id: 20 + n, label: `주소${n}` }))];
     renderAddresses(five);
     expect(await screen.findByText(/최대 5개까지/)).toBeInTheDocument(); // 목록이 온 뒤에 확인
@@ -143,7 +143,7 @@ describe('MyAddresses', () => {
   it('수정 — 기존 값으로 열리고 PUT, 409 등 오류는 폼 아래', async () => {
     renderAddresses([HOME, OFFICE]);
     const put = vi.spyOn(axiosInstance, 'put').mockRejectedValue(apiError(404, 'ADDRESS_NOT_FOUND', '배송지를 찾을 수 없습니다.'));
-    const office = (await screen.findByText(/회사 · 김곳간/)).closest('div.border');
+    const office = (await screen.findByText(/회사, 김곳간/)).closest('div.border');
     fireEvent.click(within(office).getByRole('button', { name: '수정' }));
     expect(screen.getByLabelText('기본 주소')).toHaveValue('서울 중구 세종대로 110');
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
@@ -151,11 +151,11 @@ describe('MyAddresses', () => {
     expect(put).toHaveBeenCalledWith('/api/users/me/addresses/11', expect.objectContaining({ label: '회사', detail: '' }));
   });
 
-  it('기본으로 지정 · 삭제 확인 후 DELETE', async () => {
+  it('기본으로 지정, 삭제 확인 후 DELETE', async () => {
     renderAddresses([HOME, OFFICE]);
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { ...OFFICE, main: true } } });
     const del = vi.spyOn(axiosInstance, 'delete').mockResolvedValue({ data: {} });
-    const office = (await screen.findByText(/회사 · 김곳간/)).closest('div.border');
+    const office = (await screen.findByText(/회사, 김곳간/)).closest('div.border');
 
     fireEvent.click(within(office).getByRole('button', { name: '기본으로' }));
     await waitFor(() => expect(useToastStore.getState().current?.msg).toBe('회사을(를) 기본 배송지로 지정했어요'));

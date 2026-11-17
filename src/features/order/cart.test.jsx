@@ -36,7 +36,7 @@ function client() {
 }
 
 describe('cartView', () => {
-  it('줄 펼치기 · 주문서 줄(선택된 구매 가능만, 빈 스토어 제외) · 수량 범위', () => {
+  it('줄 펼치기, 주문서 줄(선택된 구매 가능만, 빈 스토어 제외), 수량 범위', () => {
     expect(cartLines(CART).map((l) => l.productOptionId)).toEqual([11, 12, 13, 21]);
     expect(cartLines(undefined)).toEqual([]);
     expect(checkoutGroups(CART).map((g) => [g.storeId, g.items.map((l) => l.productOptionId)])).toEqual([[1, [11]], [2, [21]]]);
@@ -44,7 +44,7 @@ describe('cartView', () => {
     expect([clampQty(0), clampQty(5), clampQty(1000)]).toEqual([1, 5, 999]);
   });
 
-  it('낙관적 반영 — 고른 줄(없으면 전체)에 수량 · 선택, 줄 금액은 단가 × 수량', () => {
+  it('낙관적 반영 — 고른 줄(없으면 전체)에 수량, 선택, 줄 금액은 단가 × 수량', () => {
     const qty = patchLines(CART, [11], { quantity: 3 });
     expect(qty.stores[0].items[0]).toMatchObject({ quantity: 3, lineAmt: 30000 });
     expect(qty.stores[0].items[1].quantity).toBe(1);
@@ -52,14 +52,14 @@ describe('cartView', () => {
     expect(patchLines(undefined, null, {})).toBeUndefined();
   });
 
-  it('주문 요청 — 장바구니 줄의 옵션 ID · 수량', () => {
+  it('주문 요청 — 장바구니 줄의 옵션 ID, 수량', () => {
     const r = toOrderRequest({ lines: [line(11)], address: { name: 'n', phone: 'p', zip: 'z', addr: 'a', detail: null }, memo: '', point: 0 });
     expect(r.items).toEqual([{ productOptionId: 11, quantity: 2 }]);
   });
 });
 
 describe('장바구니 API', () => {
-  it('조회 · 담기 · 삭제(쉼표로 이은 ID) · 줄 수정 · 선택 한꺼번에 경로', async () => {
+  it('조회, 담기, 삭제(쉼표로 이은 ID), 줄 수정, 선택 한꺼번에 경로', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: CART } });
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: 'ok' } });
     const del = vi.spyOn(axiosInstance, 'delete').mockResolvedValue({ data: { data: 'ok' } });
@@ -93,7 +93,7 @@ describe('useCart', () => {
     expect(get).not.toHaveBeenCalled();
   });
 
-  it('수량은 바로 반영 후 서버 값으로 다시, 실패하면 되돌리고 서버 메시지 · 한 줄은 줄 수정 · 전체는 선택 한꺼번에', async () => {
+  it('수량은 바로 반영 후 서버 값으로 다시, 실패하면 되돌리고 서버 메시지, 한 줄은 줄 수정, 전체는 선택 한꺼번에', async () => {
     login();
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: CART } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockImplementationOnce(() => new Promise(() => {}))   // 응답 대기 — 낙관적 반영 확인
@@ -112,7 +112,7 @@ describe('useCart', () => {
     await waitFor(() => expect(patch).toHaveBeenCalledWith('/api/carts/items/checked', { checked: false, productOptionIds: undefined }));
   });
 
-  it('담기 · 삭제 — 성공 true, 실패 false + 서버 메시지', async () => {
+  it('담기, 삭제 — 성공 true, 실패 false + 서버 메시지', async () => {
     login();
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: CART } });
     vi.spyOn(axiosInstance, 'post').mockResolvedValueOnce({ data: { data: {} } }).mockRejectedValueOnce(httpError(409, '장바구니에 담을 수 없는 상품입니다.'));
@@ -137,7 +137,7 @@ describe('ShopCart — 서버 장바구니 화면', () => {
     render(<QueryClientProvider client={client()}><MemoryRouter><ShopCart /></MemoryRouter></QueryClientProvider>);
   }
 
-  it('스토어 묶음 · 무료배송까지 남은 금액 · 구매 불가 · 재고 부족 · 판매 종료, +/− · 체크 · 삭제 · 선택삭제 · 합계', async () => {
+  it('스토어 묶음, 무료배송까지 남은 금액, 구매 불가, 재고 부족, 판매 종료, +/−, 체크, 삭제, 선택삭제, 합계', async () => {
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: CART } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: {} } });
     const del = vi.spyOn(axiosInstance, 'delete').mockResolvedValue({ data: { data: {} } });
@@ -149,7 +149,7 @@ describe('ShopCart — 서버 장바구니 화면', () => {
     expect(screen.getByText('지금은 구매할 수 없는 상품이에요 (주문에서 빠져요)')).toBeInTheDocument();
     expect(screen.getByText('재고가 3개 남았어요')).toBeInTheDocument();
     expect(screen.getByText('판매가 끝난 상품 1개')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '2개 상품 주문하기' })).toBeEnabled();   // 선택 · 구매 가능 11 · 21
+    expect(screen.getByRole('button', { name: '2개 상품 주문하기' })).toBeEnabled();   // 선택, 구매 가능 11, 21
     expect(screen.getByText('83,000원')).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: '수량 늘리기' })[0]);
@@ -165,7 +165,7 @@ describe('ShopCart — 서버 장바구니 화면', () => {
     await waitFor(() => expect(lastToast()).toBe('선택한 상품을 삭제했어요'));
   });
 
-  it('빈 장바구니 · 선택 없음 삭제 안내 · 조회 실패', async () => {
+  it('빈 장바구니, 선택 없음 삭제 안내, 조회 실패', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValueOnce({ data: { data: { ...CART, stores: [], unavailable: [], cartCount: 0, checkedCount: 0 } } });
     renderPage();
     expect(await screen.findByText('장바구니가 비어 있어요')).toBeInTheDocument();

@@ -48,7 +48,7 @@ function ServiceCard({ service, errors, chaosEnabled, onKill, highlighted }) {
   );
 }
 
-// 입구 · 관리자 · 로그인 — 시연에서 내리지 않으니 한 줄로 줄인다
+// 입구, 관리자, 로그인 — 시연에서 내리지 않으니 한 줄로 줄인다
 function FixedService({ service, errors }) {
   const state = stateOf(service);
   return (

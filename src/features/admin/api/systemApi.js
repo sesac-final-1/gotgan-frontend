@@ -1,4 +1,4 @@
-// 장애 시연 화면 API — 담당 박지연(화면) · 구지훈(API). 계약: backend docs/api/admin.md 7절. 응답은 화면에서 그대로 쓴다
+// 장애 시연 화면 API — 담당 박지연(화면), 구지훈(API). 계약: backend docs/api/admin.md 7절. 응답은 화면에서 그대로 쓴다
 import { axiosInstance } from '@/shared/api/axiosInstance';
 
 const BASE = '/api/admin/system';
@@ -6,7 +6,7 @@ const BASE = '/api/admin/system';
 // 2초 폴링. 쿠버네티스 조회 실패면 503 → 화면은 마지막 값 유지 + 연결 끊김
 export const fetchSystemStatus = async () => (await axiosInstance.get(`${BASE}/status`)).data.data;
 
-// 15초 폴링. Prometheus 실패 · 요청 0 은 200 에 null → 화면은 '-'
+// 15초 폴링. Prometheus 실패, 요청 0 은 200 에 null → 화면은 '-'
 export const fetchSystemMetrics = async () => (await axiosInstance.get(`${BASE}/metrics`)).data.data;
 
 // 타임라인 — 최신순 최근 20건
@@ -27,7 +27,7 @@ const LOADTEST = `${BASE}/loadtest`;
 // { enabled, maxVus, load, accounts, series: { vus, rps, p95Ms, errorRate: [{ t, v }] } }
 export const fetchLoadTest = async () => (await axiosInstance.get(LOADTEST)).data.data;
 
-// 202 { id } — scenario: BROWSE · REVIEWS · CART · MIXED. 실행 중이면 409 SYSTEM_LOADTEST_RUNNING
+// 202 { id } — scenario: BROWSE, REVIEWS, CART, MIXED. 실행 중이면 409 SYSTEM_LOADTEST_RUNNING
 export const startLoadTest = async ({ scenario, vus, durationSec }) =>
   (await axiosInstance.post(LOADTEST, { scenario, vus, durationSec })).data.data;
 
@@ -36,7 +36,7 @@ export const scaleLoadTest = async ({ vus }) => (await axiosInstance.patch(LOADT
 
 export const stopLoadTest = async () => (await axiosInstance.delete(LOADTEST)).data.data;
 
-// 부하용 계정 300개 가입(약 1분) — 장바구니 · 혼합 시나리오 전에 하루 한 번
+// 부하용 계정 300개 가입(약 1분) — 장바구니, 혼합 시나리오 전에 하루 한 번
 export const prepareLoadTestAccounts = async () => (await axiosInstance.post(`${LOADTEST}/accounts`)).data.data;
 
 // ── 실시간 모니터링(11/16, admin.md 9절) — 실제 트래픽 기준. 실패해도 200 에 빈 값
@@ -59,7 +59,7 @@ export const fetchMonitorTrace = async (traceId) => (await axiosInstance.get(`${
 // { topErrors, slowest, statuses } 최근 5분
 export const fetchMonitorSummary = async () => (await axiosInstance.get(`${MONITOR}/summary`)).data.data;
 
-// ── 장애 분석 리포트(11/17, admin.md 10절) — from · to 는 epoch ms, 서버에는 ISO 로. 최근 7일 안
+// ── 장애 분석 리포트(11/17, admin.md 10절) — from, to 는 epoch ms, 서버에는 ISO 로. 최근 7일 안
 // { summary, buckets, issues, events, suspicious, fromMs, toMs, bucketSeconds }
 export const fetchIncidentReport = async (from, to) =>
   (await axiosInstance.get(`${BASE}/report`, { params: { from: new Date(from).toISOString(), to: new Date(to).toISOString() } })).data.data;

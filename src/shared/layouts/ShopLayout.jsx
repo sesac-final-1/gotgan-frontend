@@ -13,26 +13,26 @@ export function Wordmark({ dark = false, sub }) {
 }
 
 const NAV = [
-  { to: '/products', label: '전체 상품' }, // 판매량(랭킹) 정렬 · 태그(산지직송 · 핸드메이드)는 상품 API 에 없어 뺐다 (product.md 9절)
+  { to: '/products', label: '전체 상품' }, // 판매량(랭킹) 정렬, 태그(산지직송, 핸드메이드)는 상품 API 에 없어 뺐다 (product.md 9절)
   { to: '/products?sort=new', label: '신상' },
   { to: '/stores', label: '스토어' },
 ];
 
-// 푸터 — 실제 화면이 있는 것만 링크. 1:1 문의는 고객센터('운영팀과 채팅') · 상품 상세('판매자에게 문의')가 대신한다
+// 푸터 — 실제 화면이 있는 것만 링크. 1:1 문의는 고객센터('운영팀과 채팅'), 상품 상세('판매자에게 문의')가 대신한다
 const FOOTER_LINKS = [
   ['쇼핑', [['카테고리', '/products'], ['신상', '/products?sort=new'], ['스토어 둘러보기', '/stores']]],
   ['고객지원', [['공지사항', '/notice'], ['자주 묻는 질문', '/faq'], ['고객센터', '/help']]],
   ['판매자', [['입점 신청', '/seller/apply'], ['판매자센터', '/seller'], ['수수료 안내', '/fees'], ['판매자 이용약관', '/terms/seller']]],
 ];
 
-// 쇼핑몰 레이아웃 — 데이터(카테고리 · 장바구니 수 · 로그인 사용자)는 props 로 받는다 (shared 는 features 에 의존하지 않음, 연결은 pages/shop/ShopRoot.jsx)
+// 쇼핑몰 레이아웃 — 데이터(카테고리, 장바구니 수, 로그인 사용자)는 props 로 받는다 (shared 는 features 에 의존하지 않음, 연결은 pages/shop/ShopRoot.jsx)
 export default function ShopLayout({ categories = [], cartCount = 0, user = null, bell = null, onLogout }) {
   const [q, setQ] = useState('');
   const [menu, setMenu] = useState(false);
   const nav = useNavigate();
   const loc = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); setMenu(false); }, [loc.pathname, loc.search]); // 카테고리(?cat=)만 바뀌어도 드로어를 닫는다 · 해시(#reviews) 이동은 그대로
-  const isAdmin = !!user?.roles?.includes('ADMIN'); // 운영자만 관리자 콘솔 바로가기 (실제 접근 제어는 가드 · 게이트웨이)
+  useEffect(() => { window.scrollTo(0, 0); setMenu(false); }, [loc.pathname, loc.search]); // 카테고리(?cat=)만 바뀌어도 드로어를 닫는다, 해시(#reviews) 이동은 그대로
+  const isAdmin = !!user?.roles?.includes('ADMIN'); // 운영자만 관리자 콘솔 바로가기 (실제 접근 제어는 가드, 게이트웨이)
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -42,8 +42,8 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
           {[0, 1].map((k) => (
             <span key={k} className="flex gap-12">
               <span>실결제금액의 5% 포인트 적립 — 구매확정 때 지급</span><span className="text-point">●</span>
-              <span>여러 스토어 상품도 한 번에 결제 · 배송완료 7일 뒤 자동 구매확정</span><span className="text-point">●</span>
-              <span>누적 구매확정 30만원 SILVER · 80만원 GOLD</span><span className="text-point">●</span>
+              <span>여러 스토어 상품도 한 번에 결제, 배송완료 7일 뒤 자동 구매확정</span><span className="text-point">●</span>
+              <span>누적 구매확정 30만원 SILVER, 80만원 GOLD</span><span className="text-point">●</span>
               <span>작은 가게 사장님, 곳간에 입점하세요 → 판매대금은 매주 목요일 정산</span><span className="text-point">●</span>
             </span>
           ))}
@@ -158,7 +158,7 @@ export default function ShopLayout({ categories = [], cartCount = 0, user = null
         </div>
         <div className="border-t border-line">
           <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-6 text-[11.5px] text-mute leading-relaxed">
-            <p>(주)곳간 · 대표 홍길동 · 사업자등록번호 000-00-00000 · 통신판매업신고 2026-서울성동-0000 · 서울특별시 성동구 성수이로 00, 0층</p>
+            <p>(주)곳간, 대표 홍길동, 사업자등록번호 000-00-00000, 통신판매업신고 2026-서울성동-0000, 서울특별시 성동구 성수이로 00, 0층</p>
             <p className="mt-1">곳간은 통신판매중개자로서 통신판매의 당사자가 아니며, 입점 판매자가 등록한 상품정보 및 거래에 대한 책임은 각 판매자에게 있습니다.</p>
             <p className="mt-3 text-ink-2">※ 본 사이트는 팀 프로젝트 시연용 사이트이며 실제 거래가 이루어지지 않습니다. 이미지 출처: Unsplash</p>
           </div>

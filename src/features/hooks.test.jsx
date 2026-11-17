@@ -109,7 +109,7 @@ describe('조회 훅', () => {
     }
   });
 
-  it('관리자 카테고리 — 카테고리 트리 + 수수료를 합쳐 목업 모양(문자열 id · 비율 · 하위 이름)으로', async () => {
+  it('관리자 카테고리 — 카테고리 트리 + 수수료를 합쳐 목업 모양(문자열 id, 비율, 하위 이름)으로', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data: url === '/api/admin/categories'
       ? [{ id: 3, name: '패션의류', nameEn: 'Apparel', sortOrder: 1, active: true, children: [{ id: 301, name: '셔츠', nameEn: null, sortOrder: 1, active: true }] },
         { id: 604, name: '반려동물', nameEn: null, sortOrder: 7, active: false, children: [] }]
@@ -152,7 +152,7 @@ describe('조회 훅', () => {
     }
   });
 
-  it('스토어 홈 — 정지 · 폐점도 200 으로 받아 상태 한글, 404 는 재시도 없이 isError, id 없으면 조회 안 함', async () => {
+  it('스토어 홈 — 정지, 폐점도 200 으로 받아 상태 한글, 404 는 재시도 없이 isError, id 없으면 조회 안 함', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { storeId: 15, storeName: '볕드는집', status: 'SUSPENDED' } } });
     try {
       expect(await load(useStoreQuery, '15')).toMatchObject({ id: 15, name: '볕드는집', status: '정지' });
@@ -205,8 +205,8 @@ describe('조회 훅', () => {
   });
 });
 
-describe('입점 심사 (store 계약 — 상세 · 승인 · 반려 · 보완요청)', () => {
-  it('상세 → 소개 HTML 은 그대로(화면이 safeHtml 로 정화) · 서류 라벨 · 이력 처리자 · 같은 사업자번호', async () => {
+describe('입점 심사 (store 계약 — 상세, 승인, 반려, 보완요청)', () => {
+  it('상세 → 소개 HTML 은 그대로(화면이 safeHtml 로 정화), 서류 라벨, 이력 처리자, 같은 사업자번호', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: {
       applicationId: 27, applicationNo: 'AP-2610-027', status: 'SUPPLEMENT', statusReason: '사본이 흐립니다', categoryId: 1, categoryName: '식품',
       bizType: 'CORPORATE', intro: '<p>리넨 <b>의류</b><img src=x onerror="alert(1)"></p>', settlementAccount: { bank: '국민', number: '0', holder: '홍길동' },
@@ -227,7 +227,7 @@ describe('입점 심사 (store 계약 — 상세 · 승인 · 반려 · 보완�
     }
   });
 
-  it('승인 · 반려 · 보완요청은 PATCH /{id}/{action} — 끝나면 목록 · 상세 다시 불러오기', async () => {
+  it('승인, 반려, 보완요청은 PATCH /{id}/{action} — 끝나면 목록, 상세 다시 불러오기', async () => {
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { applicationId: 27 } } });
     const { client, Wrapper } = createWrapper();
     const invalidate = vi.spyOn(client, 'invalidateQueries');
@@ -278,20 +278,20 @@ describe('정산 관리 (A안 — 고른 주차만 API 조회)', () => {
     expect(recentWeeks(new Date(2026, 10, 1))[0].key).toBe('2026-W43'); // 일요일
   });
 
-  it('주차 목록 → 화면 필드 (상태 라벨 · 실효 수수료율)', async () => {
+  it('주차 목록 → 화면 필드 (상태 라벨, 실효 수수료율)', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { week: '2026-W43', totals: {}, settlements: [
       { id: 6, storeId: 15, storeName: '숲속공방', weekStart: '2026-10-19', itemCount: 1, carriedOverCount: 0, salesAmt: 54000,
-        commissionAmt: 4860, paymentFeeAmt: 1188, payoutAmt: 47952, status: 'HELD', holdReason: '스토어 정지 · 폐점 — 자동 보류' }] } } });
+        commissionAmt: 4860, paymentFeeAmt: 1188, payoutAmt: 47952, status: 'HELD', holdReason: '스토어 정지, 폐점 — 자동 보류' }] } } });
     try {
       expect(await load(useAdminSettlementWeekQuery, '2026-W43')).toMatchObject([{ id: 6, storeName: '숲속공방', orders: 1, gross: 54000,
-        rate: 0.09, commission: 4860, pgFee: 1188, payout: 47952, status: '지급보류', holdReason: '스토어 정지 · 폐점 — 자동 보류' }]);
+        rate: 0.09, commission: 4860, pgFee: 1188, payout: 47952, status: '지급보류', holdReason: '스토어 정지, 폐점 — 자동 보류' }]);
       expect(get).toHaveBeenCalledWith('/api/admin/settlements', { params: { week: '2026-W43' } });
     } finally {
       get.mockRestore();
     }
   });
 
-  it('지급 실행 {ids} · 선택 보류는 건마다 PATCH · 보류 해제 — 끝나면 정산 목록 다시 불러오기', async () => {
+  it('지급 실행 {ids}, 선택 보류는 건마다 PATCH, 보류 해제 — 끝나면 정산 목록 다시 불러오기', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { success: [1], failed: [] } } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: {} } });
     const { client, Wrapper } = createWrapper();
@@ -308,7 +308,7 @@ describe('정산 관리 (A안 — 고른 주차만 API 조회)', () => {
       const release = renderHook(() => useReleaseSettlementHoldMutation(), { wrapper: Wrapper }).result;
       await act(() => release.current.mutateAsync(6));
       expect(patch).toHaveBeenCalledWith('/api/admin/settlements/6/hold', { hold: false, reason: undefined });
-      expect(invalidate).toHaveBeenCalledTimes(6); // 3번 × (정산 목록 · 대시보드 — 메뉴의 지급 보류 배지)
+      expect(invalidate).toHaveBeenCalledTimes(6); // 3번 × (정산 목록, 대시보드 — 메뉴의 지급 보류 배지)
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'dashboard'] });
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'settlements'] });
     } finally {
@@ -318,8 +318,8 @@ describe('정산 관리 (A안 — 고른 주차만 API 조회)', () => {
   });
 });
 
-describe('카테고리 · 수수료 mutation', () => {
-  it('새 카테고리는 POST · 수정은 PUT /{id} · 수수료 예약은 PUT /commissions — 끝나면 카테고리 목록 다시 불러오기', async () => {
+describe('카테고리, 수수료 mutation', () => {
+  it('새 카테고리는 POST, 수정은 PUT /{id}, 수수료 예약은 PUT /commissions — 끝나면 카테고리 목록 다시 불러오기', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { id: 604 } } });
     const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: { id: 3 } } });
     const { client, Wrapper } = createWrapper();
@@ -344,7 +344,7 @@ describe('카테고리 · 수수료 mutation', () => {
 });
 
 describe('판매자 상품 mutation', () => {
-  it('판매중지 · 재개는 PATCH /status · 삭제는 건마다 DELETE — 끝나면 판매자 상품 목록 · 상세 다시 불러오기', async () => {
+  it('판매중지, 재개는 PATCH /status, 삭제는 건마다 DELETE — 끝나면 판매자 상품 목록, 상세 다시 불러오기', async () => {
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { success: [3], failed: [] } } });
     const del = vi.spyOn(axiosInstance, 'delete').mockResolvedValue({ data: { data: null } });
     const { client, Wrapper } = createWrapper();
@@ -365,7 +365,7 @@ describe('판매자 상품 mutation', () => {
     }
   });
 
-  it('상세는 GET /api/seller/products/{id} · 저장은 등록 POST — 끝나면 판매자 상품 무효화', async () => {
+  it('상세는 GET /api/seller/products/{id}, 저장은 등록 POST — 끝나면 판매자 상품 무효화', async () => {
     const detail = { productId: 101, storeId: 1, categoryId: 101, topCategoryId: 1, name: '햇감귤', price: 32900, discountRate: 18, salePrice: 26980,
       option1Name: null, option2Name: null, options: [{ productOptionId: 10101, option1Value: null, option2Value: null, extraPrice: 0, stock: 40 }],
       images: [{ key: 'products/seed/a.jpg', url: 'https://img/a.jpg' }], status: 'ON_SALE', statusReason: null, soldOut: false };
@@ -403,7 +403,7 @@ describe('스토어 별점 훅', () => {
 });
 
 describe('내 스토어 mutation', () => {
-  it('설정 저장은 PUT · 폐점은 PATCH /close — 끝나면 store 전체(내 스토어 · 공개 스토어) 다시 불러오기', async () => {
+  it('설정 저장은 PUT, 폐점은 PATCH /close — 끝나면 store 전체(내 스토어, 공개 스토어) 다시 불러오기', async () => {
     const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: { storeId: 1, storeName: '산골농부 박씨네', status: 'ACTIVE' } } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { storeId: 1, status: 'CLOSED', closedAt: '2026-11-02T15:00:00+09:00' } } });
     const { client, Wrapper } = createWrapper();
@@ -424,8 +424,8 @@ describe('내 스토어 mutation', () => {
   });
 });
 
-describe('판매자 상품 재고 수정 · 복사 mutation', () => {
-  it('재고는 PATCH /stocks · 복사는 상세를 읽어 판매중지로 POST — 끝나면 판매자 상품 무효화', async () => {
+describe('판매자 상품 재고 수정, 복사 mutation', () => {
+  it('재고는 PATCH /stocks, 복사는 상세를 읽어 판매중지로 POST — 끝나면 판매자 상품 무효화', async () => {
     const detail = { productId: 101, storeId: 1, categoryId: 101, topCategoryId: 1, name: '햇감귤', price: 32900, discountRate: 18, salePrice: 26980,
       option1Name: null, option2Name: null, options: [{ productOptionId: 10101, option1Value: null, option2Value: null, extraPrice: 0, stock: 40 }],
       images: [{ key: 'products/seed/a.jpg', url: 'https://img/a.jpg' }], status: 'ON_SALE', statusReason: null, soldOut: false };
@@ -454,7 +454,7 @@ describe('판매자 상품 재고 수정 · 복사 mutation', () => {
   });
 });
 
-describe('판매자 정산 · 관리자 정산 상세 · 지금 집계 (settlement API)', () => {
+describe('판매자 정산, 관리자 정산 상세, 지금 집계 (settlement API)', () => {
   const SUMMARY = { id: 2, storeId: 1, storeName: '산골농부 박씨네', week: '2026-W42', weekStart: '2026-10-12', weekEnd: '2026-10-18',
     itemCount: 2, carriedOverCount: 1, salesAmt: 58000, commissionAmt: 4060, paymentFeeAmt: 1276, payoutAmt: 52664, status: 'PAID',
     holdReason: null, scheduledPayDate: '2026-10-22', paidAt: '2026-10-22T10:00:00+09:00', bank: { bankName: '곳간은행', accountNumber: '100-01', accountHolder: '박씨' } };
@@ -478,7 +478,7 @@ describe('판매자 정산 · 관리자 정산 상세 · 지금 집계 (settleme
     }
   });
 
-  it('상세 — 판매자 · 관리자 같은 모양(건별 이월 · 율 · 이력 라벨), id 없으면 조회 안 함', async () => {
+  it('상세 — 판매자, 관리자 같은 모양(건별 이월, 율, 이력 라벨), id 없으면 조회 안 함', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: DETAIL } });
     try {
       const expected = { storeName: '산골농부 박씨네', items: [{ productName: '한라봉 3kg', rate: 0.07, carriedOver: true }],
@@ -509,8 +509,8 @@ describe('판매자 정산 · 관리자 정산 상세 · 지금 집계 (settleme
   });
 });
 
-describe('신고 (admin-service — 접수 · 대상별 묶음 · 상세 · 처리)', () => {
-  it('목록 — 대상별 묶음에 화면 id · 시각 변환, 상세는 신고 · 조치 시각 변환', async () => {
+describe('신고 (admin-service — 접수, 대상별 묶음, 상세, 처리)', () => {
+  it('목록 — 대상별 묶음에 화면 id, 시각 변환, 상세는 신고, 조치 시각 변환', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data: url === '/api/admin/reports'
       ? [{ targetType: 'REVIEW', targetId: 31, summary: '광고', openCount: 2, totalCount: 2, reasonCounts: { SPAM: 2 },
         lastReportedAt: '2026-10-26T15:00:00+09:00', lastAction: null }]
@@ -532,7 +532,7 @@ describe('신고 (admin-service — 접수 · 대상별 묶음 · 상세 · 처�
     expect(renderHook(() => useAdminReportQuery('USER', undefined), { wrapper: Wrapper }).result.current.fetchStatus).toBe('idle');
   });
 
-  it('처리 — 정지는 days 포함 · 기각은 days 없이, 끝나면 신고 목록과(회원이면) 회원도 다시 불러오기', async () => {
+  it('처리 — 정지는 days 포함, 기각은 days 없이, 끝나면 신고 목록과(회원이면) 회원도 다시 불러오기', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { action: { action: 'SUSPEND' }, closedReports: 1, target: {} } } });
     const { client, Wrapper } = createWrapper();
     const invalidate = vi.spyOn(client, 'invalidateQueries');
@@ -565,7 +565,7 @@ describe('신고 (admin-service — 접수 · 대상별 묶음 · 상세 · 처�
 });
 
 describe('상품 목록 훅 캐시 키 — 빈 조건을 뺀 값', () => {
-  it('{ q: "" } · { q: undefined, categoryId: null } 는 같은 캐시 키 하나 · enabled=false 면 요청 안 함', async () => {
+  it('{ q: "" }, { q: undefined, categoryId: null } 는 같은 캐시 키 하나, enabled=false 면 요청 안 함', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0, hasNext: false } } });
     const { client, Wrapper } = createWrapper();
     try {

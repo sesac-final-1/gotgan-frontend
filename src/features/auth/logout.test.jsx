@@ -38,7 +38,7 @@ describe('useLogout', () => {
   it.each([
     ['서버 로그아웃 성공', () => Promise.resolve({ data: {} })],
     ['서버 로그아웃 실패(네트워크)해도 화면은 로그아웃', () => Promise.reject(new Error('network'))],
-  ])('%s — AT · 사용자 삭제, 캐시 비움, 첫 화면', async (_, response) => {
+  ])('%s — AT, 사용자 삭제, 캐시 비움, 첫 화면', async (_, response) => {
     const post = vi.spyOn(axiosInstance, 'post').mockImplementation(response);
     const queryClient = new QueryClient();
     queryClient.setQueryData(['users', 'me'], { name: '구매자1' });

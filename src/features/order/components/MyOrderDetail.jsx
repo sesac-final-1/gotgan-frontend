@@ -17,14 +17,14 @@ export default function MyOrderDetail() {
   return (
     <div>
       <MyPageHead right={<Link to="/mypage/orders" className="text-[13px] text-ink-2">← 목록</Link>}>주문 상세</MyPageHead>
-      <div className="text-[13px] text-ink-2 mb-4"><b className="text-ink">{ymdhm(toDate(o.orderedAt))}</b> 주문 · <span className="num">{o.orderNo}</span></div>
+      <div className="text-[13px] text-ink-2 mb-4"><b className="text-ink">{ymdhm(toDate(o.orderedAt))}</b> 주문, <span className="num">{o.orderNo}</span></div>
 
       <div className="grid md:grid-cols-[1fr_320px] gap-6">
         <div className="border border-line">
           {o.items.map((l) => (
             <div key={l.orderItemId} className="flex gap-4 p-4 border-b border-line last:border-0 text-[13px]">
               <img src={l.thumbnailUrl || fallbackSrc()} alt="" className="w-16 h-20 object-cover bg-cream" />
-              <div className="flex-1"><StatusPill s={lineStatusLabel(o, l)} /><div className="font-medium text-[14px] mt-1.5">{l.productName}</div><div className="text-mute">{l.storeName} · {l.optionName || '단일상품'} · {l.quantity}개</div></div>
+              <div className="flex-1"><StatusPill s={lineStatusLabel(o, l)} /><div className="font-medium text-[14px] mt-1.5">{l.productName}</div><div className="text-mute">{l.storeName}, {l.optionName || '단일상품'}, {l.quantity}개</div></div>
               <div className="flex flex-col items-end justify-between">
                 <div className="font-bold num">{won(l.itemAmt)}</div>
                 <OpenChatButton className="btn btn-line btn-xs" basePath="/mypage/chats"
@@ -68,7 +68,7 @@ export default function MyOrderDetail() {
           <div className="flex gap-2 mt-2">
             {/* 주문 카드 id = 주문번호의 숫자 (20261027-000001 → 20261027000001, chat.md 문맥 카드) */}
             <OpenChatButton basePath="/mypage/chats" request={{ type: 'BUYER_SUPPORT', context: { type: 'ORDER', id: Number(o.orderNo.replace('-', '')) } }}>
-              결제 · 환불 문의
+              결제, 환불 문의
             </OpenChatButton>
           </div>
         </div>

@@ -1,4 +1,4 @@
-// 입점 신청 (4단계) · 내 신청 상태 — 담당 박지연. 계약: backend docs/api/store.md 2 · 2-1 · 2-2절
+// 입점 신청 (4단계), 내 신청 상태 — 담당 박지연. 계약: backend docs/api/store.md 2, 2-1, 2-2절
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,8 +17,8 @@ import { toast } from '@/shared/stores/toastStore';
 import { cx, pct, ymd, ymdhm } from '@/shared/utils/format';
 import { COMMISSION_RATES, PAYMENT_FEE_LABEL } from '@/features/support/data/policy';
 
-/* 흐름: GET /api/seller/apply/me → 없으면 신청 폼, 있으면 상태 화면(심사대기 · 보완요청 · 반려 · 승인). 반려는 재신청 가능일이 지나면 폼으로
-   제출: 서류 presign → S3 PUT → POST /api/seller/apply → me 다시 조회 → 심사대기 화면. 화면은 빈칸 · 개수 · 약관 · 형식 4칸만 보고 나머지는 서버 400 메시지로
+/* 흐름: GET /api/seller/apply/me → 없으면 신청 폼, 있으면 상태 화면(심사대기, 보완요청, 반려, 승인). 반려는 재신청 가능일이 지나면 폼으로
+   제출: 서류 presign → S3 PUT → POST /api/seller/apply → me 다시 조회 → 심사대기 화면. 화면은 빈칸, 개수, 약관, 형식 4칸만 보고 나머지는 서버 400 메시지로
    보완요청이면 "보완 제출하기" → ShopSellerResubmit(2-3절) */
 // 판매수수료 범위 — 수수료 안내(/fees)와 같은 표에서 계산(예: 6%–11%)
 const RATES = COMMISSION_RATES.map((c) => c.rate);
@@ -26,7 +26,7 @@ const COMMISSION_RANGE = `${pct(Math.min(...RATES))}–${pct(Math.max(...RATES))
 // 수수료 안내는 새 탭으로 — 같은 탭이면 작성 중인 신청서가 사라진다
 const FeesLink = () => <Link to="/fees" target="_blank" rel="noopener noreferrer" className="underline">수수료 안내</Link>;
 
-const STEPS = ['판매자 정보', '스토어 · 상품', '서류 제출', '정산 · 약관'];
+const STEPS = ['판매자 정보', '스토어, 상품', '서류 제출', '정산, 약관'];
 const ACTOR_LABEL = { APPLICANT: '신청자', ADMIN: '곳간 운영팀', SYSTEM: '시스템' };
 
 export default function ShopSellerApply() {
@@ -53,12 +53,12 @@ function ApplicationStatus({ me, onReapply, onResubmit }) {
     <div className="max-w-[640px] mx-auto px-4 pt-20">
       <div className="eyebrow">{TITLE[0]}</div>
       <h1 className="mt-2 text-[28px] font-bold tracking-tight">{TITLE[1]}</h1>
-      <p className="mt-2 text-ink-2 text-sm">접수번호 <b className="num">{me.applicationNo}</b> · {me.storeName} · {TITLE[2]}</p>
+      <p className="mt-2 text-ink-2 text-sm">접수번호 <b className="num">{me.applicationNo}</b>, {me.storeName}, {TITLE[2]}</p>
       {me.statusReason && (
         <div className="mt-6 bg-cream p-5 text-[13px] leading-relaxed">
           <b>{me.status === 'REJECTED' ? '반려 사유' : '보완 요청'}</b>
           <p className="mt-1 text-ink-2">{me.statusReason}</p>
-          {me.requestedDocs.length > 0 && <p className="mt-2 text-ink-2">다시 낼 서류: {me.requestedDocs.map((d) => DOC_TYPE_LABEL[d] ?? d).join(' · ')}</p>}
+          {me.requestedDocs.length > 0 && <p className="mt-2 text-ink-2">다시 낼 서류: {me.requestedDocs.map((d) => DOC_TYPE_LABEL[d] ?? d).join(', ')}</p>}
         </div>
       )}
       <ol className="mt-10 border-l-2 border-line ml-2">
@@ -66,7 +66,7 @@ function ApplicationStatus({ me, onReapply, onResubmit }) {
           <li key={i} className="relative pl-6 pb-7 last:pb-0">
             <span className={cx('absolute -left-[7px] top-1 w-3 h-3 rounded-full border-2', i === me.history.length - 1 ? 'bg-point border-point' : 'bg-white border-line-2')} />
             <div className="font-semibold text-[15px]">{String(i + 1).padStart(2, '0')}. {APPLICATION_STATUS_LABEL[h.toStatus] ?? h.toStatus}</div>
-            <div className="text-[13px] text-mute mt-0.5">{h.changedAt ? ymdhm(h.changedAt) : ''} · {ACTOR_LABEL[h.actor] ?? h.actor}{h.reason && ` · ${h.reason}`}</div>
+            <div className="text-[13px] text-mute mt-0.5">{h.changedAt ? ymdhm(h.changedAt) : ''}, {ACTOR_LABEL[h.actor] ?? h.actor}{h.reason && `, ${h.reason}`}</div>
           </li>
         ))}
       </ol>
@@ -93,7 +93,7 @@ const REQUIRED = [
   [],
   ['number', 'holder'],
 ];
-// 단계별로 형식을 미리 볼 칸(규칙 · 문구는 applyRules — 서버와 같음)
+// 단계별로 형식을 미리 볼 칸(규칙, 문구는 applyRules — 서버와 같음)
 const STEP_FORMAT = [['bizRegNo', 'managerPhone', 'managerEmail'], ['slug'], [], []];
 
 function ApplyForm() {
@@ -111,7 +111,7 @@ function ApplyForm() {
   const cat = categories.find((x) => x.id === form.categoryId) ?? categories[0];
   const setProduct = (i, k, v) => setProducts(products.map((p, j) => (j === i ? { ...p, [k]: v } : p)));
 
-  // 화면 검사는 최소 — 빈칸 · 상품 2개 이상 · 서류 개수 · 필수 약관. 형식(사업자번호 · 주소 규칙 등)은 서버 400 메시지로
+  // 화면 검사는 최소 — 빈칸, 상품 2개 이상, 서류 개수, 필수 약관. 형식(사업자번호, 주소 규칙 등)은 서버 400 메시지로
   const problem = (s) => {
     if (REQUIRED[s].some((k) => !String(form[k]).trim())) return '필수 항목을 모두 입력해 주세요';
     const bad = formatProblem(STEP_FORMAT[s], form);
@@ -172,8 +172,8 @@ function ApplyForm() {
           <div className="mt-8 bg-cream p-5 text-[13px] leading-relaxed">
             <b>입점 혜택</b>
             <ul className="mt-2 space-y-1 text-ink-2">
-              <li>· 판매수수료 상위 카테고리별 {COMMISSION_RANGE} · 결제수수료 {PAYMENT_FEE_LABEL} (<FeesLink />)</li>
-              <li>· 주 1회 정산 (구매확정 기준)</li>
+              <li>, 판매수수료 상위 카테고리별 {COMMISSION_RANGE}, 결제수수료 {PAYMENT_FEE_LABEL} (<FeesLink />)</li>
+              <li>, 주 1회 정산 (구매확정 기준)</li>
             </ul>
           </div>
         </div>
@@ -205,9 +205,9 @@ function ApplyForm() {
 
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="text-[20px] font-bold">스토어 · 카테고리 · 판매 예정 상품</h2>
+            <h2 className="text-[20px] font-bold">스토어, 카테고리, 판매 예정 상품</h2>
             <Field label="스토어 이름" req hint="쇼핑몰에 노출되는 이름입니다. 승인 후 변경하려면 관리자 승인이 필요해요."><input className="field" placeholder="예) 오롯이 리넨" value={form.storeName} onChange={set('storeName')} /></Field>
-            <Field label="스토어 주소" req hint="영소문자 · 숫자 · 하이픈 3~30자. 승인 후 변경할 수 없어요."><div className="flex items-center border border-line-2 h-10 px-3 text-sm"><span className="text-mute shrink-0">{storeUrlPrefix()}</span><input className="flex-1 min-w-0 outline-none" placeholder="my-store" value={form.slug} onChange={set('slug')} aria-label="스토어 주소" /></div></Field>
+            <Field label="스토어 주소" req hint="영소문자, 숫자, 하이픈 3~30자. 승인 후 변경할 수 없어요."><div className="flex items-center border border-line-2 h-10 px-3 text-sm"><span className="text-mute shrink-0">{storeUrlPrefix()}</span><input className="flex-1 min-w-0 outline-none" placeholder="my-store" value={form.slug} onChange={set('slug')} aria-label="스토어 주소" /></div></Field>
             <Field label="대표 카테고리" req hint="카테고리에 따라 판매수수료가 달라집니다.">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {categories.map((x) => (
@@ -218,7 +218,7 @@ function ApplyForm() {
                 ))}
               </div>
             </Field>
-            <Field label="판매 예정 상품" req hint="대표 상품 2~10개. 상품명 · 세부 분류 · 예상 판매가">
+            <Field label="판매 예정 상품" req hint="대표 상품 2~10개. 상품명, 세부 분류, 예상 판매가">
               <div className="space-y-2">
                 {products.map((p, i) => (
                   <div key={i} className="grid grid-cols-[1fr_120px_140px] gap-2">
@@ -241,7 +241,7 @@ function ApplyForm() {
         {step === 2 && (
           <div className="space-y-3">
             <h2 className="text-[20px] font-bold mb-2">서류 제출</h2>
-            <p className="text-[13px] text-mute mb-4">PDF, JPG, PNG (최대 10MB) · 발급일 3개월 이내 · 상품 사진은 JPG, PNG</p>
+            <p className="text-[13px] text-mute mb-4">PDF, JPG, PNG (최대 10MB), 발급일 3개월 이내, 상품 사진은 JPG, PNG</p>
             {DOC_TYPES.map((t) => (
               <Doc key={t.value} type={t} files={docs[t.value]}
                 onPick={(f) => setDocs({ ...docs, [t.value]: t.multiple ? [...docs.PRODUCT_PHOTO, ...f].slice(0, PRODUCT_PHOTO_MAX) : f })}
@@ -252,7 +252,7 @@ function ApplyForm() {
 
         {step === 3 && (
           <div className="space-y-5">
-            <h2 className="text-[20px] font-bold">정산 계좌 · 약관</h2>
+            <h2 className="text-[20px] font-bold">정산 계좌, 약관</h2>
             <div className="grid sm:grid-cols-3 gap-4">
               <Field label="은행" req><select className="field" value={form.bank} onChange={set('bank')}>{BANKS.map((b) => <option key={b}>{b}</option>)}</select></Field>
               <Field label="계좌번호" req><input className="field num" value={form.number} onChange={set('number')} /></Field>
@@ -262,7 +262,7 @@ function ApplyForm() {
               <div className="px-4 h-11 flex items-center bg-cream font-semibold text-[14px] border-b border-line">정산 정책 요약</div>
               <table className="w-full text-[13px]">
                 <tbody>
-                  {[['판매수수료', <>상위 카테고리별 {COMMISSION_RANGE} (<FeesLink />)</>], ['결제수수료', `${PAYMENT_FEE_LABEL} (PG사 수수료)`], ['정산 기준', '구매확정일 (배송완료 7일 후 자동 확정)'], ['정산 주기', '주 1회 · 월~일 확정분을 다음 주 목요일 지급'], ['지급 보류', '클레임 미처리, 스토어 정지 시 해당 건 지급 보류']].map(([k, v]) => (
+                  {[['판매수수료', <>상위 카테고리별 {COMMISSION_RANGE} (<FeesLink />)</>], ['결제수수료', `${PAYMENT_FEE_LABEL} (PG사 수수료)`], ['정산 기준', '구매확정일 (배송완료 7일 후 자동 확정)'], ['정산 주기', '주 1회, 월~일 확정분을 다음 주 목요일 지급'], ['지급 보류', '클레임 미처리, 스토어 정지 시 해당 건 지급 보류']].map(([k, v]) => (
                     <tr key={k} className="border-b border-line last:border-0"><th className="w-28 text-left font-medium text-ink-2 px-4 py-2.5">{k}</th><td className="px-4 py-2.5">{v}</td></tr>
                   ))}
                 </tbody>

@@ -4,7 +4,7 @@ import {
 } from '@/features/chat/api/chatApi';
 import { contextLabel, flattenMessages, frameToMessage, mySide, prependMessage, roomNotice, validateContent } from '@/features/chat/utils/chatView';
 
-// chat-service 응답 흉내 (chat.md 1 · 3절)
+// chat-service 응답 흉내 (chat.md 1, 3절)
 const ROOM = {
   roomId: 7, type: 'STORE_INQUIRY', status: null, counterpart: { name: '스토어 #5', role: 'SELLER' }, storeId: 5, buyerId: 10,
   lastMessage: { preview: '안녕하세요', at: '2026-10-27T10:00:00+09:00' }, unreadCount: 1, createdAt: '2026-10-27T09:00:00+09:00',
@@ -12,7 +12,7 @@ const ROOM = {
 const MESSAGE = { messageId: 3, roomId: 7, senderRole: 'BUYER', mine: true, kind: 'TEXT', content: '안녕하세요', context: null, createdAt: '2026-10-27T10:00:00+09:00' };
 
 describe('chatApi', () => {
-  it('요청 주소 · 본문 · 응답 변환', async () => {
+  it('요청 주소, 본문, 응답 변환', async () => {
     vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: ROOM } });
     vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({
       data: { data: url.endsWith('/messages') ? [MESSAGE] : url.endsWith('/unread-count') ? { count: 4 } : [ROOM, { ...ROOM, roomId: 8, lastMessage: null }] },
@@ -56,7 +56,7 @@ describe('chatView', () => {
     expect(mySide({ type: 'BUYER_SUPPORT', counterpart: { role: 'BUYER' } })).toBe('ADMIN');
   });
 
-  it('실시간 프레임 → 메시지 (mine 계산) · 맨 앞에 넣기(중복 무시) · 화면 순서', () => {
+  it('실시간 프레임 → 메시지 (mine 계산), 맨 앞에 넣기(중복 무시), 화면 순서', () => {
     const live = frameToMessage({ type: 'MESSAGE', messageId: 4, roomId: 7, senderRole: 'SELLER', kind: 'TEXT', content: '네', context: null, createdAt: '2026-10-27T10:01:00+09:00' }, 'BUYER');
     expect(live).toMatchObject({ messageId: 4, mine: false });
     expect(live.createdAt).toBeInstanceOf(Date);
@@ -78,7 +78,7 @@ describe('chatView', () => {
     expect(contextLabel(undefined)).toBe('문의 대상');
   });
 
-  it('보내기 전 확인 · 종료 안내', () => {
+  it('보내기 전 확인, 종료 안내', () => {
     expect(validateContent('   ')).toBe('메시지를 입력해 주세요.');
     expect(validateContent('가'.repeat(1001))).toMatch('1,000자');
     expect(validateContent('  안녕  ')).toBeNull();

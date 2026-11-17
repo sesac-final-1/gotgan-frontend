@@ -4,9 +4,9 @@ import RouteError from '@/app/RouteError';
 import RequireRole from '@/features/auth/components/RequireRole';
 import ShopRoot from '@/pages/shop/ShopRoot';
 
-// 전체 라우트 — 단일 파일 (컨벤션 4-3). 영역 · 도메인별 표 안에서만 추가, catch-all(*)은 항상 맨 마지막
+// 전체 라우트 — 단일 파일 (컨벤션 4-3). 영역, 도메인별 표 안에서만 추가, catch-all(*)은 항상 맨 마지막
 // 경로는 목업과 같다. 접근 권한은 컨벤션 4-3 표 그대로 RequireRole 로 (공개 화면은 감싸지 않음)
-// 코드 분할: 화면은 그 경로에 처음 들어갈 때 받는다 (판매자 · 관리자 화면이 쇼핑몰 첫 로딩에 섞이지 않게).
+// 코드 분할: 화면은 그 경로에 처음 들어갈 때 받는다 (판매자, 관리자 화면이 쇼핑몰 첫 로딩에 섞이지 않게).
 //   새 화면은 아래 표에 '경로': '폴더/파일명' 한 줄로 추가 — 파일은 src/pages 아래에서 찾는다 ('' = 영역의 첫 화면)
 
 // src/pages 의 화면 파일 (지연 로딩 — 파일마다 따로 받음). ShopRoot 는 쇼핑몰 틀이라 바로 넣는다

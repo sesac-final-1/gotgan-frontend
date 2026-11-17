@@ -1,7 +1,7 @@
-# 프론트 CI — 앱 변경 감지 → lint · 테스트 · 빌드 · SonarQube Cloud → ci-ok 판정 — 담당 이경석 (backend.yml 과 같은 구조). 배포는 Vercel Git 연동이라 이 워크플로에 없음
-# PR 머지 조건 = 필수 체크 ci-ok(빌드 · 테스트 + SonarQube Cloud 품질 게이트) 통과 + 다른 팀원 승인 1명 (main 브랜치 Rulesets pull_request_ruleset)
-# SonarQube Cloud 는 CI 분석 (설정: 루트 sonar-project.properties · Secret SONAR_TOKEN). 앱이 하나라 build job 안에서 스캔
-# 스택: Node.js 22 · Vite 6 · Vitest (컨벤션 4장). package.json 이 아직 없으면(뼈대 이전) build 를 건너뛰고 ci-ok 는 통과
+# 프론트 CI — 앱 변경 감지 → lint, 테스트, 빌드, SonarQube Cloud → ci-ok 판정 — 담당 이경석 (backend.yml 과 같은 구조). 배포는 Vercel Git 연동이라 이 워크플로에 없음
+# PR 머지 조건 = 필수 체크 ci-ok(빌드, 테스트 + SonarQube Cloud 품질 게이트) 통과 + 다른 팀원 승인 1명 (main 브랜치 Rulesets pull_request_ruleset)
+# SonarQube Cloud 는 CI 분석 (설정: 루트 sonar-project.properties, Secret SONAR_TOKEN). 앱이 하나라 build job 안에서 스캔
+# 스택: Node.js 22, Vite 6, Vitest (컨벤션 4장). package.json 이 아직 없으면(뼈대 이전) build 를 건너뛰고 ci-ok 는 통과
 name: frontend
 
 on:
@@ -18,7 +18,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  # 1) 앱 코드가 바뀌었나 — docs · .github 만 바뀐 PR 은 빌드하지 않는다. package.json 이 없으면(뼈대 이전) 빌드할 것도 없음
+  # 1) 앱 코드가 바뀌었나 — docs, .github 만 바뀐 PR 은 빌드하지 않는다. package.json 이 없으면(뼈대 이전) 빌드할 것도 없음
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -42,7 +42,7 @@ jobs:
       - id: pkg
         run: echo "exists=$([ -f package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
-  # 2) lint → 테스트 → 빌드 → SonarQube Cloud (lint · test 스크립트가 아직 없으면 건너뜀)
+  # 2) lint → 테스트 → 빌드 → SonarQube Cloud (lint, test 스크립트가 아직 없으면 건너뜀)
   #    품질 게이트 실패 시 이 job 실패 → ci-ok 실패 → 머지 차단
   build:
     needs: changes
@@ -69,7 +69,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: SonarQube Cloud 스캔 · 품질 게이트
+      - name: SonarQube Cloud 스캔, 품질 게이트
         uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -78,7 +78,7 @@ jobs:
           args: -Dsonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
 
   # 3) PR 머지 판정 — main 브랜치 보호의 필수 체크는 이 job 하나만 건다
-  #    빌드 · 테스트 · Sonar 가 성공했거나, 앱 변경이 없어 build 가 skipped 면 통과
+  #    빌드, 테스트, Sonar 가 성공했거나, 앱 변경이 없어 build 가 skipped 면 통과
   ci-ok:
     needs: [changes, build]
     if: always()

@@ -25,18 +25,18 @@ export default function AdminLayout() {
       ],
     },
     {
-      title: '회원 · 콘텐츠',
+      title: '회원, 콘텐츠',
       items: [
         { to: '/admin/users', label: '회원 관리', icon: Users },
         { to: '/admin/reports', label: '신고 관리', icon: Flag, count: reports.reduce((a, t) => a + t.openCount, 0) }, // 처리 대기 신고 수
         { to: '/admin/chats', label: '상담함', icon: MessagesSquare, count: chatUnread },
       ],
     },
-    { title: '설정', items: [{ to: '/admin/categories', label: '카테고리 · 수수료', icon: Tags }] },
+    { title: '설정', items: [{ to: '/admin/categories', label: '카테고리, 수수료', icon: Tags }] },
     { title: '시스템', items: [{ to: '/admin/system', label: '시스템 상태', icon: Activity, end: true }, { to: '/admin/system/report', label: '장애 리포트', icon: FileText }] },
   ];
   return (
     <ConsoleLayout kind="admin" badge="운영관리" groups={groups} bell={<NotificationBell dark />} onLogout={logout}
-      account={{ name: '곳간 운영팀', role: '파트너운영 · 최고관리자', avatar: '/images/avatar/u-2.jpg' }} />
+      account={{ name: '곳간 운영팀', role: '파트너운영, 최고관리자', avatar: '/images/avatar/u-2.jpg' }} />
   );
 }

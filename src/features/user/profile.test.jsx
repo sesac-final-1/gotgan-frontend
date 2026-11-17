@@ -39,29 +39,29 @@ function renderProfile(me = ME, element = <MyProfile onWithdrawn={vi.fn()} />) {
   );
 }
 
-describe('회원정보 스키마 · 요청', () => {
-  it('이름 필수 · 닉네임 30자 · 휴대폰은 비우거나 형식대로', () => {
+describe('회원정보 스키마, 요청', () => {
+  it('이름 필수, 닉네임 30자, 휴대폰은 비우거나 형식대로', () => {
     expect(profileSchema.safeParse({ name: ' ', nick: '', phone: '' }).success).toBe(false);
     expect(profileSchema.safeParse({ name: '김', nick: 'x'.repeat(31), phone: '' }).success).toBe(false);
     expect(profileSchema.safeParse({ name: '김', nick: '', phone: '02-123-4567' }).success).toBe(false);
     expect(profileSchema.safeParse({ name: '김', nick: '', phone: '' }).success).toBe(true);
   });
 
-  it('바뀐 항목만 — 닉네임 비우면 삭제(""), 휴대폰은 하이픈만 다르면 그대로 · 비우면 보내지 않음', () => {
+  it('바뀐 항목만 — 닉네임 비우면 삭제(""), 휴대폰은 하이픈만 다르면 그대로, 비우면 보내지 않음', () => {
     const me = { name: '구매자1', nick: '곳간', phone: '010-0000-0004' };
     expect(toUpdateMeRequest(me, { name: '구매자1', nick: '곳간', phone: '01000000004' })).toEqual({});
     expect(toUpdateMeRequest(me, { name: '김곳간', nick: '', phone: '' })).toEqual({ name: '김곳간', nick: '' });
     expect(toUpdateMeRequest({ ...me, phone: '' }, { name: '구매자1', nick: '곳간', phone: '010-1234-5678' })).toEqual({ phone: '010-1234-5678' });
   });
 
-  it('새 비밀번호 — 가입과 같은 규칙 · 확인 일치', () => {
+  it('새 비밀번호 — 가입과 같은 규칙, 확인 일치', () => {
     const base = { currentPassword: 'old', newPassword: 'New!pass2', newPasswordConfirm: 'New!pass2' };
     expect(passwordChangeSchema.safeParse(base).success).toBe(true);
     expect(passwordChangeSchema.safeParse({ ...base, newPassword: 'short!', newPasswordConfirm: 'short!' }).success).toBe(false);
     expect(passwordChangeSchema.safeParse({ ...base, newPasswordConfirm: 'Other!pass' }).error.issues[0].path).toEqual(['newPasswordConfirm']);
   });
 
-  it('API — PATCH /me 는 수정 후 내 정보를 화면 필드로, 비밀번호 PATCH · 탈퇴 DELETE', async () => {
+  it('API — PATCH /me 는 수정 후 내 정보를 화면 필드로, 비밀번호 PATCH, 탈퇴 DELETE', async () => {
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { ...ME, name: '김곳간' } } });
     const del = vi.spyOn(axiosInstance, 'delete').mockResolvedValue({ data: {} });
     await expect(updateMe({ name: '김곳간' })).resolves.toMatchObject({ id: 4, name: '김곳간' });
@@ -147,7 +147,7 @@ describe('MyProfile', () => {
 });
 
 describe('MyProfilePage — 탈퇴 성공', () => {
-  it('로그인 상태 · 캐시를 비우고 첫 화면으로', async () => {
+  it('로그인 상태, 캐시를 비우고 첫 화면으로', async () => {
     vi.spyOn(axiosInstance, 'delete').mockResolvedValue({ data: {} });
     useAuthStore.setState({ accessToken: 'at', user: { userId: 4, roles: ['BUYER'] }, isAuthReady: true });
     renderProfile(ME, <MyProfilePage />);

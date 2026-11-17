@@ -1,4 +1,4 @@
-# features 폴더 = 백엔드 담당과 대칭 (컨벤션 1-4 · 4-2)
+# features 폴더 = 백엔드 담당과 대칭 (컨벤션 1-4, 4-2)
 /src/features/auth/        @perish95
 /src/features/user/        @perish95
 /src/features/store/       @VoC-100

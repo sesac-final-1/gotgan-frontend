@@ -20,13 +20,13 @@ const Unavailable = () => <p className="text-mute text-[13px] text-center py-6">
 export default function SellerDashboard() {
   const { data: store, isError: storeError, refetch: refetchStore } = useMyStoreQuery();
   const { data: dash, isError: dashError, refetch: refetchDash } = useSellerDashboardQuery();
-  // 할 일 숫자 · 최근 주문은 판매자 주문 API 하나로 — 주문 관리 화면 탭 숫자와 같은 출처
+  // 할 일 숫자, 최근 주문은 판매자 주문 API 하나로 — 주문 관리 화면 탭 숫자와 같은 출처
   const { data: orders } = useSellerOrderItemsQuery(RECENT_ORDERS);
   const { data: reviewSummary } = useSellerReviewSummaryQuery();
   const { data: reviews } = useSellerReviewsQuery(RECENT_REVIEWS);
   const { data: inquiry } = useSellerInquirySummaryQuery();
 
-  // 스토어 · 통계 없이는 화면을 못 그림 — 받은 값이 없는데 실패했으면 '불러오는 중' 대신 다시 시도 안내
+  // 스토어, 통계 없이는 화면을 못 그림 — 받은 값이 없는데 실패했으면 '불러오는 중' 대신 다시 시도 안내
   if ((!store && storeError) || (!dash && dashError)) {
     const retry = () => { if (!store) refetchStore(); if (!dash) refetchDash(); };
     return (
@@ -56,7 +56,7 @@ export default function SellerDashboard() {
 
   return (
     <div>
-      <PageHead title={`${store.owner} 대표님, 좋은 하루예요`} desc={`${ymd(now)} (${WEEKDAY[now.getDay()]}) · ${store.name} 스토어 현황`}
+      <PageHead title={`${store.owner} 대표님, 좋은 하루예요`} desc={`${ymd(now)} (${WEEKDAY[now.getDay()]}), ${store.name} 스토어 현황`}
         right={<Link to="/seller/products/new" className="btn btn-ink btn-sm">+ 상품 등록</Link>} />
       {store.status === '정지' && <div className="panel p-4 mb-4 text-[13px] text-rust">스토어가 정지 중이에요 — 상품이 쇼핑몰에 노출되지 않습니다{store.statusReason && ` (사유: ${store.statusReason})`}</div>}
       {store.status === '폐점' && <div className="panel p-4 mb-4 text-[13px] text-mute">폐점한 스토어입니다</div>}
@@ -82,7 +82,7 @@ export default function SellerDashboard() {
 
       <div className="grid xl:grid-cols-[1fr_340px] gap-4 mt-4">
         <div className="panel">
-          <div className="panel-head"><span className="panel-title">일별 결제금액 · 최근 30일</span><span className="text-[12px] text-mute">막대에 마우스를 올리면 상세 금액</span></div>
+          <div className="panel-head"><span className="panel-title">일별 결제금액, 최근 30일</span><span className="text-[12px] text-mute">막대에 마우스를 올리면 상세 금액</span></div>
           <div className="p-5">
             {!daily ? <Unavailable /> : daily.some((d) => d.amount > 0) ? <BarChart data={daily} /> : <p className="text-mute text-[13px] text-center py-6">최근 30일 결제가 없어요</p>}
           </div>
@@ -137,7 +137,7 @@ export default function SellerDashboard() {
             <div className="panel-head"><span className="panel-title">새 리뷰</span><Link to="/seller/reviews" className="text-[12px] text-mute">답글 달기</Link></div>
             {(reviews?.content ?? []).map((r) => (
               <div key={r.id} className="px-5 py-3 border-b border-line last:border-0">
-                <div className="flex items-center gap-2 text-[12px]"><Stars value={r.rating} size={11} /><span className="text-mute">{r.writer} · {r.productName}</span>{r.blinded && <Pill tone="rust">블라인드</Pill>}</div>
+                <div className="flex items-center gap-2 text-[12px]"><Stars value={r.rating} size={11} /><span className="text-mute">{r.writer}, {r.productName}</span>{r.blinded && <Pill tone="rust">블라인드</Pill>}</div>
                 <p className="text-[13px] mt-1 line-clamp-2 text-ink-2">{r.body}</p>
               </div>
             ))}
@@ -145,7 +145,7 @@ export default function SellerDashboard() {
           </div>
         </div>
       </div>
-      {settlement && <p className="text-[12px] text-mute mt-4">이번 주 구매확정분 정산 예정 {won(settlement.pendingPayout)}({comma(settlement.pendingCount)}건) · 다음 주 목요일 지급</p>}
+      {settlement && <p className="text-[12px] text-mute mt-4">이번 주 구매확정분 정산 예정 {won(settlement.pendingPayout)}({comma(settlement.pendingCount)}건), 다음 주 목요일 지급</p>}
     </div>
   );
 }

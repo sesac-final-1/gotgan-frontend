@@ -45,7 +45,7 @@ export default function SellerOrderDetail() {
   };
   return (
     <div>
-      <PageHead crumbs="주문 · 배송 > 주문 관리" title={<span className="num">{o.itemNo}</span>} desc={`주문일시 ${ymdhm(toDate(o.orderedAt))} · 주문번호 ${o.orderNo}`}
+      <PageHead crumbs="주문, 배송 > 주문 관리" title={<span className="num">{o.itemNo}</span>} desc={`주문일시 ${ymdhm(toDate(o.orderedAt))}, 주문번호 ${o.orderNo}`}
         right={<Link to="/seller/orders" className="btn btn-line btn-sm">목록</Link>} />
       <div className="grid xl:grid-cols-[1fr_360px] gap-4">
         <div className="space-y-4">
@@ -55,7 +55,7 @@ export default function SellerOrderDetail() {
               <img src={o.thumbnailUrl || fallbackSrc()} alt="" className="w-20 h-24 object-cover bg-cream" />
               <div className="flex-1 text-[13px]">
                 <div className="font-semibold text-[15px]">{o.productName}</div>
-                <div className="text-mute mt-1">{o.optionName || '단일상품'} · {o.quantity}개</div>
+                <div className="text-mute mt-1">{o.optionName || '단일상품'}, {o.quantity}개</div>
                 <div className="mt-2 num">{won(o.unitPrice)} × {o.quantity} = <b>{won(o.itemAmt)}</b></div>
               </div>
             </div>
@@ -63,7 +63,7 @@ export default function SellerOrderDetail() {
               {o.status === 'PAYMENT_DONE' && <button disabled={busy} onClick={confirm} className="btn btn-ink btn-sm">발주확인</button>}
               {o.status === 'PREPARING' && !shipForm && <button onClick={() => setShipForm({ courier: defaultCourier, trackingNo: '' })} className="btn btn-ink btn-sm">송장 입력</button>}
               {o.status === 'SHIPPING' && <button disabled={busy} onClick={deliver} className="btn btn-ink btn-sm">배송완료 처리</button>}
-              {/* TODO(이경석): 판매취소 · 송장 수정 · 구매자에게 메시지 — 서버 API 가 생기면 추가 */}
+              {/* TODO(이경석): 판매취소, 송장 수정, 구매자에게 메시지 — 서버 API 가 생기면 추가 */}
             </div>
             {shipForm && (
               <div className="px-5 pb-5 flex flex-wrap items-center gap-2 text-[13px]">
@@ -90,7 +90,7 @@ export default function SellerOrderDetail() {
         <div className="space-y-4">
           <div className="panel">
             <div className="panel-head"><span className="panel-title">구매자</span></div>
-            {/* TODO(이경석): 구매자 요약(등급 · 프로필 · 우리 스토어 구매 횟수)은 user 계약이 필요 — 지금은 공개용 이름만 */}
+            {/* TODO(이경석): 구매자 요약(등급, 프로필, 우리 스토어 구매 횟수)은 user 계약이 필요 — 지금은 공개용 이름만 */}
             <div className="p-5 text-[13px]"><b>{o.buyerName}</b></div>
           </div>
           <div className="panel">

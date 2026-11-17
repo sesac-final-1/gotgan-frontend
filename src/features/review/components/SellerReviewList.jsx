@@ -11,7 +11,7 @@ import { ymd } from '@/shared/utils/format';
 
 const PAGE_SIZE = 10;
 const REPLY_MAX = 1000;
-// 탭 이름 → 서버 tab 값 · 요약 tabCounts 필드
+// 탭 이름 → 서버 tab 값, 요약 tabCounts 필드
 const TABS = { 전체: ['ALL', 'all'], '답글 미작성': ['NO_REPLY', 'noReply'], '1~2점': ['LOW_RATING', 'lowRating'], 포토: ['PHOTO', 'photo'] };
 const errorMessage = (err) => err.response?.data?.message ?? '잠시 후 다시 시도해 주세요.';
 
@@ -38,7 +38,7 @@ function ReplyBox({ r, onSubmit, pending }) {
   );
 }
 
-// 열 정의는 콜백 · 검토 요청 목록이 바뀔 때만 새로 만든다 (컨벤션 4-7)
+// 열 정의는 콜백, 검토 요청 목록이 바뀔 때만 새로 만든다 (컨벤션 4-7)
 function buildColumns({ onReply, replyPending, onFlag, flagged }) {
   return [
     {
@@ -115,7 +115,7 @@ export default function SellerReviewList() {
     state: { pagination: { pageIndex, pageSize: PAGE_SIZE } },
     onPaginationChange: (u) => setPageIndex((typeof u === 'function' ? u({ pageIndex, pageSize: PAGE_SIZE }) : u).pageIndex),
   });
-  // 탭 · 상품이 바뀌면 1페이지로
+  // 탭, 상품이 바뀌면 1페이지로
   const changeTab = (t) => { setTab(t); setPageIndex(0); };
   const changeProd = (p) => { setProd(p); setPageIndex(0); };
 
@@ -153,7 +153,7 @@ export default function SellerReviewList() {
           <button onClick={() => setFlagTarget(null)} className="btn btn-ghost btn-sm">취소</button>
           <button disabled={!flagReason.trim() || report.isPending} onClick={submitFlag} className="btn btn-ink btn-sm">요청</button>
         </>}>
-        <p className="text-[13px] text-ink-2">판매자는 리뷰를 삭제하거나 가릴 수 없습니다. 욕설 · 광고 · 허위 사실 등 정책 위반이 의심되면 사유를 적어 관리자에게 검토를 요청하세요.</p>
+        <p className="text-[13px] text-ink-2">판매자는 리뷰를 삭제하거나 가릴 수 없습니다. 욕설, 광고, 허위 사실 등 정책 위반이 의심되면 사유를 적어 관리자에게 검토를 요청하세요.</p>
         <textarea rows={3} maxLength={500} value={flagReason} onChange={(e) => setFlagReason(e.target.value)} className="field text-[13px] mt-3" placeholder="예: 상품과 무관한 광고성 내용" />
         {flagError && <p className="mt-2 text-[12px] text-rust">{flagError}</p>}
       </Modal>

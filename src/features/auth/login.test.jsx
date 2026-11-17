@@ -42,7 +42,7 @@ const fillAndSubmit = (email, password) => {
 };
 
 describe('loginSchema', () => {
-  it('이메일 형식 · 빈 비밀번호를 막고, 이메일 앞뒤 공백은 지운다', () => {
+  it('이메일 형식, 빈 비밀번호를 막고, 이메일 앞뒤 공백은 지운다', () => {
     expect(loginSchema.safeParse({ email: 'nope', password: 'x' }).success).toBe(false);
     expect(loginSchema.safeParse({ email: 'a@b.com', password: '' }).success).toBe(false);
     expect(loginSchema.parse({ email: '  a@b.com ', password: 'pw' })).toEqual({ email: 'a@b.com', password: 'pw' });
@@ -50,7 +50,7 @@ describe('loginSchema', () => {
 });
 
 describe('ShopLogin', () => {
-  it('구매회원 탭 성공 — 이메일 · 비밀번호로 로그인, AT · 사용자 저장 후 첫 화면', async () => {
+  it('구매회원 탭 성공 — 이메일, 비밀번호로 로그인, AT, 사용자 저장 후 첫 화면', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue(loginOk(BUYER));
     renderLogin();
     fillAndSubmit(' buyer1@gotgan.com ', 'pw');
@@ -87,7 +87,7 @@ describe('ShopLogin', () => {
     expect(useAuthStore.getState().user).toBeNull();
   });
 
-  it('서버 오류는 ApiResponse.message 그대로 (비밀번호 불일치 · 정지)', async () => {
+  it('서버 오류는 ApiResponse.message 그대로 (비밀번호 불일치, 정지)', async () => {
     vi.spyOn(axiosInstance, 'post')
       .mockRejectedValueOnce(apiError(401, 'AUTH_INVALID_CREDENTIALS', '이메일 또는 비밀번호가 올바르지 않습니다.'))
       .mockRejectedValueOnce(apiError(403, 'AUTH_ACCOUNT_DISABLED', '이용이 정지된 계정입니다.'));
@@ -108,7 +108,7 @@ describe('ShopLogin', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('구매회원 탭에서만 소셜 로그인 · 회원가입 안내', () => {
+  it('구매회원 탭에서만 소셜 로그인, 회원가입 안내', () => {
     renderLogin();
     expect(screen.getByRole('link', { name: '카카오 로그인' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: '판매자' }));

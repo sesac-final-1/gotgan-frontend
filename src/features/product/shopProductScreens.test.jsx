@@ -6,7 +6,7 @@ import ShopHome from '@/features/product/components/ShopHome';
 import ShopProductList from '@/features/product/components/ShopProductList';
 import ShopProductDetail from '@/features/product/components/ShopProductDetail';
 
-// 공개 상품 화면 실제 API 연결 (frontend #60 productApi 후속) — 목록 · 상세 · 메인
+// 공개 상품 화면 실제 API 연결 (frontend #60 productApi 후속) — 목록, 상세, 메인
 const CATEGORIES = [
   { id: 3, name: '패션의류', nameEn: 'Apparel', children: [{ id: 301, name: '셔츠', nameEn: null }, { id: 302, name: '니트', nameEn: null }] },
   { id: 1, name: '식품', nameEn: 'Food', children: [{ id: 101, name: '과일', nameEn: null }] },
@@ -86,8 +86,8 @@ function renderAt(path, element, routePath) {
 }
 const productCalls = (get) => get.mock.calls.filter(([url]) => url === '/api/products').map(([, opts]) => opts.params);
 
-describe('상품 목록 — 서버 페이징 · 필터', () => {
-  it('URL 조건을 그대로 조회 파라미터로 — 하위 카테고리 우선 · 정렬 매핑 · 별점은 평점 API', async () => {
+describe('상품 목록 — 서버 페이징, 필터', () => {
+  it('URL 조건을 그대로 조회 파라미터로 — 하위 카테고리 우선, 정렬 매핑, 별점은 평점 API', async () => {
     const get = mockApi({ products: () => page([card(3, '리넨 셔츠'), card(4, '울 니트')], 3) });
     renderAt('/products?cat=3&sub=302&sort=low&page=1&q=리넨', <ShopProductList />, '/products');
 
@@ -99,7 +99,7 @@ describe('상품 목록 — 서버 페이징 · 필터', () => {
     expect(screen.getByRole('heading', { name: /리넨/ })).toBeInTheDocument();
   });
 
-  it('정렬 메뉴는 신상품 · 가격 2종, 알 수 없는 정렬은 신상품순', async () => {
+  it('정렬 메뉴는 신상품, 가격 2종, 알 수 없는 정렬은 신상품순', async () => {
     const get = mockApi();
     renderAt('/products?sort=rank', <ShopProductList />, '/products');
     await screen.findByText('리넨 셔츠');
@@ -108,7 +108,7 @@ describe('상품 목록 — 서버 페이징 · 필터', () => {
     expect(screen.queryByText('리뷰 많은순')).not.toBeInTheDocument();
   });
 
-  it('가격 · 품절 제외는 조회 조건으로, 카테고리를 바꾸면 하위 · 페이지 초기화, 페이지 이동은 URL 로', async () => {
+  it('가격, 품절 제외는 조회 조건으로, 카테고리를 바꾸면 하위, 페이지 초기화, 페이지 이동은 URL 로', async () => {
     const get = mockApi({ products: () => page([card(3, '리넨 셔츠')], 3) });
     renderAt('/products?cat=3&sub=301&page=2', <ShopProductList />, '/products');
     await screen.findByText('리넨 셔츠');
@@ -130,7 +130,7 @@ describe('상품 목록 — 서버 페이징 · 필터', () => {
     expect(productCalls(get).at(-1)).toMatchObject({ categoryId: '1', page: 0 });
   });
 
-  it('하위 카테고리 칩 · 빈 결과 안내', async () => {
+  it('하위 카테고리 칩, 빈 결과 안내', async () => {
     mockApi({ products: () => page([]) });
     renderAt('/products?cat=3', <ShopProductList />, '/products');
     expect(await screen.findByText('조건에 맞는 상품이 없어요')).toBeInTheDocument();
@@ -168,8 +168,8 @@ describe('상품 목록 — 서버 페이징 · 필터', () => {
   });
 });
 
-describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
-  it('옵션을 고르면 그 조합의 productOptionId · 추가금으로 담는다', async () => {
+describe('상품 상세 — 실제 상품, 옵션 id 로 담기', () => {
+  it('옵션을 고르면 그 조합의 productOptionId, 추가금으로 담는다', async () => {
     mockApi();
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: {} } });
     renderAt('/products/3', <ShopProductDetail />, '/products/:id');
@@ -189,7 +189,7 @@ describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
     expect(await screen.findByText('장바구니에 담았어요')).toBeInTheDocument();
   });
 
-  it('옵션 없는 상품은 값 없는 옵션 하나의 id 로 바로 담는다 · 같은 스토어 다른 상품', async () => {
+  it('옵션 없는 상품은 값 없는 옵션 하나의 id 로 바로 담는다, 같은 스토어 다른 상품', async () => {
     const single = { ...DETAIL, option1Name: null, options: [{ productOptionId: 21, option1Value: null, option2Value: null, extraPrice: 0, soldOut: false }] };
     const get = mockApi({ detail: single, products: () => page([card(3, '자기 자신'), card(9, '같은 스토어 셔츠')]) });
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: {} } });
@@ -204,7 +204,7 @@ describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
     await waitFor(() => expect(post).toHaveBeenCalledWith('/api/carts/items', { items: [{ productOptionId: 21, quantity: 1 }] }));
   });
 
-  it('구매할 수 없는 상품(purchasable=false)은 담기 · 구매 버튼 대신 안내', async () => {
+  it('구매할 수 없는 상품(purchasable=false)은 담기, 구매 버튼 대신 안내', async () => {
     mockApi({ detail: { ...DETAIL, purchasable: false } });
     renderAt('/products/3', <ShopProductDetail />, '/products/:id');
     expect(await screen.findByRole('button', { name: '현재 구매할 수 없는 상품입니다' })).toBeDisabled();
@@ -212,7 +212,7 @@ describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 
-  it('전부 품절인 상품은 눌리지 않는 「일시품절」 — 재입고 알림 · 스토어 알림받기 버튼 없음', async () => {
+  it('전부 품절인 상품은 눌리지 않는 「일시품절」 — 재입고 알림, 스토어 알림받기 버튼 없음', async () => {
     mockApi({ store: STORE_HOME, detail: { ...DETAIL, soldOut: true, options: DETAIL.options.map((o) => ({ ...o, soldOut: true })) } });
     renderAt('/products/3', <ShopProductDetail />, '/products/:id');
     await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
@@ -261,24 +261,24 @@ describe('상품 상세 — 실제 상품 · 옵션 id 로 담기', () => {
 });
 
 describe('상품 상세 — 스토어 정보 (GET /api/stores/{id})', () => {
-  it('운영 중 스토어면 이름 · 배송 정책 · 소개(HTML 정화)', async () => {
+  it('운영 중 스토어면 이름, 배송 정책, 소개(HTML 정화)', async () => {
     mockApi({ store: STORE_HOME });
     renderAt('/products/3', <ShopProductDetail />, '/products/:id');
     await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
-    expect(await screen.findByText(/CJ대한통운 · 3,500원/)).toBeInTheDocument();
+    expect(await screen.findByText(/CJ대한통운, 3,500원/)).toBeInTheDocument();
     expect(screen.getByText('50,000원 이상 구매 시 무료 (스토어 묶음배송)')).toBeInTheDocument();
     expect(screen.getAllByText('성수동 리넨 작업실').length).toBeGreaterThan(0); // <p> 태그가 글자로 보이지 않음
     expect(screen.queryByText(/<p>/)).not.toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /오롯이 리넨/ })[0]).toHaveAttribute('href', '/store/1');
   });
 
-  it('승인 직후 스토어(택배사 · 출고 안내 · 무료 기준 없음)는 빈 문구 없이 배송비만', async () => {
+  it('승인 직후 스토어(택배사, 출고 안내, 무료 기준 없음)는 빈 문구 없이 배송비만', async () => {
     mockApi({ store: { ...STORE_HOME, shippingFee: 3000, freeShippingThreshold: null, courier: null, dispatchNote: null } });
     renderAt('/products/3', <ShopProductDetail />, '/products/:id');
     await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });
 
-    expect((await screen.findAllByText('3,000원')).length).toBe(2); // 상단 배송 칸 · 안내 표 — '· 3,000원' · '(0원 이상 무료)' 아님
-    expect(screen.queryByText(/·\s*3,000원/)).toBeNull();
+    expect((await screen.findAllByText('3,000원')).length).toBe(2); // 상단 배송 칸, 안내 표 — ', 3,000원', '(0원 이상 무료)' 아님
+    expect(screen.queryByText(/, \s*3,000원/)).toBeNull();
     expect(screen.queryByText('배송 방법')).toBeNull();
     expect(screen.queryByText('출고')).toBeNull();
     expect(screen.queryByText(/0원 이상 무료/)).toBeNull();
@@ -303,7 +303,7 @@ describe('상품 상세 — 스토어 정보 (GET /api/stores/{id})', () => {
 });
 
 describe('메인 — 카테고리별 신상품 (PRD-14)', () => {
-  it('이번 주의 가게 — 공개 스토어 목록의 토담공방 · 그 스토어 상품 3개', async () => {
+  it('이번 주의 가게 — 공개 스토어 목록의 토담공방, 그 스토어 상품 3개', async () => {
     const todam = { storeId: 2, storeName: '토담공방', slug: 'todam', categoryId: 2, intro: '<p>전주 도자기 공방</p>', imageUrl: null, color: '#8c6d4f', grade: 'POWER', createdAt: '2025-08-01T10:00:00+09:00' };
     const get = mockApi({ stores: [todam], products: (params) => page(params.storeId === 2 ? [card(204, '다완 찻잔 2인 세트', { storeId: 2 })] : []) });
     renderAt('/', <ShopHome />, '/');
@@ -313,7 +313,7 @@ describe('메인 — 카테고리별 신상품 (PRD-14)', () => {
     expect(productCalls(get)).toContainEqual({ storeId: 2, size: 3 });
   });
 
-  it('첫 상위 카테고리의 신상품 8개, 탭을 누르면 그 카테고리로 · 전체 신상품 · 랭킹 없음', async () => {
+  it('첫 상위 카테고리의 신상품 8개, 탭을 누르면 그 카테고리로, 전체 신상품, 랭킹 없음', async () => {
     const get = mockApi({
       products: (params) => page(params.categoryId === 1 ? [card(50, '서귀포 감귤', { topCategoryId: 1 })] : params.categoryId === 3 ? [card(3, '리넨 셔츠')] : [card(7, '새로 온 머그')]),
     });
@@ -337,7 +337,7 @@ describe('메인 — 카테고리별 신상품 (PRD-14)', () => {
     expect(await screen.findByText('이 카테고리에 새로 들어온 상품이 아직 없어요.')).toBeInTheDocument();
   });
 
-  it('카테고리 신상품 · 새로 들어온 상품 조회가 실패하면 빈 안내 대신 칸마다 다시 시도', async () => {
+  it('카테고리 신상품, 새로 들어온 상품 조회가 실패하면 빈 안내 대신 칸마다 다시 시도', async () => {
     mockApi({ products: () => { throw new Error('502'); } });
     renderAt('/', <ShopHome />, '/');
 
@@ -348,7 +348,7 @@ describe('메인 — 카테고리별 신상품 (PRD-14)', () => {
 });
 
 describe('상품 상세 — 판매가는 서버 salePrice', () => {
-  it('화면 계산(89,000 × 0.85 = 75,650)과 달라도 서버 판매가로 가격 · 총 상품금액을 보여 줌', async () => {
+  it('화면 계산(89,000 × 0.85 = 75,650)과 달라도 서버 판매가로 가격, 총 상품금액을 보여 줌', async () => {
     mockApi({ store: STORE_HOME, detail: { ...DETAIL, salePrice: 75000 } });
     renderAt('/products/3', <ShopProductDetail />, '/products/:id');
     await screen.findByRole('heading', { level: 1, name: '프렌치 리넨 오버핏 셔츠' });

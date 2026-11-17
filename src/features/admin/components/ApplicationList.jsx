@@ -32,7 +32,7 @@ const COLUMNS = [
   },
 ];
 
-// 입점 심사 목록 — 담당 구지훈. 전체 1회 로드 후 화면에서 탭 · 검색 · 정렬 · 페이징 (서버 요청 없음, 컨벤션 4-7)
+// 입점 심사 목록 — 담당 구지훈. 전체 1회 로드 후 화면에서 탭, 검색, 정렬, 페이징 (서버 요청 없음, 컨벤션 4-7)
 export default function ApplicationList() {
   const [tab, setTab] = useState('전체');
   const { data: apps = [], isLoading, isError } = useApplicationsQuery();
@@ -51,10 +51,10 @@ export default function ApplicationList() {
 
   return (
     <div>
-      <PageHead title="입점 심사" desc="심사 기준: 사업자 상태(국세청) · 통신판매업 신고 · 카테고리 적합성 · 중복 입점 여부 / 처리 기한: 접수 후 영업일 3일" />
+      <PageHead title="입점 심사" desc="심사 기준: 사업자 상태(국세청), 통신판매업 신고, 카테고리 적합성, 중복 입점 여부 / 처리 기한: 접수 후 영업일 3일" />
       <div className="flex flex-wrap gap-3 items-center">
         <Segments items={STATUS_TABS} value={tab} onChange={setTab} counts={counts} />
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="접수번호 · 스토어 · 대표자 · 카테고리" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="접수번호, 스토어, 대표자, 카테고리" className="ml-auto" />
       </div>
       <div className="mt-3">
         <DataTable table={table} loading={isLoading} error={isError} />

@@ -114,7 +114,7 @@ export default function ShopSignup() {
         <div>
           <label className="label" htmlFor="signup-password">비밀번호</label>
           <input id="signup-password" name="password" type="password" autoComplete="new-password" className="field"
-            placeholder="영문 · 특수문자 포함 8자 이상" value={form.password} onChange={handleChange} />
+            placeholder="영문, 특수문자 포함 8자 이상" value={form.password} onChange={handleChange} />
           <FieldError message={errors.password} />
         </div>
         <div>

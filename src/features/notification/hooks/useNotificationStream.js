@@ -7,8 +7,8 @@ import { toast } from '@/shared/stores/toastStore';
 import { NOTIFICATION_STREAM_URL } from '@/features/notification/api/notificationApi';
 
 /**
- * 실시간 알림 (SSE, 담당 구지훈) — 새 알림이 오면 토스트 + 목록 · 숫자 다시 불러오기. 탭을 가리면 끊고 다시 보이면 연결(라이브러리 기본).
- * 토큰이 바뀌면(재발급 · 로그아웃) 다시 연결하거나 끊는다. 401 이면 다음 토큰까지 연결하지 않는다
+ * 실시간 알림 (SSE, 담당 구지훈) — 새 알림이 오면 토스트 + 목록, 숫자 다시 불러오기. 탭을 가리면 끊고 다시 보이면 연결(라이브러리 기본).
+ * 토큰이 바뀌면(재발급, 로그아웃) 다시 연결하거나 끊는다. 401 이면 다음 토큰까지 연결하지 않는다
  */
 export function useNotificationStream() {
   const token = useAuthStore((s) => s.accessToken);
@@ -27,15 +27,15 @@ export function useNotificationStream() {
         const n = JSON.parse(ev.data);
         toast(n.title);
         void queryClient.invalidateQueries({ queryKey: queryKeys.notification.all });
-        if (n.type === 'CHAT_MESSAGE') void queryClient.invalidateQueries({ queryKey: queryKeys.chat.all }); // 보고 있지 않은 방의 새 메시지 — 목록 · 배지 숫자
-        if (n.type === 'ORDER_NEW' || n.type === 'CLAIM_REQUESTED') { // 판매자 새 주문(O-13) · 반품 · 교환 요청(Q-구-15) — 주문 관리 목록 · 대시보드 숫자를 바로 다시 불러옴
+        if (n.type === 'CHAT_MESSAGE') void queryClient.invalidateQueries({ queryKey: queryKeys.chat.all }); // 보고 있지 않은 방의 새 메시지 — 목록, 배지 숫자
+        if (n.type === 'ORDER_NEW' || n.type === 'CLAIM_REQUESTED') { // 판매자 새 주문(O-13), 반품, 교환 요청(Q-구-15) — 주문 관리 목록, 대시보드 숫자를 바로 다시 불러옴
           void queryClient.invalidateQueries({ queryKey: queryKeys.order.seller() });
           void queryClient.invalidateQueries({ queryKey: queryKeys.store.sellerDashboard() });
         }
       },
       onerror: (err) => {
-        if (/알림 연결 실패 4\d\d/.test(err?.message)) throw err; // 인증 · 권한 오류는 재시도하지 않음
-        return 5_000; // 네트워크 · 서버 오류는 5초 뒤 다시
+        if (/알림 연결 실패 4\d\d/.test(err?.message)) throw err; // 인증, 권한 오류는 재시도하지 않음
+        return 5_000; // 네트워크, 서버 오류는 5초 뒤 다시
       },
     }).catch(() => {}); // 멈춘 연결 — 토큰이 바뀌면 이 효과가 다시 연결
     return () => ctrl.abort();

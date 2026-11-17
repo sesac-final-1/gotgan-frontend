@@ -9,7 +9,7 @@ import { useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsersQuery';
 import { GRADES } from '@/features/user/constants';
 import { comma, ymd } from '@/shared/utils/format';
 
-const TABS = ['전체', '정상', '이용정지']; // 회원 상태는 ACTIVE · SUSPENDED 뿐 (휴면 없음)
+const TABS = ['전체', '정상', '이용정지']; // 회원 상태는 ACTIVE, SUSPENDED 뿐 (휴면 없음)
 const GRADE_TABS = ['전체', ...GRADES.map((g) => g.id)];
 const NUM = { thClass: 'text-right', tdClass: 'text-right num', search: false };
 const DATE = { tdClass: 'num text-ink-2', search: false };
@@ -29,7 +29,7 @@ const COLUMNS = [
   { accessorKey: 'status', header: '상태', cell: ({ getValue }) => <StatusPill s={getValue()} /> },
 ];
 
-// 회원 목록 — 상태 · 등급 탭은 columnFilters, 검색 · 정렬 · 페이징은 화면에서 (컨벤션 4-7)
+// 회원 목록 — 상태, 등급 탭은 columnFilters, 검색, 정렬, 페이징은 화면에서 (컨벤션 4-7)
 export default function UserList() {
   const [tab, setTab] = useState('전체');
   const [grade, setGrade] = useState('전체');
@@ -50,11 +50,11 @@ export default function UserList() {
 
   return (
     <div>
-      <PageHead title="회원 관리" desc="회원등급은 누적 구매확정 금액 기준 (NORMAL · SILVER 30만원 · GOLD 80만원) · 포인트 적립률 5%" />
+      <PageHead title="회원 관리" desc="회원등급은 누적 구매확정 금액 기준 (NORMAL, SILVER 30만원, GOLD 80만원), 포인트 적립률 5%" />
       <div className="flex flex-wrap gap-3 items-center">
         <Segments items={TABS} value={tab} onChange={setTab} counts={counts} />
         <Segments items={GRADE_TABS} value={grade} onChange={setGrade} counts={gCounts} />
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="이름 · 이메일" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="이름, 이메일" className="ml-auto" />
       </div>
       <div className="mt-3">
         <DataTable table={table} loading={isLoading} error={isError} />

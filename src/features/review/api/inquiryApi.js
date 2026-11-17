@@ -5,7 +5,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 const toDate = (iso) => (iso ? new Date(iso) : null);
 const mapPage = (page, map) => ({ ...page, content: page.content.map(map) });
 
-// GET /api/inquiries?productId — 공개. 볼 수 없는 비밀글은 content · answer 가 null, mine = 내 문의
+// GET /api/inquiries?productId — 공개. 볼 수 없는 비밀글은 content, answer 가 null, mine = 내 문의
 export const toProductInquiry = (i) => ({
   id: i.inquiryId,
   writer: i.writerDisplayName,
@@ -20,7 +20,7 @@ export const toProductInquiry = (i) => ({
 export const fetchProductInquiries = async (params) =>
   mapPage((await axiosInstance.get('/api/inquiries', { params })).data.data, toProductInquiry);
 
-// GET /api/inquiries/me — 내 문의(비밀글 · 답변 포함), 상품명 · 사진은 등록 시점 값
+// GET /api/inquiries/me — 내 문의(비밀글, 답변 포함), 상품명, 사진은 등록 시점 값
 export const toMyInquiry = (i) => ({
   id: i.inquiryId,
   productId: i.productId,
@@ -63,7 +63,7 @@ export const toSellerInquiry = (i) => ({
 export const fetchSellerInquiries = async (params) =>
   mapPage((await axiosInstance.get('/api/seller/inquiries', { params })).data.data, toSellerInquiry);
 
-// GET /api/seller/inquiries/summary — { unanswered, answered, all } (탭 숫자 · 메뉴 배지)
+// GET /api/seller/inquiries/summary — { unanswered, answered, all } (탭 숫자, 메뉴 배지)
 export const fetchSellerInquirySummary = async () => (await axiosInstance.get('/api/seller/inquiries/summary')).data.data;
 
 // PUT /api/seller/inquiries/{id}/answer — 문의당 1개, 있으면 덮어씀

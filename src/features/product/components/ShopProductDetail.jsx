@@ -1,5 +1,5 @@
-// 상품 상세 — 담당 박지연 (리뷰 · Q&A 영역은 review 도메인 컴포넌트) · 실제 API 화면 연결 구지훈(10/30)
-// 상품은 GET /api/products/{id}, 스토어(이름 · 배송비 · 소개)는 GET /api/stores/{storeId} — 스토어 정보를 못 받거나 운영 중이 아니면 기본 문구
+// 상품 상세 — 담당 박지연 (리뷰, Q&A 영역은 review 도메인 컴포넌트), 실제 API 화면 연결 구지훈(10/30)
+// 상품은 GET /api/products/{id}, 스토어(이름, 배송비, 소개)는 GET /api/stores/{storeId} — 스토어 정보를 못 받거나 운영 중이 아니면 기본 문구
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router';
 import { Share2, X, Minus, Plus, ChevronRight, Truck } from 'lucide-react';
@@ -38,24 +38,24 @@ export default function ShopProductDetail() {
   // 목록 카드(GET /api/stores)에는 배송 정책이 없어 스토어 홈 응답을 쓴다
   const { data: store } = useStoreQuery(p?.storeId);
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
-  // 없는 상품은 404 뿐이다 — 서버 장애(502 등) · 연결 실패를 없는 상품처럼 안내하지 않는다(QA N-박-7)
+  // 없는 상품은 404 뿐이다 — 서버 장애(502 등), 연결 실패를 없는 상품처럼 안내하지 않는다(QA N-박-7)
   const notFound = error?.response?.status === 404;
   if (isError && !notFound && !p) return <ListStatus query={query} failText="상품을 불러오지 못했어요." />;
   if (notFound || !p) return <div className="p-20 text-center">상품을 찾을 수 없습니다. <Link to="/" className="underline">홈으로</Link></div>;
-  // key: 다른 상품으로 이동하면 이미지 · 옵션 선택 · 리뷰 필터 상태 초기화
+  // key: 다른 상품으로 이동하면 이미지, 옵션 선택, 리뷰 필터 상태 초기화
   return <DetailBody key={p.id} p={p} store={store?.status === '운영중' ? store : undefined} closedName={store && store.status !== '운영중' ? store.name : undefined} />;
 }
 
 const STORE_FALLBACK = { name: '판매 스토어' };
 
-// closedName: 정지 · 폐점 스토어 이름(스토어 응답은 이름 · 상태만) — 운영 중이 아니면 문의 버튼 · 배송 정책을 숨긴다
+// closedName: 정지, 폐점 스토어 이름(스토어 응답은 이름, 상태만) — 운영 중이 아니면 문의 버튼, 배송 정책을 숨긴다
 function DetailBody({ p, store: storeInfo, closedName }) {
   const store = storeInfo ?? { ...STORE_FALLBACK, ...(closedName && { name: closedName }), id: p.storeId };
   const nav = useNavigate();
   const loc = useLocation();
   const { addToCart } = useCart();
   const { data: qnaPage } = useProductInquiriesQuery(p.id); // Q&A 탭 숫자 — ShopProductQna 첫 페이지와 같은 쿼리
-  const { data: summary } = useProductReviewSummaryQuery(p.id); // 별점 · 리뷰 수 — ShopProductReviews 와 같은 쿼리
+  const { data: summary } = useProductReviewSummaryQuery(p.id); // 별점, 리뷰 수 — ShopProductReviews 와 같은 쿼리
   const rating = summary?.averageRating ?? 0;
   const reviewCount = summary?.reviewCount ?? 0;
   const { data: storePage } = useProductSearchQuery({ storeId: p.storeId, size: 5 });
@@ -71,11 +71,11 @@ function DetailBody({ p, store: storeInfo, closedName }) {
   const others = useRatedProducts(storeProducts);
   const unit = p.salePrice; // 서버 판매가(product.md 공통 — 10원 단위 반올림) — 주문 금액과 같은 값
   const soldOut = p.status === '품절';
-  const canBuy = p.purchasable; // 판매중지 · 스토어 정지 등은 200 + purchasable=false (product.md 10절)
+  const canBuy = p.purchasable; // 판매중지, 스토어 정지 등은 200 + purchasable=false (product.md 10절)
   const total = lines.reduce((a, l) => a + l.qty * (unit + l.extra), 0);
   const ship = !storeInfo ? 0 : store.freeOver && total >= store.freeOver ? 0 : store.shipFee;
 
-  // 장바구니는 언제나 productOptionId 로 담는다 — 고른 값 조합과 같은 optionItems 의 id · 추가금
+  // 장바구니는 언제나 productOptionId 로 담는다 — 고른 값 조합과 같은 optionItems 의 id, 추가금
   const single = p.optionItems[0]; // 옵션 없는 상품은 값 없는 옵션 1개
   const singleLine = (qty) => ({ label: '', qty, productOptionId: single?.id, extra: single?.extraPrice ?? 0 });
   const choose = (name, v) => {
@@ -143,11 +143,11 @@ function DetailBody({ p, store: storeInfo, closedName }) {
           <div className="mt-5 pb-5 border-b border-line"><Price p={p} size="lg" /></div>
 
           <dl className="py-4 border-b border-line text-[13px] grid grid-cols-[72px_1fr] gap-y-2.5">
-            <dt className="text-mute">적립</dt><dd>구매확정 시 실결제금액의 5% · 약 <b className="num">{comma(earnOf(unit))}P</b></dd>
+            <dt className="text-mute">적립</dt><dd>구매확정 시 실결제금액의 5%, 약 <b className="num">{comma(earnOf(unit))}P</b></dd>
             <dt className="text-mute">배송</dt>
             {storeInfo ? (
               <dd>
-                <div className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {[store.courier, store.shipFee ? `${comma(store.shipFee)}원` : '무료배송'].filter(Boolean).join(' · ')}</div>
+                <div className="flex items-center gap-1.5"><Truck size={14} strokeWidth={1.6} /> {[store.courier, store.shipFee ? `${comma(store.shipFee)}원` : '무료배송'].filter(Boolean).join(', ')}</div>
                 {store.freeOver > 0 && store.shipFee > 0 && <div className="text-mute mt-0.5">{comma(store.freeOver)}원 이상 구매 시 무료 (스토어 묶음배송)</div>}
                 {store.dispatch && <div className="text-moss mt-0.5 font-medium">{store.dispatch}</div>}
               </dd>
@@ -250,11 +250,11 @@ function DetailBody({ p, store: storeInfo, closedName }) {
                     ['출고', store.dispatch],
                   ] : [['배송비', '스토어 배송 정책에 따름 — 장바구니에서 스토어별로 계산']]),
                   ['교환/반품 신청', '배송 완료 후 7일 이내, 마이페이지 > 주문/배송에서 신청'],
-                  ['반품 배송비', `단순 변심: 왕복 ${storeInfo ? won((store.shipFee || 3000) * 2) : '배송비'} / 상품 하자·오배송: 판매자 부담`],
-                  ['교환/반품 불가', '사용 · 훼손으로 상품 가치가 떨어진 경우, 신선식품 · 주문 제작 상품의 단순 변심'],
+                  ['반품 배송비', `단순 변심: 왕복 ${storeInfo ? won((store.shipFee || 3000) * 2) : '배송비'} / 상품 하자, 오배송: 판매자 부담`],
+                  ['교환/반품 불가', '사용, 훼손으로 상품 가치가 떨어진 경우, 신선식품, 주문 제작 상품의 단순 변심'],
                   ['구매 확정', '배송 완료 7일 후 자동 구매확정 (확정 이후에는 교환/반품 불가)'],
-                  ['포인트', '적립은 구매확정 때 · 취소 · 반품 완료 시 그 상품분 사용 포인트는 환원'],
-                ].filter(([, v]) => v).map(([k, v]) => ( // 승인 직후 스토어는 택배사 · 출고 안내가 비어 있음(store.md 13-1) — 빈 행은 뺀다
+                  ['포인트', '적립은 구매확정 때, 취소, 반품 완료 시 그 상품분 사용 포인트는 환원'],
+                ].filter(([, v]) => v).map(([k, v]) => ( // 승인 직후 스토어는 택배사, 출고 안내가 비어 있음(store.md 13-1) — 빈 행은 뺀다
                   <tr key={k} className="border-b border-line"><th className="w-40 bg-cream text-left font-medium px-3 py-3 text-ink-2 align-top">{k}</th><td className="px-3 py-3 leading-relaxed">{v}</td></tr>
                 ))}
               </tbody>

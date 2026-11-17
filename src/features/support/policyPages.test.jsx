@@ -46,7 +46,7 @@ describe('푸터 정책 화면', () => {
     expect(screen.getByRole('tab', { name: '판매자' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('button', { name: /반품 배송비는 얼마인가요/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /어떤 서류가 필요한가요/ }));
-    expect(screen.getByText(/사업자등록증 · 통신판매업 신고증/)).toBeInTheDocument();
+    expect(screen.getByText(/사업자등록증, 통신판매업 신고증/)).toBeInTheDocument();
   });
 
   it('수수료 안내 — 카테고리 요율 표와 계산 예시(원 단위 내림)', () => {

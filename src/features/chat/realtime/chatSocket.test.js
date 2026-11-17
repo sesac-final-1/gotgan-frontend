@@ -1,7 +1,7 @@
 import { ReconnectionTimeMode } from '@stomp/stompjs';
 import { createChatSocket, reconnectDelay, RELEASE_GRACE_MS } from '@/features/chat/realtime/chatSocket';
 
-// STOMP 클라이언트는 가짜 — 연결 · 끊김 · 서버 프레임을 직접 흉내 내 연결 수명 규칙(chat.md 6-1절)을 확인한다
+// STOMP 클라이언트는 가짜 — 연결, 끊김, 서버 프레임을 직접 흉내 내 연결 수명 규칙(chat.md 6-1절)을 확인한다
 function fakeStomp() {
   const clients = [];
   const create = (config) => {
@@ -52,7 +52,7 @@ afterEach(() => {
 });
 
 describe('chatSocket — 필요할 때만 연결', () => {
-  it('구독 전에는 연결하지 않고, 구독하면 토큰을 실어 연결 · 방과 오류 큐를 구독한다', async () => {
+  it('구독 전에는 연결하지 않고, 구독하면 토큰을 실어 연결, 방과 오류 큐를 구독한다', async () => {
     expect(stomp.clients).toHaveLength(0);
     const handler = vi.fn();
     socket.subscribeRoom(7, handler);
@@ -72,7 +72,7 @@ describe('chatSocket — 필요할 때만 연결', () => {
     expect(c.publish).toHaveBeenCalledWith({ destination: '/pub/rooms/7', body: '{"content":"안녕하세요"}', headers: { 'content-type': 'application/json' } });
   });
 
-  it('토큰이 없으면 연결하지 않는다 · 연결 직전에 토큰이 사라지면 멈춘다', async () => {
+  it('토큰이 없으면 연결하지 않는다, 연결 직전에 토큰이 사라지면 멈춘다', async () => {
     token = null;
     socket.subscribeRoom(7, vi.fn());
     expect(stomp.clients).toHaveLength(0);
@@ -85,7 +85,7 @@ describe('chatSocket — 필요할 때만 연결', () => {
     expect(socket.status).toBe('stopped');
   });
 
-  it('연결 중에 다른 방을 구독하면 바로 구독 · 같은 방 화면이 둘이면 하나가 떠나도 유지', async () => {
+  it('연결 중에 다른 방을 구독하면 바로 구독, 같은 방 화면이 둘이면 하나가 떠나도 유지', async () => {
     const offA = socket.subscribeRoom(7, vi.fn());
     await connect(stomp.last());
     const second = vi.fn();
@@ -196,7 +196,7 @@ describe('chatSocket — 안 쓰면 바로 끊기 (좀비 연결 방지)', () =>
   });
 });
 
-describe('chatSocket — 끊김 · 재연결', () => {
+describe('chatSocket — 끊김, 재연결', () => {
   it('재연결 지연은 라이브러리 지수 모드로 늘린다 — 1초 근처에서 시작, 최대 30초', () => {
     socket.subscribeRoom(7, vi.fn());
     const { config } = stomp.last();
@@ -205,7 +205,7 @@ describe('chatSocket — 끊김 · 재연결', () => {
     expect(config.reconnectDelay).toBeLessThanOrEqual(1_000);
   });
 
-  it('끊기면 재연결하고 · 다시 연결되면 방을 다시 구독한다', async () => {
+  it('끊기면 재연결하고, 다시 연결되면 방을 다시 구독한다', async () => {
     const statuses = [];
     socket.onStatus((s) => statuses.push(s));
     socket.subscribeRoom(7, vi.fn());

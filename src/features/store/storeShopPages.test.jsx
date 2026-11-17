@@ -9,7 +9,7 @@ import ShopStoreList from '@/features/store/components/ShopStoreList';
 afterEach(() => vi.restoreAllMocks());
 
 const CATEGORIES = [{ id: 1, name: '식품', nameEn: 'Food', children: [{ id: 101, name: '과일', nameEn: null }, { id: 102, name: '꿀', nameEn: null }] }];
-// store.md 14절 · product.md 9절 응답
+// store.md 14절, product.md 9절 응답
 const STORE = {
   storeId: 1, storeName: '산골농부 박씨네', status: 'ACTIVE', slug: 'park-farm', categoryId: 1, intro: '<p>귤 농사<img src=x onerror="alert(1)"></p>',
   imageUrl: null, color: '#d0701f', grade: 'BIG_POWER', createdAt: '2024-02-26T10:00:00+09:00', ownerName: '박영철', bizRegNo: '000-00-00006',
@@ -44,7 +44,7 @@ function renderAt(path, element, routePath) {
 }
 
 describe('스토어 홈 /store/:id — GET /api/stores/{id}', () => {
-  it('주소의 id(문자열)로 스토어를 찾고, 그 스토어 상품 · 하위 카테고리 탭 · 별점 · 배송 문구', async () => {
+  it('주소의 id(문자열)로 스토어를 찾고, 그 스토어 상품, 하위 카테고리 탭, 별점, 배송 문구', async () => {
     const get = mockApi();
     renderAt('/store/1', <ShopStoreHome />, '/store/:id');
 
@@ -54,12 +54,12 @@ describe('스토어 홈 /store/:id — GET /api/stores/{id}', () => {
     expect(get).toHaveBeenCalledWith('/api/products', { params: { storeId: 1, sort: 'NEW', size: 100 } });
     expect(screen.getByRole('button', { name: '과일' })).toBeInTheDocument();
     expect(await screen.findByText('(12)')).toBeInTheDocument();
-    expect(screen.getByText('우체국택배 · 3,000원')).toBeInTheDocument(); // 무료배송 기준 없음 → "(0원 이상 무료)" 안 붙음
+    expect(screen.getByText('우체국택배, 3,000원')).toBeInTheDocument(); // 무료배송 기준 없음 → "(0원 이상 무료)" 안 붙음
     expect(screen.getByText('귤 농사')).toBeInTheDocument(); // 소개 HTML 이 글자로 찍히지 않고 정화돼서
     expect(document.querySelector('[onerror]')).toBeNull();
   });
 
-  it('스토어 주소(slug)로 들어와도 같은 스토어 홈 — 상품 · 별점은 응답의 숫자 id 로', async () => {
+  it('스토어 주소(slug)로 들어와도 같은 스토어 홈 — 상품, 별점은 응답의 숫자 id 로', async () => {
     const get = mockApi();
     renderAt('/store/park-farm', <ShopStoreHome />, '/store/:id');
 
@@ -91,7 +91,7 @@ describe('스토어 홈 /store/:id — GET /api/stores/{id}', () => {
     useAuthStore.setState({ accessToken: null, user: null });
   });
 
-  it('없는 스토어(404) · 정지 스토어 안내', async () => {
+  it('없는 스토어(404), 정지 스토어 안내', async () => {
     mockApi({ store: null });
     renderAt('/store/99', <ShopStoreHome />, '/store/:id');
     expect(await screen.findByText('존재하지 않는 스토어입니다')).toBeInTheDocument();

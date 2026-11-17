@@ -7,9 +7,9 @@ import { toast } from '@/shared/stores/toastStore';
 
 const errorMessage = (err, fallback) => err?.response?.data?.message ?? fallback;
 
-// 장바구니 — 담당 이경석 (GET /api/carts + 담기 · 수량 · 선택 · 삭제). 원본은 서버(MySQL, Redis 캐시)라 새로고침 · 다른 기기에서도 같다.
+// 장바구니 — 담당 이경석 (GET /api/carts + 담기, 수량, 선택, 삭제). 원본은 서버(MySQL, Redis 캐시)라 새로고침, 다른 기기에서도 같다.
 // 로그인 전에는 부르지 않는다 (쇼핑몰 헤더 배지가 모든 화면에서 이 훅을 쓴다).
-// 수량 · 선택은 낙관적 업데이트 — 누르는 즉시 화면에 반영하고, 저장이 실패하면 되돌린 뒤 서버 값(금액 · 배송비)으로 다시 맞춘다.
+// 수량, 선택은 낙관적 업데이트 — 누르는 즉시 화면에 반영하고, 저장이 실패하면 되돌린 뒤 서버 값(금액, 배송비)으로 다시 맞춘다.
 export function useCart() {
   const loggedIn = useAuthStore((s) => Boolean(s.user));
   const queryClient = useQueryClient();
@@ -17,7 +17,7 @@ export function useCart() {
   const query = useQuery({ queryKey: key, queryFn: () => fetchCart(), enabled: loggedIn });
   const refresh = () => queryClient.invalidateQueries({ queryKey: key });
 
-  // 한 줄이면 줄 수정(수량 · 선택), 여러 줄 · 전체(ids null)면 선택 한꺼번에
+  // 한 줄이면 줄 수정(수량, 선택), 여러 줄, 전체(ids null)면 선택 한꺼번에
   const optimistic = useMutation({
     mutationFn: ({ ids, change }) => (ids?.length === 1 ? updateCartItem(ids[0], change) : checkCartItems(change.checked, ids ?? undefined)),
     onMutate: async ({ ids, change }) => {

@@ -1,4 +1,4 @@
-// 마이페이지 회원정보 수정 — 담당 이경석. 내 정보 수정 · 비밀번호 변경 · 탈퇴
+// 마이페이지 회원정보 수정 — 담당 이경석. 내 정보 수정, 비밀번호 변경, 탈퇴
 import { useState } from 'react';
 import { GradeBadge, Modal } from '@/shared/components/ui';
 import { MyPageHead } from '@/shared/layouts/MyPageLayout';
@@ -19,7 +19,7 @@ function FieldError({ message }) {
 }
 
 /**
- * @param onWithdrawn 탈퇴 성공 후 — 로그인 상태 · 캐시 정리와 이동은 페이지가 (auth 는 다른 도메인)
+ * @param onWithdrawn 탈퇴 성공 후 — 로그인 상태, 캐시 정리와 이동은 페이지가 (auth 는 다른 도메인)
  */
 export default function MyProfile({ onWithdrawn }) {
   const { data: me, isLoading } = useMeQuery();
@@ -45,7 +45,7 @@ export default function MyProfile({ onWithdrawn }) {
         </div>
       </div>
       <div className="mt-10 border border-line p-5 text-[13px]">
-        <div className="font-bold mb-3">회원등급 <span className="text-mute font-normal">· 누적 구매확정 금액 기준 · 적립률은 모든 등급 {POINT_RATE * 100}%</span></div>
+        <div className="font-bold mb-3">회원등급 <span className="text-mute font-normal">, 누적 구매확정 금액 기준, 적립률은 모든 등급 {POINT_RATE * 100}%</span></div>
         <div className="grid grid-cols-3 gap-px bg-line">
           {GRADES.map((g) => (
             <div key={g.id} className={cx('p-3 text-center', g.id === me.grade ? 'bg-ink text-white' : 'bg-white')}>
@@ -63,7 +63,7 @@ export default function MyProfile({ onWithdrawn }) {
   );
 }
 
-// 이름 · 닉네임 · 휴대폰 — 바뀐 항목만 보낸다. key 로 저장 후 새 값에서 다시 시작
+// 이름, 닉네임, 휴대폰 — 바뀐 항목만 보낸다. key 로 저장 후 새 값에서 다시 시작
 function ProfileForm({ me }) {
   const [form, setForm] = useState({ name: me.name, nick: me.nick ?? '', phone: me.phone ?? '' });
   const [errors, setErrors] = useState({});
@@ -101,7 +101,7 @@ function ProfileForm({ me }) {
         <FieldError message={errors.name} />
       </div>
       <div>
-        <label className="label" htmlFor="profile-nick">닉네임 <span className="font-normal text-mute">(선택 · 비우면 삭제)</span></label>
+        <label className="label" htmlFor="profile-nick">닉네임 <span className="font-normal text-mute">(선택, 비우면 삭제)</span></label>
         <input id="profile-nick" name="nick" className="field" value={form.nick} onChange={handleChange} />
         <FieldError message={errors.nick} />
       </div>
@@ -118,7 +118,7 @@ function ProfileForm({ me }) {
   );
 }
 
-// 비밀번호 변경 — 성공해도 로그인 상태는 그대로 (서버가 세션 · 토큰을 유지). 인증 액션이라 API 직접 호출 (컨벤션 4-6 예외)
+// 비밀번호 변경 — 성공해도 로그인 상태는 그대로 (서버가 세션, 토큰을 유지). 인증 액션이라 API 직접 호출 (컨벤션 4-6 예외)
 function PasswordModal({ email, onClose }) {
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', newPasswordConfirm: '' });
   const [errors, setErrors] = useState({});
@@ -156,7 +156,7 @@ function PasswordModal({ email, onClose }) {
 
   const fields = [
     ['currentPassword', '현재 비밀번호', 'current-password'],
-    ['newPassword', '새 비밀번호', 'new-password', '영문 · 특수문자 포함 8자 이상'],
+    ['newPassword', '새 비밀번호', 'new-password', '영문, 특수문자 포함 8자 이상'],
     ['newPasswordConfirm', '새 비밀번호 확인', 'new-password'],
   ];
   return (

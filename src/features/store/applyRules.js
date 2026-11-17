@@ -1,14 +1,14 @@
-// 입점 신청 · 보완 재제출 공용 규칙 — 담당 박지연. 계약: backend docs/api/store.md 2절(입력 규칙) · 2-3절(재제출)
+// 입점 신청, 보완 재제출 공용 규칙 — 담당 박지연. 계약: backend docs/api/store.md 2절(입력 규칙), 2-3절(재제출)
 import { introToText, textToIntro } from '@/features/store/storeText';
 
-// 서버(SellerApplyRequest · ApplicationResubmitRequest)가 형식을 검사하는 네 칸 — 같은 규칙 · 문구로 화면에서 미리 막는다. 서버 규칙이 바뀌면 여기도 같이
+// 서버(SellerApplyRequest, ApplicationResubmitRequest)가 형식을 검사하는 네 칸 — 같은 규칙, 문구로 화면에서 미리 막는다. 서버 규칙이 바뀌면 여기도 같이
 const RESERVED_SLUGS = ['admin', 'seller', 'new', 'api', 'me'];
 const FORMAT_RULES = {
   bizRegNo: [[/^\d{3}-\d{2}-\d{5}$/, '사업자등록번호는 000-00-00000 형식입니다.']],
   managerPhone: [[/^01[016789]-\d{3,4}-\d{4}$/, '휴대폰 번호는 010-0000-0000 형식입니다.']],
   managerEmail: [[/^[^\s@]+@[^\s@]+\.[^\s@]+$/, '이메일 형식이 올바르지 않습니다.']],
   slug: [
-    [/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/, '스토어 주소는 영소문자 · 숫자 · 하이픈 3~30자, 하이픈으로 시작 · 끝날 수 없습니다.'],
+    [/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/, '스토어 주소는 영소문자, 숫자, 하이픈 3~30자, 하이픈으로 시작, 끝날 수 없습니다.'],
     [(v) => !RESERVED_SLUGS.includes(v), '사용할 수 없는 스토어 주소입니다.'],
     [(v) => !/^\d+$/.test(v), '스토어 주소는 숫자만으로 만들 수 없습니다.'], // /store/{id} 와 구분 (store.md 14-3)
   ],
@@ -32,7 +32,7 @@ const BIZ_FIELDS = ['bizType', 'ownerName', 'bizRegNo']; // 하나라도 바뀌�
 const toProductRow = (p) => ({ name: p.name, subCategory: p.subCategory, price: String(p.price) });
 const normalizeProducts = (rows) => rows.map((p) => ({ name: p.name.trim(), subCategory: p.subCategory, price: Number(p.price) }));
 
-/** 재제출 폼의 처음 값 — me.submitted(제출한 내용) + 스토어명 · 주소. 고칠 수 없는 값(약관 · 마케팅)은 넣지 않는다 */
+/** 재제출 폼의 처음 값 — me.submitted(제출한 내용) + 스토어명, 주소. 고칠 수 없는 값(약관, 마케팅)은 넣지 않는다 */
 export function toResubmitForm(me) {
   const s = me.submitted;
   return {
@@ -53,8 +53,8 @@ export function toResubmitForm(me) {
 
 /**
  * 재제출 본문 — 지금 값과 다른 칸만 담는다(보내지 않은 칸은 서버가 그대로 둠).
- * 계좌는 하나라도 바뀌면 세 값 모두, 대표 상품은 바뀌면 목록 전체. 빈 문자열로 지울 수 없어(소개만 예외) 월 매출 · 판매 채널은 비우면 안 보낸다.
- * bizChanged = 사업자 구분 · 대표자 · 사업자번호 중 하나라도 바뀜 → 사업자등록증 필수
+ * 계좌는 하나라도 바뀌면 세 값 모두, 대표 상품은 바뀌면 목록 전체. 빈 문자열로 지울 수 없어(소개만 예외) 월 매출, 판매 채널은 비우면 안 보낸다.
+ * bizChanged = 사업자 구분, 대표자, 사업자번호 중 하나라도 바뀜 → 사업자등록증 필수
  */
 export function buildResubmitRequest(me, form) {
   const start = toResubmitForm(me);
@@ -88,7 +88,7 @@ const FIELD_LABEL = {
 export function resubmitConfirmMessage(request, docLabels) {
   const changed = [...Object.keys(request).map((k) => FIELD_LABEL[k] ?? k), ...docLabels.map((l) => `${l}(다시 냄)`)];
   return changed.length
-    ? `바꾼 항목: ${changed.join(' · ')}\n제출하면 다시 심사받습니다. 제출할까요?`
+    ? `바꾼 항목: ${changed.join(', ')}\n제출하면 다시 심사받습니다. 제출할까요?`
     : '바꾼 항목이 없어요. 확인만 제출할까요?';
 }
 

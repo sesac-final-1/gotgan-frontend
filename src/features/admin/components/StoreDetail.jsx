@@ -27,7 +27,7 @@ function buildProductColumns(setTarget) {
       accessorKey: 'name', header: '상품',
       cell: ({ row: { original: p } }) => (
         <div className="flex items-center gap-2.5"><img src={p.imageUrl} alt="" className="w-9 h-9 object-cover bg-cream" />
-          <div><div>{p.name}</div><div className="text-[11.5px] text-mute">{p.topCategoryName} · {p.categoryName}</div></div></div>
+          <div><div>{p.name}</div><div className="text-[11.5px] text-mute">{p.topCategoryName}, {p.categoryName}</div></div></div>
       ),
     },
     { accessorKey: 'salePrice', header: '판매가', meta: NUM, cell: ({ getValue }) => comma(getValue()) },
@@ -56,7 +56,7 @@ const SETTLEMENT_COLUMNS = [
 
 export default function StoreDetail() {
   const { id } = useParams();
-  const { data: detail, isLoading } = useAdminStoreQuery(id); // 기본 정보 · 상태 이력 (backend #182)
+  const { data: detail, isLoading } = useAdminStoreQuery(id); // 기본 정보, 상태 이력 (backend #182)
   const { data: list = [] } = useAdminStoreListQuery(); // 평점 = review 스토어 평점(#160) — 목록과 같은 값
   const rating = list.find((x) => x.id === id);
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
@@ -70,10 +70,10 @@ function DetailBody({ s }) {
   const [reason, setReason] = useState('');
   const [modal, setModal] = useState(false);
   const changeStatus = useChangeStoreStatusMutation();
-  const canSubmit = status !== s.status && reason.trim() !== '' && !changeStatus.isPending; // 정지 · 해제 모두 사유 필수(store 9절)
+  const canSubmit = status !== s.status && reason.trim() !== '' && !changeStatus.isPending; // 정지, 해제 모두 사유 필수(store 9절)
   const { data: recent, isLoading: settleLoading, isError: settleError } = useAdminStoreSettlementsQuery(s.storeId); // 최근 8주 (backend #184)
   const { data: prods = [], isLoading: prodsLoading, isError: prodsError } = useAdminStoreProductsQuery(s.storeId);
-  const [blockTarget, setBlockTarget] = useState(null); // { product, blocked } — 강제중지 · 해제 확인 모달
+  const [blockTarget, setBlockTarget] = useState(null); // { product, blocked } — 강제중지, 해제 확인 모달
   const [blockReason, setBlockReason] = useState('');
   const block = useBlockProductMutation();
   const productColumns = useMemo(() => buildProductColumns(setBlockTarget), []);
@@ -108,21 +108,21 @@ function DetailBody({ s }) {
 
   return (
     <div>
-      <PageHead crumbs="판매자 > 스토어 관리" title={s.name} desc={`${s.owner} · ${s.company} · 입점 ${ymd(s.since)}`}
+      <PageHead crumbs="판매자 > 스토어 관리" title={s.name} desc={`${s.owner}, ${s.company}, 입점 ${ymd(s.since)}`}
         right={<><Link to={`/store/${s.id}`} className="btn btn-line btn-sm">쇼핑몰에서 보기 <ExternalLink size={13} /></Link>
           <OpenChatButton basePath="/admin/chats" request={{ type: 'SELLER_SUPPORT', storeId: Number(s.storeId), context: { type: 'STORE', id: Number(s.storeId) } }}>판매자와 상담</OpenChatButton>{s.status !== '폐점' && <button onClick={() => { setStatus(s.status); setModal(true); }} className="btn btn-ink btn-sm">상태 변경</button>}</>} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <Kpi label="8주 거래액" value={shortWon(recent?.totals.salesAmt ?? 0)} unit="원" sub={`정산서 ${comma(recent?.totals.count ?? 0)}건 · 이번 주 포함`} />
-        <Kpi label="8주 수수료 수익" value={shortWon(recent?.totals.commissionAmt ?? 0)} unit="원" sub="정산서 기준 · 상위 카테고리별 판매수수료" />
+        <Kpi label="8주 거래액" value={shortWon(recent?.totals.salesAmt ?? 0)} unit="원" sub={`정산서 ${comma(recent?.totals.count ?? 0)}건, 이번 주 포함`} />
+        <Kpi label="8주 수수료 수익" value={shortWon(recent?.totals.commissionAmt ?? 0)} unit="원" sub="정산서 기준, 상위 카테고리별 판매수수료" />
         <Kpi label="평균 평점" value={s.reviewCount ? s.avg.toFixed(2) : '-'} sub={`리뷰 ${comma(s.reviewCount)}건`} />
-        <Kpi label="판매중 상품" value={comma(onSale)} unit="개" sub={`등록 ${comma(prods.length)}개 · 삭제 제외`} />
+        <Kpi label="판매중 상품" value={comma(onSale)} unit="개" sub={`등록 ${comma(prods.length)}개, 삭제 제외`} />
       </div>
       <div className="grid xl:grid-cols-[1fr_380px] gap-4 mt-4">
         <div className="space-y-4">
           <div>
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <span className="panel-title">등록 상품 {prods.length}</span>
-              <SearchInput value={prodTable.globalFilter} onChange={prodTable.setGlobalFilter} placeholder="상품명 · 상태" className="ml-auto" />
+              <SearchInput value={prodTable.globalFilter} onChange={prodTable.setGlobalFilter} placeholder="상품명, 상태" className="ml-auto" />
             </div>
             <DataTable table={prodTable.table} loading={prodsLoading} error={prodsError} empty="등록된 상품이 없어요" />
           </div>
@@ -141,7 +141,7 @@ function DetailBody({ s }) {
             <KV rows={[
               ['상태', <span><StatusPill s={s.status} />{s.statusReason && <span className="block text-[11.5px] text-mute mt-1">{s.statusReason}</span>}</span>],
               ['등급', s.grade], ['상호', s.company], ['사업자번호', s.bizNo], ['고객 문의', s.csPhone || '-'],
-              ['배송', `${s.courier || '택배사 미지정'} · ${won(s.shippingFee)} · ${s.freeShippingThreshold ? `${won(s.freeShippingThreshold)} 이상 무료` : '무료배송 없음'}`],
+              ['배송', `${s.courier || '택배사 미지정'}, ${won(s.shippingFee)}, ${s.freeShippingThreshold ? `${won(s.freeShippingThreshold)} 이상 무료` : '무료배송 없음'}`],
               ['출고 안내', s.dispatchNote || '-'],
               ['입점 신청', s.applicationId ? <Link to={`/admin/applications/${s.applicationId}`} className="hover:underline">신청서 #{s.applicationId}</Link> : '-'],
             ]} />
@@ -151,7 +151,7 @@ function DetailBody({ s }) {
             <ol className="text-[12.5px] space-y-2">
               {[...s.history].reverse().map((h) => (
                 <li key={h.at.getTime()} className="text-ink-2">
-                  <div><span className="num text-mute">{ymdhm(h.at)}</span> · <b className="text-ink">{h.from ? `${h.from} → ${h.to}` : `개설 (${h.to})`}</b> · {ACTOR_LABEL[h.actor] ?? h.actor}</div>
+                  <div><span className="num text-mute">{ymdhm(h.at)}</span>, <b className="text-ink">{h.from ? `${h.from} → ${h.to}` : `개설 (${h.to})`}</b>, {ACTOR_LABEL[h.actor] ?? h.actor}</div>
                   {h.reason && <div className="text-mute mt-0.5">{h.reason}</div>}
                 </li>
               ))}
@@ -165,7 +165,7 @@ function DetailBody({ s }) {
         <p className="text-[13.5px] font-semibold">{blockTarget?.product.name}</p>
         <div className="mt-3 text-[13px] text-ink-2 bg-cream p-3 leading-relaxed">
           {blockTarget?.blocked
-            ? '쇼핑몰에서 즉시 숨겨지고 구매할 수 없어요. 판매자는 수정 · 재고 변경 · 삭제는 할 수 있지만 판매를 재개할 수 없어요.'
+            ? '쇼핑몰에서 즉시 숨겨지고 구매할 수 없어요. 판매자는 수정, 재고 변경, 삭제는 할 수 있지만 판매를 재개할 수 없어요.'
             : '판매중지(STOPPED) 상태로 돌아가요. 판매자가 내용을 점검한 뒤 직접 재개합니다.'}
         </div>
         {blockTarget?.blocked && <>

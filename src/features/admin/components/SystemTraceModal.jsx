@@ -9,7 +9,7 @@ export default function SystemTraceModal({ traceId, onClose }) {
 
   return (
     <Modal open={!!traceId} onClose={onClose} title="트레이스" width={760}>
-      <p className="text-sm text-mute break-all">traceId {traceId}{data ? ` · 전체 ${data.durationMs}ms` : ''}</p>
+      <p className="text-sm text-mute break-all">traceId {traceId}{data ? `, 전체 ${data.durationMs}ms` : ''}</p>
       {isPending && <p className="mt-3 text-sm text-mute">불러오는 중...</p>}
       {(isError || (data && data.spans.length === 0)) && (
         <p className="mt-3 text-sm text-mute">트레이스를 찾지 못했어요. Zipkin 은 메모리 저장이라 부하 중엔 몇 분 지나면 밀려나요.</p>
@@ -21,7 +21,7 @@ export default function SystemTraceModal({ traceId, onClose }) {
               <span className={`font-bold truncate ${s.error ? 'text-rust' : ''}`}>{serviceShortName(s.service ?? '-')}</span>
               <div className="min-w-0">
                 <div className="flex justify-between gap-2">
-                  <span className={`truncate ${s.error ? 'text-rust' : 'text-ink-2'}`}>{s.name}{s.status ? ` · ${s.status}` : ''}</span>
+                  <span className={`truncate ${s.error ? 'text-rust' : 'text-ink-2'}`}>{s.name}{s.status ? `, ${s.status}` : ''}</span>
                   <span className="tabular-nums shrink-0">{s.durationMs}ms</span>
                 </div>
                 <div className="relative h-2 bg-sand">

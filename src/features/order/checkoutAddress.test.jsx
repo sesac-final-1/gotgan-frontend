@@ -5,7 +5,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import { queryKeys } from '@/shared/api/queryKeys';
 import ShopCheckout from '@/features/order/components/ShopCheckout';
 
-// 장바구니 · 포인트는 화면 바깥 — 주문서의 배송지 추가만 본다
+// 장바구니, 포인트는 화면 바깥 — 주문서의 배송지 추가만 본다
 vi.mock('@/features/order/hooks/useCart', () => ({
   useCart: () => ({
     isLoading: false,
@@ -77,7 +77,7 @@ describe('주문서 배송지 추가', () => {
     expect(screen.queryByRole('button', { name: '저장' })).not.toBeInTheDocument();                   // 폼이 닫힘
   });
 
-  it('5개면 새 배송지 추가 비활성 · 안내', async () => {
+  it('5개면 새 배송지 추가 비활성, 안내', async () => {
     const five = [HOME, ...[1, 2, 3, 4].map((n) => ({ ...OFFICE, id: 20 + n, label: `주소${n}` }))];
     renderCheckout([five]);
     await screen.findByText('(06236) 서울 강남구 테헤란로 152 21층');

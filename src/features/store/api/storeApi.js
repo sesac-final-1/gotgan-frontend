@@ -1,5 +1,5 @@
-// store 도메인 API — 담당 박지연. 공개 API(목록 · 스토어 홈)는 실제 호출, 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절)
-// 계약: backend docs/api/store.md 14절. 스토어 · 카테고리 id 는 숫자다 (목업 's1' · 'fashion' 아님)
+// store 도메인 API — 담당 박지연. 공개 API(목록, 스토어 홈)는 실제 호출, 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절)
+// 계약: backend docs/api/store.md 14절. 스토어, 카테고리 id 는 숫자다 (목업 's1', 'fashion' 아님)
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { withRealType } from '@/shared/utils/fileType';
 
@@ -7,7 +7,7 @@ import { withRealType } from '@/shared/utils/fileType';
 const GRADE_LABEL = { SPROUT: '새싹', POWER: '파워', BIG_POWER: '빅파워' };
 const STATUS_LABEL = { ACTIVE: '운영중', SUSPENDED: '정지', CLOSED: '폐점' };
 
-// 목록 · 홈 공통
+// 목록, 홈 공통
 const common = (r) => ({
   id: r.storeId,
   name: r.storeName,
@@ -26,8 +26,8 @@ export const toStoreCard = (r) => ({ ...common(r), status: '운영중' });
 // 운영 중 스토어 전체(개설 최신순, 페이징 없음). 로그인 없이 호출
 export const fetchStores = async () => (await axiosInstance.get('/api/stores')).data.data.map(toStoreCard);
 
-// GET /api/stores/{id} — 스토어 홈. 정지 · 폐점은 { storeId, storeName, status } 만 오고 나머지 null → 화면은 status !== '운영중' 이면 안내
-// 배송비 · 무료배송 기준은 목업처럼 0 = 없음 (freeShippingThreshold null = 무료배송 없음)
+// GET /api/stores/{id} — 스토어 홈. 정지, 폐점은 { storeId, storeName, status } 만 오고 나머지 null → 화면은 status !== '운영중' 이면 안내
+// 배송비, 무료배송 기준은 목업처럼 0 = 없음 (freeShippingThreshold null = 무료배송 없음)
 export const toStoreHome = (r) => ({
   ...common(r),
   status: STATUS_LABEL[r.status] ?? r.status,
@@ -48,14 +48,14 @@ export const fetchStore = async (idOrSlug) => {
 };
 
 // GET /api/reviews/ratings/stores?ids= — 스토어 홈 별점(review #160, 공개). store 응답에는 평점이 없어 화면이 따로 묻는다(노션 10/28 안내)
-// 리뷰가 없으면 0 · 0, 블라인드 · 삭제 리뷰는 빠진 값
+// 리뷰가 없으면 0, 0, 블라인드, 삭제 리뷰는 빠진 값
 export const fetchStoreRating = async (storeId) => {
   const [r] = (await axiosInstance.get('/api/reviews/ratings/stores', { params: { ids: String(storeId) } })).data.data;
   return { avg: Number(r?.averageRating ?? 0), count: r?.reviewCount ?? 0 };
 };
 
 // GET /api/seller/store — 로그인한 판매자의 스토어(X-Store-Id, store.md 13-1). 스토어 홈과 같은 이름 + 판매자만 보는 값
-// 정지 · 폐점 스토어도 200(설정 화면이 상태 · 사유를 보여 줌). 상위 카테고리(cat)는 이 응답에 없다
+// 정지, 폐점 스토어도 200(설정 화면이 상태, 사유를 보여 줌). 상위 카테고리(cat)는 이 응답에 없다
 export const toMyStore = (r) => ({
   ...toStoreHome(r),
   statusReason: r.statusReason ?? '',
@@ -80,13 +80,13 @@ export async function uploadStoreImage(picked) {
 }
 
 // PATCH /api/seller/store/close — 폐점(12절, 되돌릴 수 없음) → { storeId, status: 'CLOSED', closedAt }
-// 409 STORE_ORDERS_IN_PROGRESS · STORE_SETTLEMENT_OUTSTANDING 은 서버 메시지("진행 중인 주문 n건…")를 그대로 보여 준다
+// 409 STORE_ORDERS_IN_PROGRESS, STORE_SETTLEMENT_OUTSTANDING 은 서버 메시지("진행 중인 주문 n건…")를 그대로 보여 준다
 export const closeMyStore = async () => {
   const r = (await axiosInstance.patch('/api/seller/store/close')).data.data;
   return { ...r, closedAt: new Date(r.closedAt) };
 };
 
-// GET /api/seller/dashboard (15절) — order · product · settlement 통계를 그대로 담고, 못 받은 영역은 null + unavailable[]
+// GET /api/seller/dashboard (15절) — order, product, settlement 통계를 그대로 담고, 못 받은 영역은 null + unavailable[]
 // 화면 이름으로: 날짜는 KST 자정 Date, 영역이 null 이면 그대로 null(화면은 그 카드만 "일시적으로 불러올 수 없음")
 const kstDate = (ymd) => new Date(`${ymd}T00:00:00+09:00`);
 export const toSellerDashboard = (r) => ({

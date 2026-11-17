@@ -44,7 +44,7 @@ describe('authApi', () => {
 });
 
 describe('authStore', () => {
-  it('로그인 · 로그아웃 모두 isAuthReady 를 켠다', () => {
+  it('로그인, 로그아웃 모두 isAuthReady 를 켠다', () => {
     useAuthStore.getState().setAuth({ accessToken: 'at', user: USER });
     expect(useAuthStore.getState()).toMatchObject({ accessToken: 'at', user: USER, isAuthReady: true });
     useAuthStore.getState().clearAuth();
@@ -75,7 +75,7 @@ describe('SocialCallback', () => {
     </StrictMode>,
   );
 
-  it('성공 — refresh 한 번으로 AT · 사용자 저장 후 역할 첫 화면', async () => {
+  it('성공 — refresh 한 번으로 AT, 사용자 저장 후 역할 첫 화면', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { accessToken: 'at', user: USER } } });
     renderAt('/auth/callback');
     expect(await screen.findByText('home page')).toBeInTheDocument();

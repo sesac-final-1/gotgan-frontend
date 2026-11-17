@@ -17,7 +17,7 @@ export default function SystemLinks() {
       </a>
       <button type="button" className="btn btn-line btn-sm" onClick={() => setGuideOpen(true)}>Grafana 안내</button>
       <Modal open={guideOpen} onClose={() => setGuideOpen(false)} title="Grafana 접속 방법">
-        <p className="text-sm">자세한 그래프 · 로그 · 트레이스는 Grafana 에서 봅니다. 외부에 열려 있지 않아 터미널에서 먼저 연결해야 해요.</p>
+        <p className="text-sm">자세한 그래프, 로그, 트레이스는 Grafana 에서 봅니다. 외부에 열려 있지 않아 터미널에서 먼저 연결해야 해요.</p>
         <pre className="mt-3 p-3 bg-cream text-[13px] overflow-x-auto"><code>{GRAFANA_COMMAND}</code></pre>
         <p className="mt-3 text-sm">연결한 뒤 <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer" className="underline">http://localhost:3000</a> 을 여세요.</p>
       </Modal>

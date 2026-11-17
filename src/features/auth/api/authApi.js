@@ -17,5 +17,5 @@ export const signup = (request) => axiosInstance.post('/api/auth/signup', reques
 // POST /api/auth/refresh — RT 쿠키로 AT 재발급 → { accessToken, expiresIn, user }
 export const refreshToken = () => axiosInstance.post('/api/auth/refresh').then((res) => res.data.data);
 
-// POST /api/auth/logout — Keycloak 세션 종료 · RT 쿠키 삭제
+// POST /api/auth/logout — Keycloak 세션 종료, RT 쿠키 삭제
 export const logout = () => axiosInstance.post('/api/auth/logout');

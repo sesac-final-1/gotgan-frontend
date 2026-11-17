@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 import { axiosInstance, setAuthHandlers, TOO_MANY_REQUESTS_MESSAGE } from '@/shared/api/axiosInstance';
 import { refreshOnce } from '@/shared/api/refresh';
 
-// 네트워크 대신 어댑터를 바꿔 끼워 요청 · 응답을 흉내 낸다
+// 네트워크 대신 어댑터를 바꿔 끼워 요청, 응답을 흉내 낸다
 const ok = (config, data = {}) => Promise.resolve({ data, status: 200, statusText: 'OK', headers: {}, config });
 const fail = (config, status) => Promise.reject(new AxiosError('fail', 'ERR', config, null, { data: {}, status, statusText: '', headers: {}, config }));
 
@@ -64,7 +64,7 @@ describe('axiosInstance 인증 인터셉터', () => {
     expect(onAuthFailed).toHaveBeenCalledTimes(1);
   });
 
-  it('로그인 · 재발급 자체의 401, 토큰 없이 받은 401, 403 은 재발급하지 않는다', async () => {
+  it('로그인, 재발급 자체의 401, 토큰 없이 받은 401, 403 은 재발급하지 않는다', async () => {
     const refresh = vi.fn();
     setAuthHandlers({ refresh });
     axiosInstance.defaults.adapter = vi.fn((config) => fail(config, config.url === '/api/forbidden' ? 403 : 401));

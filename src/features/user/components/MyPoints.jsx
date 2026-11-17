@@ -1,4 +1,4 @@
-// 마이페이지 포인트 — 담당 이경석. 전체 1회 로드 후 화면에서 구분 탭 · 검색 · 정렬 · 페이징 (컨벤션 4-7)
+// 마이페이지 포인트 — 담당 이경석. 전체 1회 로드 후 화면에서 구분 탭, 검색, 정렬, 페이징 (컨벤션 4-7)
 import { useMemo, useState } from 'react';
 import { StatusPill, Segments } from '@/shared/components/ui';
 import { MyPageHead } from '@/shared/layouts/MyPageLayout';
@@ -67,14 +67,14 @@ export default function MyPoints() {
       </div>
       <div className="mt-6 mb-4 flex flex-wrap gap-3 items-center">
         <Segments items={['전체', ...POINT_TYPES]} value={type} onChange={setType} counts={counts} />
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="내용 · 주문번호" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="내용, 주문번호" className="ml-auto" />
       </div>
       <DataTable table={table} loading={isLoading} error={isError} empty="포인트 내역이 없어요" />
       <div className="mt-6 bg-cream p-5 text-[13px] text-ink-2 leading-relaxed">
         <b className="text-ink">포인트 안내</b><br />
-        · 구매확정 시 실결제금액(포인트 사용분 제외)의 {POINT_RATE * 100}%가 적립되며, 다음 결제부터 사용할 수 있어요.<br />
-        · 사용 · 적립 포인트는 상품주문 단위로 금액 비율에 따라 나뉘어 기록돼요.<br />
-        · 취소 · 반품이 완료되면 그 상품주문분 사용 포인트는 환원됩니다.
+        - 구매확정 시 실결제금액(포인트 사용분 제외)의 {POINT_RATE * 100}%가 적립되며, 다음 결제부터 사용할 수 있어요.<br />
+        - 사용, 적립 포인트는 상품주문 단위로 금액 비율에 따라 나뉘어 기록돼요.<br />
+        - 취소, 반품이 완료되면 그 상품주문분 사용 포인트는 환원됩니다.
       </div>
     </div>
   );

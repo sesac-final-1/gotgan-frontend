@@ -1,7 +1,7 @@
-// 클레임 응답(backend ClaimDetailResponse) → 화면 표시 · 판매자 다음 처리 — 담당 이경석
+// 클레임 응답(backend ClaimDetailResponse) → 화면 표시, 판매자 다음 처리 — 담당 이경석
 import { CLAIM_REASONS, CLAIM_STEP_LABEL, CLAIM_TYPE_LABEL } from '@/features/order/constants';
 
-// 상태 배지 — 반품요청 · 반품승인 · 반품수거완료 · 교환재배송중 · 반품완료 · 반품거부 (취소 진행 중은 "취소중")
+// 상태 배지 — 반품요청, 반품승인, 반품수거완료, 교환재배송중, 반품완료, 반품거부 (취소 진행 중은 "취소중")
 export function claimStatusLabel({ type, status }) {
   if (type === 'CANCEL' && status === 'APPROVED') return '취소중';
   return `${CLAIM_TYPE_LABEL[type] ?? type}${CLAIM_STEP_LABEL[status] ?? status}`;
@@ -9,19 +9,19 @@ export function claimStatusLabel({ type, status }) {
 
 export const reasonLabel = (code) => CLAIM_REASONS.find((r) => r.code === code)?.label.replace(/ \(.*\)$/, '') ?? code;
 
-// 판매자가 지금 할 일 — 요청: 승인 · 거부, 승인: 수거 완료, 교환 수거완료: 재배송 송장. 취소는 자동(판매자 할 일 없음)
+// 판매자가 지금 할 일 — 요청: 승인, 거부, 승인: 수거 완료, 교환 수거완료: 재배송 송장. 취소는 자동(판매자 할 일 없음)
 export function nextAction({ type, status }) {
   if (type === 'CANCEL') return null;
   if (status === 'REQUESTED') return { action: 'approve', label: '승인 (수거 요청)', rejectable: true };
-  if (status === 'APPROVED') return { action: 'collect', label: type === 'RETURN' ? '수거 완료 · 환불' : '수거 완료' };
+  if (status === 'APPROVED') return { action: 'collect', label: type === 'RETURN' ? '수거 완료, 환불' : '수거 완료' };
   if (status === 'COLLECTED' && type === 'EXCHANGE') return { action: 'reship', label: '재배송 송장' };
   return null;
 }
 
-// 구매자가 철회할 수 있는지 — 반품 · 교환이 판매자 승인 전일 때만 (취소는 즉시 처리)
+// 구매자가 철회할 수 있는지 — 반품, 교환이 판매자 승인 전일 때만 (취소는 즉시 처리)
 export const canWithdraw = ({ type, status }) => type !== 'CANCEL' && status === 'REQUESTED';
 
-// 처리 안내 (구매자 · 판매자 상세)
+// 처리 안내 (구매자, 판매자 상세)
 export function claimProgress({ type, status, rejectReason }) {
   switch (status) {
     case 'REQUESTED': return '판매자 확인 중이에요.';

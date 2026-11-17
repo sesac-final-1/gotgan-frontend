@@ -1,5 +1,5 @@
-// 장바구니 · 주문서 공통 — 결제 금액 요약 박스 — 담당 이경석
-// 상품금액 · 배송비는 서버 장바구니 응답(선택된 구매 가능 줄 기준, 스토어별 묶음배송)을 그대로 받는다
+// 장바구니, 주문서 공통 — 결제 금액 요약 박스 — 담당 이경석
+// 상품금액, 배송비는 서버 장바구니 응답(선택된 구매 가능 줄 기준, 스토어별 묶음배송)을 그대로 받는다
 import { earnOf, POINT_RATE } from '@/features/user/constants';
 import { won, comma } from '@/shared/utils/format';
 

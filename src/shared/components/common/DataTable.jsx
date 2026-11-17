@@ -3,9 +3,9 @@ import { SortableHeader } from '@/shared/components/common/SortableHeader';
 import { BlockPager } from '@/shared/components/common/BlockPager';
 import { cx } from '@/shared/utils/format';
 
-// 목업 .panel + .tbl 표를 TanStack Table 로 그린다 — 디자인 그대로, 정렬 헤더 · 블록 페이저 포함
-// 열 정의 meta: { thClass, tdClass, search(false 면 검색 제외) } · 정렬/검색 값과 표시가 다르면 accessorFn(값) + cell(표시) 분리
-// 로딩 · 에러 · 빈 상태는 tbody 안의 행 하나 — 검색창이 사라졌다 생기며 포커스를 잃지 않게 (컨벤션 4-7)
+// 목업 .panel + .tbl 표를 TanStack Table 로 그린다 — 디자인 그대로, 정렬 헤더, 블록 페이저 포함
+// 열 정의 meta: { thClass, tdClass, search(false 면 검색 제외) }, 정렬/검색 값과 표시가 다르면 accessorFn(값) + cell(표시) 분리
+// 로딩, 에러, 빈 상태는 tbody 안의 행 하나 — 검색창이 사라졌다 생기며 포커스를 잃지 않게 (컨벤션 4-7)
 export function DataTable({ table, loading = false, error = null, empty = '조건에 맞는 항목이 없어요', className = '' }) {
   const colSpan = table.getVisibleLeafColumns().length;
   const rows = table.getRowModel().rows;

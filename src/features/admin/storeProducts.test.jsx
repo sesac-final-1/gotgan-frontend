@@ -4,7 +4,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import { useAdminStoreProductsQuery } from '@/features/admin/hooks/useAdminStoreProductsQuery';
 import { useBlockProductMutation } from '@/features/admin/hooks/useBlockProductMutation';
 
-// 관리자 스토어 상품 · 강제 판매중지 (backend #110 · #112 — product 응답 그대로 전달)
+// 관리자 스토어 상품, 강제 판매중지 (backend #110, #112 — product 응답 그대로 전달)
 const PRODUCTS = [{ productId: 101, name: '서귀포 노지 햇감귤 5kg', salePrice: 26980, totalStock: 900, status: 'ON_SALE', hiddenReason: null }];
 
 afterEach(() => vi.restoreAllMocks());

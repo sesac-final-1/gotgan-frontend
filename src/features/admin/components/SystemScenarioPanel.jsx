@@ -20,7 +20,7 @@ export default function SystemScenarioPanel({ services, chaosEnabled }) {
   const [confirming, setConfirming] = useState(false);
   const kill = useKillOneEachMutation();
   const targets = services.filter((s) => s.killable && s.desired >= 2);
-  const names = targets.map((s) => serviceShortName(s.name)).join(' · ');
+  const names = targets.map((s) => serviceShortName(s.name)).join(', ');
   const blocked = blockedReason({ chaosEnabled, targets });
 
   const submit = () => kill.mutate(undefined, {
@@ -40,7 +40,7 @@ export default function SystemScenarioPanel({ services, chaosEnabled }) {
       </button>
       <div className="text-base">
         <span className="text-mute">대상</span> <b>{names || '-'}</b>
-        <span className="ml-3 text-sm text-mute">{blocked ?? '각 서비스 파드 1개 제거 · 1개로 무중단 유지'}</span>
+        <span className="ml-3 text-sm text-mute">{blocked ?? '각 서비스 파드 1개 제거, 1개로 무중단 유지'}</span>
       </div>
       {confirming && (
         <Modal

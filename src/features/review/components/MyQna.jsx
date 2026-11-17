@@ -1,4 +1,4 @@
-// 마이페이지 상품 문의 — 담당 이경석. 카드형 목록(표 아님) — 내가 쓴 문의 · 판매자 답변 (backend review.md 14 · 15 · 17절)
+// 마이페이지 상품 문의 — 담당 이경석. 카드형 목록(표 아님) — 내가 쓴 문의, 판매자 답변 (backend review.md 14, 15, 17절)
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Lock } from 'lucide-react';

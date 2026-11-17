@@ -6,8 +6,8 @@ const STORE = { id: 1, name: '산골농부 박씨네', intro: '<p>귤 농사</p>
 
 const valid = (patch = {}) => ({ ...initialSettings(STORE), ...patch });
 
-describe('팔레트 · 택배사 목록', () => {
-  it('지금 색 · 택배사가 목록 밖이면 맨 앞에 함께, 안이면 그대로', () => {
+describe('팔레트, 택배사 목록', () => {
+  it('지금 색, 택배사가 목록 밖이면 맨 앞에 함께, 안이면 그대로', () => {
     expect(paletteWith('#d0701f')).toEqual(['#d0701f', ...PALETTE]);
     expect(paletteWith(PALETTE[2])).toBe(PALETTE);
     expect(couriersWith('경동택배')[0]).toBe('경동택배');
@@ -25,7 +25,7 @@ describe('initialSettings', () => {
 });
 
 describe('validateSettings', () => {
-  it('통과하면 null · 070 · 휴대폰도 통과', () => {
+  it('통과하면 null, 070, 휴대폰도 통과', () => {
     expect(validateSettings(valid())).toBeNull();
     expect(validateSettings(valid({ csPhone: '070-1234-5678' }))).toBeNull();
     expect(validateSettings(valid({ csPhone: '010-1234-5678', freeOver: '', shippingFee: '0' }))).toBeNull();
@@ -47,7 +47,7 @@ describe('validateSettings', () => {
 });
 
 describe('buildSettingsRequest — 13-2 요청', () => {
-  it('숫자 변환 · 무료배송 빈칸은 null · 빈 문자열(공백뿐)은 null · 이미지 키 그대로', () => {
+  it('숫자 변환, 무료배송 빈칸은 null, 빈 문자열(공백뿐)은 null, 이미지 키 그대로', () => {
     expect(buildSettingsRequest(valid({ imageKey: 'stores/1/a.jpg', freeOver: '', courier: '', dispatchNote: '  ', intro: '', csPhone: ' 064-0000-0006 ' }))).toEqual({
       intro: null, imageKey: 'stores/1/a.jpg', color: '#d0701f', csPhone: '064-0000-0006', shippingFee: 3000, freeShippingThreshold: null, courier: null, dispatchNote: null,
     });
@@ -56,7 +56,7 @@ describe('buildSettingsRequest — 13-2 요청', () => {
 });
 
 describe('기본 배송비 0원 = 모든 주문 무료배송', () => {
-  it('0원이면 무료배송 기준을 검사하지 않고 null 로 보냄 · 빈칸은 0원이 아님', () => {
+  it('0원이면 무료배송 기준을 검사하지 않고 null 로 보냄, 빈칸은 0원이 아님', () => {
     const f = valid({ shippingFee: '0', freeOver: '0' });
     expect(isAllFree(f)).toBe(true);
     expect(validateSettings(f)).toBeNull();
