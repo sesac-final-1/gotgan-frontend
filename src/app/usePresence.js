@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { VISITOR_HEADER, visitorId } from '@/shared/utils/visitorId';
 
 // 접속 신호(11/17) — 관리자 시스템 상태의 "현재 접속자"가 바로 늘고 바로 줄게 한다. 계약 backend admin.md 9절 visitors.
 // - 탭이 보이는 동안 20초마다 POST /api/presence/ping (서버는 최근 60초 안에 신호가 있는 사람을 센다)
@@ -15,7 +16,8 @@ export function usePresence() {
     };
     const leave = () => {
       const token = useAuthStore.getState().accessToken;
-      fetch('/api/presence/leave', { method: 'POST', keepalive: true, headers: token ? { Authorization: `Bearer ${token}` } : {} }).catch(() => {});
+      const headers = { [VISITOR_HEADER]: visitorId(), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      fetch('/api/presence/leave', { method: 'POST', keepalive: true, headers }).catch(() => {});
     };
     const onVisibility = () => (document.visibilityState === 'visible' ? ping() : leave());
 
