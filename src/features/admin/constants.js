@@ -65,8 +65,8 @@ export const REPORT_ACTIONS = {
 export const REPORT_ACTION_LABEL = { BLIND: '블라인드', UNBLIND: '블라인드 해제', SUSPEND: '이용정지', UNSUSPEND: '정지 해제', DISMISS: '기각' };
 export const REPORT_STATUS_LABEL = { OPEN: '처리대기', RESOLVED: '조치완료', DISMISSED: '기각' };
 
-/** 시스템 상태 — 오류율(0~1)을 퍼센트로. 값이 없으면(Prometheus 실패 · 아직 못 받음) '-' */
-export const formatErrorRate = (rate) => (rate == null ? '-' : `${Math.round(rate * 1000) / 10}%`);
+/** 시스템 상태 — 최근 1분 5xx 건수(11/17 피드백: 퍼센트 대신 건수). 값이 없으면(Prometheus 실패 · 아직 못 받음) '-' */
+export const formatErrorCount = (count) => (count == null ? '-' : `${count}건/분`);
 
 /** 시스템 상태 — 화면에 쓰는 서비스 이름. order-service → order */
 export const serviceShortName = (name) => name.replace(/-service$/, '');

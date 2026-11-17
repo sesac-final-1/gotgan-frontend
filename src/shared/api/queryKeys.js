@@ -28,6 +28,7 @@ export const queryKeys = {
     systemEvents: () => ['admin', 'system', 'events'],
     systemLoadTest: () => ['admin', 'system', 'loadtest'], // 관리자 화면 부하테스트(11/16)
     systemMonitor: (part) => ['admin', 'system', 'monitor', part], // 실시간 모니터링(11/16) — overview · calls · errors · summary · trace
+    systemReport: (from, to) => ['admin', 'system', 'report', from, to], // 장애 분석 리포트(11/17)
   },
 
   // ── user (이경석)

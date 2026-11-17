@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/api/queryKeys';
 import {
-  fetchLoadTest, fetchMonitorCalls, fetchMonitorErrors, fetchMonitorOverview, fetchMonitorSummary, fetchMonitorTrace,
+  fetchIncidentReport, fetchLoadTest, fetchMonitorCalls, fetchMonitorErrors, fetchMonitorOverview, fetchMonitorSummary, fetchMonitorTrace,
   fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService,
   prepareLoadTestAccounts, scaleLoadTest, startLoadTest, stopLoadTest,
 } from '@/features/admin/api/systemApi';
@@ -86,4 +86,15 @@ export const useMonitorSummaryQuery = (enabled) => useQuery(monitorQuery('summar
 // 트레이스는 고른 줄만 한 번 — 끝난 요청이라 다시 부르지 않는다
 export function useMonitorTraceQuery(traceId) {
   return useQuery({ queryKey: queryKeys.admin.systemMonitor(['trace', traceId]), queryFn: () => fetchMonitorTrace(traceId), enabled: !!traceId, retry: false });
+}
+
+// 장애 분석 리포트 — 폴링 없음(기간을 고를 때만). 조회가 몇 초 걸릴 수 있어 같은 기간은 1분 동안 다시 묻지 않는다
+export function useIncidentReportQuery(range) {
+  return useQuery({
+    queryKey: queryKeys.admin.systemReport(range?.from, range?.to),
+    queryFn: () => fetchIncidentReport(range.from, range.to),
+    enabled: Boolean(range),
+    retry: false,
+    staleTime: 60_000,
+  });
 }

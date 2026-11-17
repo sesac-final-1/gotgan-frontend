@@ -8,7 +8,7 @@ export const SCENARIO_SERVICES = {
   MIXED: ['product-service', 'review-service', 'store-service', 'user-service', 'order-service'],
 };
 
-// 이상 판단 — 에러는 최근 3개 점(약 15초) 중 하나라도 0 보다 크면. 정상이면 0% 가 맞다
+// 이상 판단 — 5xx 건수가 최근 3개 점(약 15초) 중 하나라도 0 보다 크면. 정상이면 0건이 맞다
 export const hasErrors = (points = []) => points.slice(-3).some((p) => p.v > 0);
 
 // 응답 시간 급등 — 마지막 값이 1초를 넘거나, 그 전 값들의 중앙값의 3배 + 200ms 를 넘으면

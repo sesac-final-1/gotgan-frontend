@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { ExternalLink } from 'lucide-react';
 import { Modal } from '@/shared/components/ui';
 
@@ -10,6 +11,7 @@ export default function SystemLinks() {
   const [guideOpen, setGuideOpen] = useState(false);
   return (
     <div className="flex gap-2">
+      <Link to="/admin/system/report" className="btn btn-ink btn-sm">장애 리포트</Link>
       <a href="/" target="_blank" rel="noopener noreferrer" className="btn btn-line btn-sm inline-flex items-center gap-1">
         쇼핑몰 새 창으로 열기 <ExternalLink size={14} aria-hidden="true" />
       </a>
