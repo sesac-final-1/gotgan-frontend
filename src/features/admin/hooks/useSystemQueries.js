@@ -99,6 +99,6 @@ export function useIncidentReportQuery(range) {
   });
 }
 
-// 현재 접속자 — 5초마다 다시 센다(서버는 최근 120초 안에 요청한 사람을 센다)
+// 현재 접속자 — 5초마다 다시 센다(서버는 최근 60초 안에 신호가 있는 사람을 센다)
 export const VISITORS_POLL_MS = 5_000;
 export const useVisitorsQuery = () => useQuery(monitorQuery('visitors', () => fetchMonitorVisitors(), VISITORS_POLL_MS));
