@@ -3,7 +3,7 @@ import { queryKeys } from '@/shared/api/queryKeys';
 import { updateSellerProductStatus, deleteSellerProducts, saveSellerProduct, updateSellerProductStocks, fetchSellerProduct } from '@/features/product/api/productApi';
 import { buildCopyRequest } from '@/features/product/productForm';
 
-// 판매자 상품 변경 — 담당 박지연. 끝나면(일부 실패 포함) 판매자 상품 목록 · 상세를 다시 불러온다
+// 판매자 상품 변경 — 담당 박지연. 끝나면(일부 실패 포함) 판매자 상품 목록, 상세를 다시 불러온다
 
 function useSellerProductMutation(mutationFn) {
   const qc = useQueryClient();

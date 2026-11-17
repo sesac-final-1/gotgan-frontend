@@ -27,11 +27,11 @@ const LIST = {
 };
 const httpError = (status, message) => Object.assign(new Error(String(status)), { response: { status, data: { code: 'X', message } } });
 
-describe('sellerBulk — 일괄 처리 결과 · 탭', () => {
-  it('요약 · 실패 사유 · 탭 ↔ 상태 코드 · 탭 숫자', () => {
+describe('sellerBulk — 일괄 처리 결과, 탭', () => {
+  it('요약, 실패 사유, 탭 ↔ 상태 코드, 탭 숫자', () => {
     expect(bulkSummary('발주확인', { succeeded: [{}, {}], failed: [] })).toBe('2건 발주확인 완료');
-    expect(bulkSummary('발주확인', { succeeded: [{}], failed: [{}] })).toBe('1건 발주확인 완료 · 1건 실패 (표에서 사유 확인)');
-    expect(bulkSummary('발주확인', { succeeded: [], failed: [{}] })).toBe('발주확인하지 못했어요 · 1건 실패 (표에서 사유 확인)');
+    expect(bulkSummary('발주확인', { succeeded: [{}], failed: [{}] })).toBe('1건 발주확인 완료, 1건 실패 (표에서 사유 확인)');
+    expect(bulkSummary('발주확인', { succeeded: [], failed: [{}] })).toBe('발주확인하지 못했어요, 1건 실패 (표에서 사유 확인)');
     expect(failureMap({ failed: [{ orderItemId: 457, message: '이미 처리됨' }] })).toEqual({ 457: '이미 처리됨' });
     expect(statusOfTab('배송중')).toBe('SHIPPING');
     expect(statusOfTab('전체')).toBeNull();
@@ -39,14 +39,14 @@ describe('sellerBulk — 일괄 처리 결과 · 탭', () => {
     expect(tabCounts()).toMatchObject({ 전체: 0, 결제완료: 0 });
   });
 
-  it('송장 요청 — 행마다 택배사(없으면 기본) · 송장번호(비우면 null)', () => {
+  it('송장 요청 — 행마다 택배사(없으면 기본), 송장번호(비우면 null)', () => {
     expect(toShipItems([{ orderItemId: 1 }, { orderItemId: 2 }], { 1: { courier: '롯데택배', trackingNo: ' 2470-1 ' }, 2: { trackingNo: '  ' } }, 'CJ대한통운'))
       .toEqual([{ orderItemId: 1, courier: '롯데택배', trackingNo: '2470-1' }, { orderItemId: 2, courier: 'CJ대한통운', trackingNo: null }]);
   });
 });
 
-describe('판매자 주문 API · 훅', () => {
-  it('목록 · 상세 · 발주확인 · 송장 · 배송완료 경로', async () => {
+describe('판매자 주문 API, 훅', () => {
+  it('목록, 상세, 발주확인, 송장, 배송완료 경로', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: 'ok' } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: 'done' } });
 
@@ -63,7 +63,7 @@ describe('판매자 주문 API · 훅', () => {
     expect(patch).toHaveBeenNthCalledWith(3, '/api/seller/order-items/deliver', { orderItemIds: [456] });
   });
 
-  it('상세는 ID 없으면 부르지 않고, 처리 뒤 판매자 목록 · 상세 전체 무효화', async () => {
+  it('상세는 ID 없으면 부르지 않고, 처리 뒤 판매자 목록, 상세 전체 무효화', async () => {
     const { client, Wrapper } = createWrapper();
     expect(renderHook(() => useSellerOrderItemQuery(undefined), { wrapper: Wrapper }).result.current.fetchStatus).toBe('idle');
 
@@ -84,8 +84,8 @@ function renderAt(path, element, routePath) {
   );
 }
 
-describe('SellerOrderList — 서버 페이징 목록 · 일괄 처리', () => {
-  it('목록 · 탭 숫자 · 탭 전환은 status 로 다시 조회, 발주확인 일부 실패는 그 행에 사유', async () => {
+describe('SellerOrderList — 서버 페이징 목록, 일괄 처리', () => {
+  it('목록, 탭 숫자, 탭 전환은 status 로 다시 조회, 발주확인 일부 실패는 그 행에 사유', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: LIST } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: {
       succeeded: [row(456, 'PREPARING')], failed: [{ orderItemId: 457, code: 'ORDER_INVALID_STATUS', message: '지금 주문 상태에서는 처리할 수 없습니다.' }] } } });
@@ -95,13 +95,13 @@ describe('SellerOrderList — 서버 페이징 목록 · 일괄 처리', () => {
     expect(get).toHaveBeenCalledWith('/api/seller/order-items', { params: { status: undefined, q: undefined, page: 0, size: 20 } });
     expect(within(screen.getByRole('button', { name: /^전체/ })).getByText('4')).toBeInTheDocument();
 
-    // 선택이 바뀌면 행이 다시 그려지므로 매번 다시 찾는다 — 456 · 457 · 458(배송준비 — 발주확인 대상 아님)
+    // 선택이 바뀌면 행이 다시 그려지므로 매번 다시 찾는다 — 456, 457, 458(배송준비 — 발주확인 대상 아님)
     [1, 2, 3].forEach((i) => fireEvent.click(screen.getAllByRole('checkbox')[i]));
     fireEvent.click(screen.getByRole('button', { name: '발주확인' }));
 
     expect(await screen.findByText('처리 실패: 지금 주문 상태에서는 처리할 수 없습니다.')).toBeInTheDocument();
     expect(patch).toHaveBeenCalledWith('/api/seller/order-items/confirm', { orderItemIds: [456, 457] });
-    expect(useToastStore.getState().current.msg).toBe('1건 발주확인 완료 · 1건 실패 (표에서 사유 확인)');
+    expect(useToastStore.getState().current.msg).toBe('1건 발주확인 완료, 1건 실패 (표에서 사유 확인)');
     // 서버 API 가 없는 버튼은 가짜 성공 토스트 대신 빠져 있다
     ['판매취소', '발송지연 안내', /송장 출력/, /엑셀 다운로드/].forEach((name) => expect(screen.queryByRole('button', { name })).not.toBeInTheDocument());
 
@@ -109,7 +109,7 @@ describe('SellerOrderList — 서버 페이징 목록 · 일괄 처리', () => {
     await waitFor(() => expect(get).toHaveBeenCalledWith('/api/seller/order-items', { params: { status: 'PREPARING', q: undefined, page: 0, size: 20 } }));
   });
 
-  it('송장 입력 모달 — 배송준비 행만 택배사 · 송장번호로 발송처리, 배송완료는 배송중 행이 없으면 안내', async () => {
+  it('송장 입력 모달 — 배송준비 행만 택배사, 송장번호로 발송처리, 배송완료는 배송중 행이 없으면 안내', async () => {
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: LIST } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: { succeeded: [row(458, 'SHIPPING')], failed: [] } } });
     renderAt('/seller/orders', <SellerOrderList />, '/seller/orders');
@@ -119,7 +119,7 @@ describe('SellerOrderList — 서버 페이징 목록 · 일괄 처리', () => {
     fireEvent.click(screen.getByRole('button', { name: '배송완료 처리' }));
     expect(useToastStore.getState().current.msg).toBe('배송중 상태의 주문만 배송완료 처리할 수 있어요');
 
-    fireEvent.click(screen.getByRole('button', { name: '송장 입력 · 발송처리' }));
+    fireEvent.click(screen.getByRole('button', { name: '송장 입력, 발송처리' }));
     fireEvent.change(screen.getByPlaceholderText('숫자만 입력 (비우면 자동)'), { target: { value: '651200001234' } });
     fireEvent.click(screen.getByRole('button', { name: '발송처리' }));
 
@@ -158,7 +158,7 @@ describe('SellerOrderDetail — 상태별 단건 처리', () => {
     expect(screen.getByText('주문이 접수되었습니다')).toBeInTheDocument();
   });
 
-  it('동작 없는 버튼 · 고정 수수료 정산액은 보이지 않음 — 정산은 정산 내역으로', async () => {
+  it('동작 없는 버튼, 고정 수수료 정산액은 보이지 않음 — 정산은 정산 내역으로', async () => {
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: row(456, 'PAYMENT_DONE') } });
     renderAt('/seller/orders/456', <SellerOrderDetail />, '/seller/orders/:lineId');
 

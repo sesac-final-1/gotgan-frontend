@@ -18,7 +18,7 @@ describe('format', () => {
     expect(maskName('이도')).toBe('이*');
   });
 
-  it('날짜 · 클래스', () => {
+  it('날짜, 클래스', () => {
     expect(ymd(new Date(2026, 9, 1))).toBe('2026.10.01');
     expect(ymd(null)).toBe('-'); // 한 번도 로그인하지 않은 회원의 최근 접속 — 표 한 칸 때문에 화면이 깨지지 않게
     expect(ymdhm(undefined)).toBe('-');

@@ -1,4 +1,4 @@
-// 입점 신청 · 보완 재제출 화면 공용 부품 — 담당 박지연
+// 입점 신청, 보완 재제출 화면 공용 부품 — 담당 박지연
 import { useRef } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
 import { PRODUCT_PHOTO_MAX } from '@/features/store/constants';
@@ -25,7 +25,7 @@ export function Doc({ type, files, onPick, onClear, current }) {
       <div className={cx('w-10 h-10 flex items-center justify-center shrink-0', done ? 'bg-ink text-white' : 'bg-cream text-mute')}>{done ? <FileText size={18} /> : <Upload size={18} />}</div>
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-semibold">{type.label} <span className="text-point">*</span></div>
-        <div className="text-[12px] text-mute truncate">{done ? list.map((f) => f.name).join(', ') + (type.multiple ? ` · ${list.length}장` : '') : idle}</div>
+        <div className="text-[12px] text-mute truncate">{done ? list.map((f) => f.name).join(', ') + (type.multiple ? `, ${list.length}장` : '') : idle}</div>
       </div>
       <input ref={input} type="file" accept={type.accept} multiple={type.multiple} className="hidden" aria-label={type.label}
         onChange={(e) => { onPick(type.multiple ? [...e.target.files] : e.target.files[0] ?? null); e.target.value = ''; }} />

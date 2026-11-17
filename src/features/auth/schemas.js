@@ -1,4 +1,4 @@
-// 인증 폼 검증 — 담당 이경석 (서버 LoginRequest · SignupRequest 와 같은 규칙. 최종 판단은 서버 · Keycloak)
+// 인증 폼 검증 — 담당 이경석 (서버 LoginRequest, SignupRequest 와 같은 규칙. 최종 판단은 서버, Keycloak)
 import { z } from 'zod';
 
 // 이메일 하나만 — 가입 화면 중복확인 버튼에서도 같은 규칙으로
@@ -10,7 +10,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, '비밀번호를 입력해주세요'),
 });
 
-// 가입 — 비밀번호는 realm 정책과 같게 (8~64자 · 영문 · 특수문자 · 이메일과 다름), 휴대폰은 하이픈 있어도 없어도 됨
+// 가입 — 비밀번호는 realm 정책과 같게 (8~64자, 영문, 특수문자, 이메일과 다름), 휴대폰은 하이픈 있어도 없어도 됨
 export const signupSchema = z.object({
   email,
   password: z.string()

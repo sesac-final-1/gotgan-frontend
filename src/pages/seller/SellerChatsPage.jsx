@@ -2,7 +2,7 @@ import { PageHead } from '@/shared/components/ui';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import OpenChatButton from '@/features/chat/components/OpenChatButton';
 
-// /seller/chats(/:roomId) — 스토어 톡(구매자 문의) · 판매자 운영 상담 (chat.md)
+// /seller/chats(/:roomId) — 스토어 톡(구매자 문의), 판매자 운영 상담 (chat.md)
 export default function SellerChatsPage() {
   return (
     <>

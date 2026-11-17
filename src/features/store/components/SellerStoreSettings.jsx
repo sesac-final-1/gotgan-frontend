@@ -1,4 +1,4 @@
-// 스토어 설정 — 담당 박지연. 계약 backend docs/api/store.md 12 · 13절
+// 스토어 설정 — 담당 박지연. 계약 backend docs/api/store.md 12, 13절
 import { useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { PageHead, StatusPill, KV, Modal } from '@/shared/components/ui';
@@ -40,12 +40,12 @@ function StoreSettingsBody({ s }) {
     });
   };
 
-  // 파일 선택 → 화면 검사(형식 · 10MB) → 발급 · S3 PUT → 키를 폼에(저장을 눌러야 반영). 미리보기는 브라우저 메모리 주소
+  // 파일 선택 → 화면 검사(형식, 10MB) → 발급, S3 PUT → 키를 폼에(저장을 눌러야 반영). 미리보기는 브라우저 메모리 주소
   const pickCover = async (e) => {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    if (!STORE_IMAGE_TYPES.includes(file.type)) return toast('JPG · PNG · WEBP 이미지만 올릴 수 있어요');
+    if (!STORE_IMAGE_TYPES.includes(file.type)) return toast('JPG, PNG, WEBP 이미지만 올릴 수 있어요');
     if (file.size > STORE_IMAGE_MAX_BYTES) return toast('이미지는 10MB 이하만 올릴 수 있어요');
     setUploading(true);
     try {

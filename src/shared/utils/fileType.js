@@ -18,6 +18,6 @@ export async function sniffType(file) {
 /** 실제 형식으로 type 을 바꾼 File (같으면 그대로). 4종이 아니면 올리기 전에 막는다 */
 export async function withRealType(file) {
   const type = await sniffType(file);
-  if (!type) throw new Error(`${file.name} — JPG · PNG · WEBP · PDF 파일만 올릴 수 있어요`);
+  if (!type) throw new Error(`${file.name} — JPG, PNG, WEBP, PDF 파일만 올릴 수 있어요`);
   return type === file.type ? file : new File([file], file.name, { type });
 }

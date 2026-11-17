@@ -1,10 +1,10 @@
-// 내 주문 응답(backend OrderSummaryResponse · OrderDetailResponse) → 화면 표시 — 담당 이경석
+// 내 주문 응답(backend OrderSummaryResponse, OrderDetailResponse) → 화면 표시 — 담당 이경석
 import { CLAIM_REASONS, FLOW, FLOW_STATUS, ITEM_STATUS_LABEL, ORDER_STATUS_LABEL } from '@/features/order/constants';
 
 // 시각은 오프셋 없는 Asia/Seoul LocalDateTime(2026-10-26T12:00:00) — 브라우저 현지 시각으로 읽는다
 export const toDate = (s) => (s ? new Date(s) : null);
 
-// 결제 대기 · 실패 주문의 상품주문은 ORDERED(주문완료)로 남는다 → 주문 상태(결제대기 · 결제실패)로 보여 준다
+// 결제 대기, 실패 주문의 상품주문은 ORDERED(주문완료)로 남는다 → 주문 상태(결제대기, 결제실패)로 보여 준다
 export const lineStatusLabel = (order, item) => ORDER_STATUS_LABEL[order.status] ?? ITEM_STATUS_LABEL[item.status] ?? item.status;
 
 // 주문 목록 기간 탭 — 서버는 전체를 주고 화면이 주문일로 거른다. N개월 = 오늘에서 N달 전 같은 날 0시부터
@@ -26,16 +26,16 @@ export const openClaimCount = (statusCounts = {}) =>
 // 상품주문번호(20261026-000001-01) → 주문번호 — 클레임 신청 경로 /mypage/claim/:lineId 의 lineId 가 상품주문번호
 export const orderNoOf = (itemNo) => itemNo.slice(0, itemNo.lastIndexOf('-'));
 
-// 신청할 수 있는 클레임 — 결제완료: 즉시 취소(CLM-01), 배송완료: 반품 · 교환(7일 이내는 서버가 판단). 배송준비 취소요청(CLM-02)은 아직 서버에 없음
+// 신청할 수 있는 클레임 — 결제완료: 즉시 취소(CLM-01), 배송완료: 반품, 교환(7일 이내는 서버가 판단). 배송준비 취소요청(CLM-02)은 아직 서버에 없음
 export const claimTypesOf = (status) => ({ PAYMENT_DONE: ['CANCEL'], DELIVERED: ['RETURN', 'EXCHANGE'] })[status] ?? [];
 
-// 클레임 접수 결과 안내 — 취소 COMPLETED(환불 끝) · APPROVED(환불 처리 중, 서버가 마저 진행), 반품 · 교환 REQUESTED
+// 클레임 접수 결과 안내 — 취소 COMPLETED(환불 끝), APPROVED(환불 처리 중, 서버가 마저 진행), 반품, 교환 REQUESTED
 export function claimDoneMessage({ type, status }) {
   if (type === 'CANCEL') return status === 'COMPLETED' ? '주문을 취소했어요. 결제 금액은 결제수단으로 돌려드려요.' : '취소를 접수했어요. 환불을 처리하고 있어요.';
   return type === 'RETURN' ? '반품을 신청했어요. 판매자 확인 후 회수해 드려요.' : '교환을 신청했어요. 판매자 확인 후 회수해 드려요.';
 }
 
-// 판매자 귀책 사유 — 반품 배송비 면제 · 사진 필수
+// 판매자 귀책 사유 — 반품 배송비 면제, 사진 필수
 export const isSellerFault = (reasonCode) => CLAIM_REASONS.some((r) => r.code === reasonCode && r.sellerFault);
 
 // 배송 진행 — 상품주문 시각 필드로 최신 단계부터

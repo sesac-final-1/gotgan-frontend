@@ -3,7 +3,7 @@ import { GradeBadge } from '@/shared/components/ui';
 import { cx, won, comma } from '@/shared/utils/format';
 
 const MENU = [
-  ['쇼핑', [['/mypage/orders', '주문 · 배송'], ['/mypage/claims', '취소 · 반품 · 교환'], ['/cart', '장바구니']]],
+  ['쇼핑', [['/mypage/orders', '주문, 배송'], ['/mypage/claims', '취소, 반품, 교환'], ['/cart', '장바구니']]],
   ['활동', [['/mypage/reviews', '리뷰 관리'], ['/mypage/qna', '상품 문의'], ['/mypage/chats', '1:1 채팅']]],
   ['혜택', [['/mypage/points', '포인트']]],
   ['내 정보', [['/mypage/profile', '회원정보 수정'], ['/mypage/addresses', '배송지 관리']]],
@@ -14,8 +14,8 @@ export function MyPageHead({ children, right }) {
   return <div className="flex items-end justify-between border-b border-ink pb-3 mb-5"><h1 className="text-[20px] font-bold">{children}</h1>{right}</div>;
 }
 
-// 마이페이지 레이아웃 — 데이터(회원 · 등급 · 포인트 · 건수)는 props 로 받는다 (shared 는 features 에 의존하지 않음, 연결은 pages/mypage/MyPageRoot.jsx)
-// me: 회원 정보 · gradeLabel: 등급 이름 · next: 다음 등급 { id, min } 또는 null
+// 마이페이지 레이아웃 — 데이터(회원, 등급, 포인트, 건수)는 props 로 받는다 (shared 는 features 에 의존하지 않음, 연결은 pages/mypage/MyPageRoot.jsx)
+// me: 회원 정보, gradeLabel: 등급 이름, next: 다음 등급 { id, min } 또는 null
 export default function MyPageLayout({ me, gradeLabel = '', next = null, pointBalance = 0, todoReviews = 0, openClaims = 0 }) {
   return (
     <div className="max-w-[1280px] mx-auto px-4 md:px-6 pt-8">
@@ -26,7 +26,7 @@ export default function MyPageLayout({ me, gradeLabel = '', next = null, pointBa
             <>
               <img src={me.avatar} data-fallback="avatar" alt="" className="w-16 h-16 rounded-full object-cover" />
               <div>
-                <div className="flex items-center gap-2 text-[13px] text-white/60"><GradeBadge grade={me.grade} dark /> {gradeLabel} 회원 · {next ? `${next.id}까지 ${won(next.min - me.spent)}` : '최고 등급'}</div>
+                <div className="flex items-center gap-2 text-[13px] text-white/60"><GradeBadge grade={me.grade} dark /> {gradeLabel} 회원, {next ? `${next.id}까지 ${won(next.min - me.spent)}` : '최고 등급'}</div>
                 <div className="text-[22px] font-bold mt-0.5">{me.name}님, 반가워요</div>
                 <div className="mt-2 h-1 w-56 bg-white/15"><div className="h-full bg-[#e6c06a]" style={{ width: `${next ? (me.spent / next.min) * 100 : 100}%` }} /></div>
               </div>

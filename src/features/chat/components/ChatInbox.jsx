@@ -6,7 +6,7 @@ import { useChatRoomsQuery } from '@/features/chat/hooks/useChatQueries';
 import ChatRoomPanel from '@/features/chat/components/ChatRoomPanel';
 import { ROOM_TYPE_LABEL } from '@/features/chat/utils/chatView';
 
-// 화면마다 보는 방 종류 탭 — 구매자: 스토어 톡 · 고객센터 / 판매자: 스토어 톡 · 운영 상담 / 관리자: 상담방 2종 (+ 처리 대기)
+// 화면마다 보는 방 종류 탭 — 구매자: 스토어 톡, 고객센터 / 판매자: 스토어 톡, 운영 상담 / 관리자: 상담방 2종 (+ 처리 대기)
 const TABS = {
   buyer: [['전체', {}], ['스토어 톡', { type: 'STORE_INQUIRY' }], ['고객센터', { type: 'BUYER_SUPPORT' }]],
   seller: [['전체', {}], ['스토어 톡', { type: 'STORE_INQUIRY' }], ['운영 상담', { type: 'SELLER_SUPPORT' }]],
@@ -14,7 +14,7 @@ const TABS = {
 };
 const when = (d) => (d ? d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }) : '');
 
-/** 채팅함 — 왼쪽 방 목록 · 오른쪽 열린 방(/…/chats/:roomId). 좁은 화면은 하나씩 */
+/** 채팅함 — 왼쪽 방 목록, 오른쪽 열린 방(/…/chats/:roomId). 좁은 화면은 하나씩 */
 export default function ChatInbox({ kind, basePath }) {
   const { roomId } = useParams();
   const navigate = useNavigate();

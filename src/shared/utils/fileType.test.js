@@ -7,7 +7,7 @@ const WEBP = [...'RIFF'].map((c) => c.charCodeAt(0)).concat([0, 0, 0, 0], [...'W
 const file = (bytes, name, type) => new File([new Uint8Array(bytes)], name, { type });
 
 describe('sniffType', () => {
-  it('앞 바이트로 jpeg · png · webp · pdf 를 알아본다', async () => {
+  it('앞 바이트로 jpeg, png, webp, pdf 를 알아본다', async () => {
     expect(await sniffType(file(JPG, 'a.jpg', 'image/jpeg'))).toBe('image/jpeg');
     expect(await sniffType(file(PNG, 'a.png', 'image/png'))).toBe('image/png');
     expect(await sniffType(file(WEBP, 'a.webp', 'image/webp'))).toBe('image/webp');

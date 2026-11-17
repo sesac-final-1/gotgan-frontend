@@ -31,7 +31,7 @@ export function resetChatSocket() {
 
 /**
  * 열린 방의 실시간 — 화면에 있는 동안만 구독하고 떠나면 해제(연결 정리는 chatSocket).
- * 새 메시지는 목록 맨 앞에 넣고, 다시 연결되면 REST 로 빈 곳을 채운다. 상대 읽음 위치(READ) · 상대 입력 중(TYPING)을 돌려준다
+ * 새 메시지는 목록 맨 앞에 넣고, 다시 연결되면 REST 로 빈 곳을 채운다. 상대 읽음 위치(READ), 상대 입력 중(TYPING)을 돌려준다
  */
 export function useChatRoomSocket(roomId, side) {
   const queryClient = useQueryClient();

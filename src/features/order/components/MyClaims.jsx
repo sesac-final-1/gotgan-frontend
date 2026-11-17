@@ -1,4 +1,4 @@
-// 마이페이지 클레임 내역 — 담당 이경석 (GET /api/claims). 전체 1회 로드 후 화면에서 유형 탭 · 검색 · 정렬 · 페이징 (컨벤션 4-7)
+// 마이페이지 클레임 내역 — 담당 이경석 (GET /api/claims). 전체 1회 로드 후 화면에서 유형 탭, 검색, 정렬, 페이징 (컨벤션 4-7)
 // 목업의 행 펼침(상세) 은 DataTable 에 펼침 행이 없어 같은 내용을 모달로 띄운다
 import { useMemo, useState } from 'react';
 import { StatusPill, Segments, Modal } from '@/shared/components/ui';
@@ -69,17 +69,17 @@ export default function MyClaims() {
 
   return (
     <div>
-      <MyPageHead>취소 · 반품 · 교환</MyPageHead>
+      <MyPageHead>취소, 반품, 교환</MyPageHead>
       <div className="mb-4 flex flex-wrap gap-3 items-center">
         <Segments items={TYPES} value={type} onChange={setType} counts={counts} />
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="상품 · 옵션 · 사유" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="상품, 옵션, 사유" className="ml-auto" />
       </div>
       <DataTable table={table} loading={isLoading} error={isError} empty="신청한 클레임이 없어요" />
       <div className="mt-6 bg-cream p-5 text-[13px] text-ink-2 leading-relaxed">
         <b className="text-ink">처리 안내</b><br />
-        · 결제완료 상태: 즉시 취소<br />
-        · 반품/교환: 배송완료 후 7일 이내 신청 가능 · 구매확정 후에는 신청 불가 · 판매자 승인 → 회수 → 환불(반품) · 재배송(교환)<br />
-        · 취소 · 반품 완료 시 그 상품주문분 사용 포인트는 환원됩니다. (적립은 구매확정 때라 회수할 적립 포인트가 없어요)
+        - 결제완료 상태: 즉시 취소<br />
+        - 반품/교환: 배송완료 후 7일 이내 신청 가능, 구매확정 후에는 신청 불가, 판매자 승인 → 회수 → 환불(반품), 재배송(교환)<br />
+        - 취소, 반품 완료 시 그 상품주문분 사용 포인트는 환원됩니다. (적립은 구매확정 때라 회수할 적립 포인트가 없어요)
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)} title={open ? `${CLAIM_TYPE_LABEL[open.type]} 상세` : ''} width={560}
@@ -91,7 +91,7 @@ export default function MyClaims() {
           <div className="space-y-4">
             <div className="text-[13px] space-y-1.5">
               <div><span className="text-mute w-24 inline-block">상품주문번호</span><span className="num">{open.itemNo}</span></div>
-              <div><span className="text-mute w-24 inline-block">사유</span>{reasonLabel(open.reasonCode)}{open.reasonDetail && ` · ${open.reasonDetail}`}</div>
+              <div><span className="text-mute w-24 inline-block">사유</span>{reasonLabel(open.reasonCode)}{open.reasonDetail && `, ${open.reasonDetail}`}</div>
               <div><span className="text-mute w-24 inline-block">신청일</span><span className="num">{ymd(toDate(open.requestedAt))}</span></div>
               <div><span className="text-mute w-24 inline-block">처리 상태</span>{claimProgress(open)}</div>
               {open.type === 'EXCHANGE' && open.trackingNo && <div><span className="text-mute w-24 inline-block">재배송</span><span className="num">{open.courier} {open.trackingNo}</span></div>}

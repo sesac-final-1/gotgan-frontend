@@ -29,7 +29,7 @@ const COLUMNS = [
   { accessorKey: 'status', header: '상태', cell: ({ getValue }) => <StatusPill s={getValue()} /> },
 ];
 
-// 스토어 목록 — 전체 1회 로드 후 화면에서 탭 · 검색 · 정렬 · 페이징 (컨벤션 4-7). 폐점은 '전체' 에만
+// 스토어 목록 — 전체 1회 로드 후 화면에서 탭, 검색, 정렬, 페이징 (컨벤션 4-7). 폐점은 '전체' 에만
 export default function StoreList() {
   const [tab, setTab] = useState('전체');
   const { data: stores = [], isLoading, isError } = useAdminStoreListQuery();
@@ -43,10 +43,10 @@ export default function StoreList() {
 
   return (
     <div>
-      <PageHead title="스토어 관리" desc="입점 승인된 스토어 목록 · 등급은 최근 3개월 거래액과 페널티 점수로 매월 1일 갱신" />
+      <PageHead title="스토어 관리" desc="입점 승인된 스토어 목록, 등급은 최근 3개월 거래액과 페널티 점수로 매월 1일 갱신" />
       <div className="flex flex-wrap gap-3 items-center">
         <Segments items={TABS} value={tab} onChange={setTab} counts={counts} />
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="스토어명 · 대표자 · 사업자번호" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="스토어명, 대표자, 사업자번호" className="ml-auto" />
       </div>
       <div className="mt-3">
         <DataTable table={table} loading={isLoading} error={isError} />

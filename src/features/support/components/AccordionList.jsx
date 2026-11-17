@@ -1,4 +1,4 @@
-// 펼치기 목록 — 공지사항 · 자주 묻는 질문 공용 (고객센터 FAQ 목록과 같은 모양). items: [{ key, side, title, body }]
+// 펼치기 목록 — 공지사항, 자주 묻는 질문 공용 (고객센터 FAQ 목록과 같은 모양). items: [{ key, side, title, body }]
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cx } from '@/shared/utils/format';

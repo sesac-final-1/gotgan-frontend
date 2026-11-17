@@ -5,7 +5,7 @@ import {
   changeChatStatus, fetchChatMessages, fetchChatRooms, fetchChatUnreadCount, openChatRoom, PAGE_SIZE, readChatRoom,
 } from '@/features/chat/api/chatApi';
 
-// 채팅 조회 · 변경 훅 — 담당 구지훈. 실시간 반영은 useChatRoomSocket, 다른 방 소식은 알림 SSE(CHAT_MESSAGE)가 chat 키를 무효화
+// 채팅 조회, 변경 훅 — 담당 구지훈. 실시간 반영은 useChatRoomSocket, 다른 방 소식은 알림 SSE(CHAT_MESSAGE)가 chat 키를 무효화
 
 export function useChatRoomsQuery(filter) {
   const loggedIn = useAuthStore((s) => !!s.user);
@@ -36,7 +36,7 @@ export function useOpenChatMutation() {
   });
 }
 
-/** 읽음 — 목록 · 배지 숫자만 새로 (메시지는 그대로) */
+/** 읽음 — 목록, 배지 숫자만 새로 (메시지는 그대로) */
 export function useReadChatMutation() {
   const queryClient = useQueryClient();
   return useMutation({

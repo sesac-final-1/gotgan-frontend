@@ -1,4 +1,4 @@
-// 마이페이지 배송지 관리 — 담당 이경석. 카드형 목록 · 등록 / 수정 / 삭제 / 기본 지정 (최대 5개)
+// 마이페이지 배송지 관리 — 담당 이경석. 카드형 목록, 등록 / 수정 / 삭제 / 기본 지정 (최대 5개)
 import { useState } from 'react';
 import { Modal, Checkbox } from '@/shared/components/ui';
 import { PostcodeSearch } from '@/shared/components/common/PostcodeSearch';
@@ -18,7 +18,7 @@ const EMPTY = { label: '', name: '', phone: '', zip: '', addr: '', detail: '', m
 
 export default function MyAddresses() {
   const { data: addresses = [], isLoading, isError } = useMyAddressesQuery();
-  const [editing, setEditing] = useState(null); // null · { mode: 'create' } · { mode: 'edit', address }
+  const [editing, setEditing] = useState(null); // null, { mode: 'create' }, { mode: 'edit', address }
   const [deleting, setDeleting] = useState(null);
   const setDefault = useSetDefaultAddressMutation();
   const full = addresses.length >= MAX_ADDRESSES;
@@ -42,7 +42,7 @@ export default function MyAddresses() {
         {addresses.map((a) => (
           <div key={a.id} className="border border-line p-5 flex justify-between gap-4 text-[13px]">
             <div>
-              <div className="font-bold text-[14px]">{a.label} · {a.name} {a.main && <span className="text-point text-[11px] ml-1">기본배송지</span>}</div>
+              <div className="font-bold text-[14px]">{a.label}, {a.name} {a.main && <span className="text-point text-[11px] ml-1">기본배송지</span>}</div>
               <div className="text-ink-2 mt-1">{a.phone}</div><div className="text-ink-2">({a.zip}) {a.addr} {a.detail}</div>
             </div>
             <div className="flex gap-1.5 items-start shrink-0">
@@ -60,12 +60,12 @@ export default function MyAddresses() {
   );
 }
 
-// 등록 · 수정 — 같은 폼. 우편번호 · 기본 주소는 주소 검색으로만 채운다
+// 등록, 수정 — 같은 폼. 우편번호, 기본 주소는 주소 검색으로만 채운다
 // 등록은 연락처를 내 회원정보 휴대폰으로 미리 채운다 (수정 가능, 소셜 가입처럼 비어 있으면 빈 칸)
 // 주문서도 이 폼으로 바로 등록한다 — onSaved(저장된 배송지)로 새 배송지를 고른다
 export function AddressFormModal({ address, onClose, onSaved }) {
   const editMode = !!address;
-  const { data: me } = useMeQuery(); // 마이페이지 레이아웃 · 주문서가 미리 불러와 캐시에 있음
+  const { data: me } = useMeQuery(); // 마이페이지 레이아웃, 주문서가 미리 불러와 캐시에 있음
   const [form, setForm] = useState(() => (address
     ? { ...EMPTY, ...address, detail: address.detail ?? '' }
     : { ...EMPTY, phone: me?.phone ?? '' }));

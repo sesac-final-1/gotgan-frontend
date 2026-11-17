@@ -1,4 +1,4 @@
-// 우편번호 검색창 — 모달 · 폼 안에 펼쳐 넣는다(embed). 팝업 창은 모바일에서 새 창이 떠 쓰지 않음
+// 우편번호 검색창 — 모달, 폼 안에 펼쳐 넣는다(embed). 팝업 창은 모바일에서 새 창이 떠 쓰지 않음
 // onSelect({ zip, addr }) 로 결과를 돌려주고, 닫기는 부르는 쪽이 정한다
 import { useEffect, useRef, useState } from 'react';
 import { loadPostcode, toPostcodeAddress } from '@/shared/utils/postcode';

@@ -21,7 +21,7 @@ export const initialSettings = (s) => ({
   dispatchNote: s.dispatch,
 });
 
-const PHONE = /^0\d{1,2}-\d{3,4}-\d{4}$/; // 휴대 · 지역 · 070
+const PHONE = /^0\d{1,2}-\d{3,4}-\d{4}$/; // 휴대, 지역, 070
 
 // 기본 배송비 0원 = 모든 주문 무료배송 — 이때 무료배송 기준은 의미가 없어 보내지 않는다(null).
 // 기준이 남아 있으면 order 장바구니가 "무료배송까지 N원 더 담기"를 엉뚱하게 보여 줌(amountToFree 가 기준만 봄)

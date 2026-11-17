@@ -29,7 +29,7 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
-// GET — 요약 · 포토 줄(photoOnly) · 목록을 URL · 파라미터로 나눠 돌려준다
+// GET — 요약, 포토 줄(photoOnly), 목록을 URL, 파라미터로 나눠 돌려준다
 function renderReviews({ list = [REVIEW, PLAIN], photo = [REVIEW], totalPages = 1, p = P, fail = false } = {}) {
   const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (url, { params }) => {
     if (fail && url === '/api/reviews') throw new Error('500');
@@ -46,7 +46,7 @@ function renderReviews({ list = [REVIEW, PLAIN], photo = [REVIEW], totalPages = 
 const lastListParams = (get) => get.mock.calls.filter(([url, opts]) => url === '/api/reviews' && 'rating' in opts.params).at(-1)[1].params;
 
 describe('상품 리뷰 API', () => {
-  it('숫자 상품 id — 실제 API 경로 · 응답을 화면 필드로', async () => {
+  it('숫자 상품 id — 실제 API 경로, 응답을 화면 필드로', async () => {
     const get = vi.spyOn(axiosInstance, 'get')
       .mockResolvedValueOnce({ data: { data: page([REVIEW, PLAIN]) } })
       .mockResolvedValueOnce({ data: { data: SUMMARY } });
@@ -67,7 +67,7 @@ describe('상품 리뷰 API', () => {
 });
 
 describe('상품 상세 리뷰 영역', () => {
-  it('요약 · 사이즈 · 포토 줄 · 목록(작성자 · 옵션 · 사이즈 · 사진 · 판매자 답글), 도움돼요 없음', async () => {
+  it('요약, 사이즈, 포토 줄, 목록(작성자, 옵션, 사이즈, 사진, 판매자 답글), 도움돼요 없음', async () => {
     renderReviews();
     expect(await screen.findByText('곳간러버', { selector: 'div' })).toBeInTheDocument();
     expect(screen.getByText('4.5')).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe('상품 상세 리뷰 영역', () => {
     expect(screen.queryByText(/도움/)).toBeNull();
   });
 
-  it('별점 · 포토만 · 정렬 · 페이지 → 서버 파라미터, 바꾸면 1페이지로', async () => {
+  it('별점, 포토만, 정렬, 페이지 → 서버 파라미터, 바꾸면 1페이지로', async () => {
     const get = renderReviews({ totalPages: 3 });
     await screen.findByText('그냥 그래요');
     expect(lastListParams(get)).toEqual({ productId: '101', rating: undefined, photoOnly: false, sort: 'LATEST', page: 0, size: 10 });
@@ -101,7 +101,7 @@ describe('상품 상세 리뷰 영역', () => {
     await waitFor(() => expect(lastListParams(get)).toMatchObject({ photoOnly: true, sort: 'RATING_LOW' }));
   });
 
-  it('빈 목록 · 조건 빈 목록 · 오류 안내, 패션이 아니면 사이즈 칸 없음(고정 문구도 없음)', async () => {
+  it('빈 목록, 조건 빈 목록, 오류 안내, 패션이 아니면 사이즈 칸 없음(고정 문구도 없음)', async () => {
     renderReviews({ list: [], photo: [], p: { id: '101', cat: 'food' } });
     expect(await screen.findByText('아직 작성된 리뷰가 없어요')).toBeInTheDocument();
     expect(screen.queryByText('사이즈')).toBeNull();
@@ -139,7 +139,7 @@ describe('상품 리뷰 신고 (REV-12)', () => {
     expect(screen.getAllByRole('button', { name: '신고' })).toHaveLength(1);
   });
 
-  it('비로그인 · 판매자에게는 신고 버튼이 없다', async () => {
+  it('비로그인, 판매자에게는 신고 버튼이 없다', async () => {
     renderReviews();
     expect(await screen.findByText('곳간러버')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '신고' })).not.toBeInTheDocument();

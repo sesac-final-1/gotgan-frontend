@@ -16,7 +16,7 @@ import { cx, comma, ymd } from '@/shared/utils/format';
 
 const EMPTY = [];
 
-// /store/:id — 스토어 한 건을 id 또는 스토어 주소 slug 로 조회(store.md 14-2 · 14-3). 주소의 값은 문자열이라 목록에서 숫자 id 와 비교하지 않는다
+// /store/:id — 스토어 한 건을 id 또는 스토어 주소 slug 로 조회(store.md 14-2, 14-3). 주소의 값은 문자열이라 목록에서 숫자 id 와 비교하지 않는다
 export default function ShopStoreHome() {
   const { id } = useParams();
   const { data: s, isLoading, isError, error } = useStoreQuery(id);
@@ -86,7 +86,7 @@ function StoreBody({ s }) {
           {[
             ['배송', shippingText(s)],
             ['출고', s.dispatch || '-'],
-            ['판매자 정보', [s.owner, s.bizNo && `사업자 ${s.bizNo}`, s.phone].filter(Boolean).join(' · ')],
+            ['판매자 정보', [s.owner, s.bizNo && `사업자 ${s.bizNo}`, s.phone].filter(Boolean).join(', ')],
           ].map(([k, v]) => <div key={k} className="bg-white p-5"><div className="eyebrow mb-1.5">{k}</div>{v}</div>)}
         </div>
       </div>

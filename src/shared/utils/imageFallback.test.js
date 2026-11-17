@@ -22,7 +22,7 @@ describe('이미지 대체', () => {
     },
   );
 
-  it('모르는 카테고리 · 속성 없음 → 기본 이미지', () => {
+  it('모르는 카테고리, 속성 없음 → 기본 이미지', () => {
     expect(fallbackSrc({ cat: '99' })).toBe('/images/fallback/default.svg');
     expect(fallbackSrc()).toBe('/images/fallback/default.svg');
   });
@@ -34,7 +34,7 @@ describe('이미지 대체', () => {
     expect(el.hasAttribute('srcset')).toBe(false);
   });
 
-  it('스토어 · 프로필은 종류 속성으로 고른다', () => {
+  it('스토어, 프로필은 종류 속성으로 고른다', () => {
     const store = img({ 'data-fallback': 'store' });
     const avatar = img({ 'data-fallback': 'avatar' });
     fail(store);

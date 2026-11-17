@@ -9,7 +9,7 @@ import SystemVisitors from '@/features/admin/components/SystemVisitors';
 import { failureCauses, progress } from '@/features/admin/loadTest';
 import { useToastStore } from '@/shared/stores/toastStore';
 
-// 관리자 화면 부하테스트 — 계약 backend admin.md 8절. 서버를 흉내 내는 작은 상태 하나로 시작 · 조절 · 중지 · 계정 준비를 확인한다
+// 관리자 화면 부하테스트 — 계약 backend admin.md 8절. 서버를 흉내 내는 작은 상태 하나로 시작, 조절, 중지, 계정 준비를 확인한다
 const URL = '/api/admin/system/loadtest';
 
 // 시나리오는 화면(SystemDashboard)이 들고 있다 — 테스트에서도 같은 방식으로
@@ -46,7 +46,7 @@ function stubServer() {
 describe('부하테스트 API', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('조회 · 시작 · 변경 · 중지 · 계정 준비 경로와 본문', async () => {
+  it('조회, 시작, 변경, 중지, 계정 준비 경로와 본문', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { enabled: true } } });
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { id: 'lt-1' } } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: null } });
@@ -80,7 +80,7 @@ describe('부하테스트 패널', () => {
   };
   const lastToast = () => useToastStore.getState().current?.msg;
 
-  it('시작하면 고른 시나리오 · 사용자 수 · 시간으로 보내고 실행 중 그래프를 보여 준다', async () => {
+  it('시작하면 고른 시나리오, 사용자 수, 시간으로 보내고 실행 중 그래프를 보여 준다', async () => {
     renderPanel();
     fireEvent.change(await screen.findByRole('combobox', { name: '시나리오' }), { target: { value: 'REVIEWS' } });
     fireEvent.change(screen.getByRole('combobox', { name: '최대 시간' }), { target: { value: '180' } });

@@ -22,7 +22,7 @@ function renderWith(tree) {
 }
 
 describe('카테고리 수수료 — 상품 수', () => {
-  it('상위 · 하위 상품 수를 카테고리 트리 값으로, 값이 없는 하위는 -, 스토어 칸 없음', async () => {
+  it('상위, 하위 상품 수를 카테고리 트리 값으로, 값이 없는 하위는 -, 스토어 칸 없음', async () => {
     renderWith([{ id: 1, name: '식품', nameEn: 'Food', sortOrder: 1, active: true, productCount: 12,
       children: [{ id: 101, name: '과일', productCount: 7 }, { id: 102, name: '채소' }] }]);
 

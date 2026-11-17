@@ -8,7 +8,7 @@ import {
 import { formatClock, hasErrors, isLatencySpike, isServerError } from '@/features/admin/monitor';
 
 // 실시간 모니터링(11/16 피드백) — 담당 구지훈. 부하테스트와 상관없이 실제 트래픽을 항상 보여 준다(계약 backend admin.md 9절).
-// 그래프는 서버 지표(5초 수집), 호출 · 장애는 원본 데이터라 1초마다 바로 반응. 에러가 하나라도 있거나 응답이 치솟으면 빨간 배경
+// 그래프는 서버 지표(5초 수집), 호출, 장애는 원본 데이터라 1초마다 바로 반응. 에러가 하나라도 있거나 응답이 치솟으면 빨간 배경
 const TABS = [
   { key: 'overview', label: '총 현황' },
   { key: 'services', label: '서비스별' },
@@ -42,9 +42,9 @@ function OverviewTab({ overview }) {
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
       <SeriesCharts series={overview?.total} />
       <div className={`border px-3 py-2 ${pending > 0 ? 'border-rust bg-rust-soft' : 'border-line bg-paper'}`} aria-label="DB 연결">
-        <span className={`text-sm ${pending > 0 ? 'text-rust font-bold' : 'text-mute'}`}>DB 연결 (전체){pending > 0 ? ' · 대기 발생' : ''}</span>
+        <span className={`text-sm ${pending > 0 ? 'text-rust font-bold' : 'text-mute'}`}>DB 연결 (전체){pending > 0 ? ', 대기 발생' : ''}</span>
         <p className="text-xl font-bold tabular-nums mt-1">{active} / {max}</p>
-        <p className="text-sm text-mute">사용 중 / 최대 · 대기 {pending}</p>
+        <p className="text-sm text-mute">사용 중 / 최대, 대기 {pending}</p>
       </div>
     </div>
   );
@@ -60,7 +60,7 @@ function ServicesTab({ overview }) {
             <div className="flex items-center justify-between mb-1">
               <b className={`text-lg ${bad ? 'text-rust' : ''}`}>{serviceShortName(s.name)}</b>
               <span className="text-sm text-mute">
-                {s.db ? `DB ${s.db.active}/${s.db.max}${s.db.pending ? ` · 대기 ${s.db.pending}` : ''}` : 'DB 없음'}
+                {s.db ? `DB ${s.db.active}/${s.db.max}${s.db.pending ? `, 대기 ${s.db.pending}` : ''}` : 'DB 없음'}
               </span>
             </div>
             <div className="grid grid-cols-3 gap-1"><SeriesCharts series={s.series} compact /></div>
@@ -139,7 +139,7 @@ function SummaryTab() {
           <ol className="grid gap-1 text-sm">
             {data.topErrors.map((e) => (
               <li key={`${e.service}-${e.api}-${e.status}`} className="flex justify-between gap-2 text-rust font-bold">
-                <span className="break-all">{serviceShortName(e.service)} · {e.api} · {e.status}</span><span className="tabular-nums">{e.count}건</span>
+                <span className="break-all">{serviceShortName(e.service)}, {e.api}, {e.status}</span><span className="tabular-nums">{e.count}건</span>
               </li>
             ))}
           </ol>
@@ -151,7 +151,7 @@ function SummaryTab() {
           <ol className="grid gap-1 text-sm">
             {data.slowest.map((s) => (
               <li key={`${s.service}-${s.api}`} className="flex justify-between gap-2">
-                <span className="break-all">{serviceShortName(s.service)} · {s.api}</span><span className="tabular-nums">{s.avgMs}ms</span>
+                <span className="break-all">{serviceShortName(s.service)}, {s.api}</span><span className="tabular-nums">{s.avgMs}ms</span>
               </li>
             ))}
           </ol>
@@ -186,7 +186,7 @@ export default function SystemMonitorPanel() {
     <section aria-label="실시간 모니터링" className="panel">
       <div className="panel-head">
         <h2 className="panel-title">실시간 모니터링 {alerting && <span className="ml-2 px-2 py-0.5 text-sm bg-rust text-white">장애 감지</span>}</h2>
-        <span className="text-sm text-mute">실제 트래픽 기준 · 그래프 5초 · 호출 / 장애 1초</span>
+        <span className="text-sm text-mute">실제 트래픽 기준, 그래프 5초, 호출 / 장애 1초</span>
       </div>
       <div role="tablist" className="flex gap-5 px-5 border-b border-line">
         {TABS.map((t) => (

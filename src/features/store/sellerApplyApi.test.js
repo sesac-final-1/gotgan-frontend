@@ -18,7 +18,7 @@ const ME = {
 const file = (name, type, size = 1000) => fileOf(name, type, size);
 
 describe('fetchMyApplication — GET /api/seller/apply/me', () => {
-  it('신청한 적 없으면 null, 있으면 시각은 Date · 빈 사유 · 요청 서류는 배열', async () => {
+  it('신청한 적 없으면 null, 있으면 시각은 Date, 빈 사유, 요청 서류는 배열', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValueOnce({ data: { data: null } }).mockResolvedValueOnce({ data: { data: ME } });
 
     expect(await fetchMyApplication()).toBeNull();
@@ -33,7 +33,7 @@ describe('fetchMyApplication — GET /api/seller/apply/me', () => {
     expect(me.history[1].changedAt).toEqual(new Date('2026-10-23T01:00:00Z'));
   });
 
-  it('옛 보완요청(requestedDocs null) · 사유 null 은 빈 값으로', () => {
+  it('옛 보완요청(requestedDocs null), 사유 null 은 빈 값으로', () => {
     expect(toMyApplication({ ...ME, status: 'PENDING', statusReason: null, requestedDocs: null, history: null }))
       .toMatchObject({ statusReason: '', requestedDocs: [], history: [] });
   });
@@ -95,7 +95,7 @@ describe('applySeller — 서류 올린 뒤 POST /api/seller/apply', () => {
   });
 });
 
-describe('submitted · resubmitApplication — 보완 재제출 (2-2 · 2-3절)', () => {
+describe('submitted, resubmitApplication — 보완 재제출 (2-2, 2-3절)', () => {
   it('submitted 의 서류 올린 시각은 Date, submitted 가 없으면 null', () => {
     const me = toMyApplication({ ...ME, submitted: { companyName: '곳간상회', documents: [{ docType: 'ECOMMERCE_REG', originalName: 'old.pdf', uploadedAt: '2026-10-22T14:05:11+09:00' }] } });
     expect(me.submitted.companyName).toBe('곳간상회');

@@ -1,4 +1,4 @@
-// 판매자 상품 등록 / 수정 — 담당 박지연. 계약 backend docs/api/product.md 12 · 13 · 16 · 17절
+// 판매자 상품 등록 / 수정 — 담당 박지연. 계약 backend docs/api/product.md 12, 13, 16, 17절
 import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { X, ImagePlus } from 'lucide-react';
@@ -33,7 +33,7 @@ function Row({ label, req, children }) {
 const digits = (v) => Number(v.replace(/\D/g, ''));
 const errorMessage = (err, fallback) => err?.response?.data?.message ?? err?.message ?? fallback;
 
-// /seller/products/new · /seller/products/:id/edit — 데이터가 모두 온 뒤 폼을 그린다 (초기값이 훅 데이터라서)
+// /seller/products/new, /seller/products/:id/edit — 데이터가 모두 온 뒤 폼을 그린다 (초기값이 훅 데이터라서)
 export default function SellerProductForm() {
   const { id } = useParams();
   const { data: src, isLoading: pLoading, isError } = useSellerProductQuery(id);
@@ -63,13 +63,13 @@ function FormBody({ src, categories, storeName }) {
   const setGroup = (i, patch) => set({ groups: f.groups.map((g, k) => (k === i ? { ...g, ...patch } : g)) });
   const setRow = (values, patch) => set({ rows: { ...f.rows, [comboKey(values)]: { ...rowOf(f.rows, values), ...patch } } });
 
-  // 파일 선택 → 화면 검사(개수 · 형식 · 10MB) → 발급 · S3 PUT → 키를 폼에. 미리보기는 브라우저 메모리 주소
+  // 파일 선택 → 화면 검사(개수, 형식, 10MB) → 발급, S3 PUT → 키를 폼에. 미리보기는 브라우저 메모리 주소
   const addImages = async (e) => {
     const files = [...e.target.files];
     e.target.value = '';
     if (!files.length) return;
     if (f.images.length + files.length > MAX_IMAGES) return toast(`이미지는 ${MAX_IMAGES}장까지 올릴 수 있어요`);
-    if (files.some((x) => !PRODUCT_IMAGE_TYPES.includes(x.type))) return toast('JPG · PNG · WEBP 이미지만 올릴 수 있어요');
+    if (files.some((x) => !PRODUCT_IMAGE_TYPES.includes(x.type))) return toast('JPG, PNG, WEBP 이미지만 올릴 수 있어요');
     if (files.some((x) => x.size > PRODUCT_IMAGE_MAX_BYTES)) return toast('이미지는 한 장에 10MB 이하만 올릴 수 있어요');
     setUploading(true);
     try {
@@ -105,7 +105,7 @@ function FormBody({ src, categories, storeName }) {
       <PageHead crumbs="상품 > 상품 조회/수정" title={edit ? '상품 수정' : '상품 등록'} desc={edit ? `상품번호 ${src.id}` : '필수 항목(*)을 모두 입력하면 바로 판매가 시작됩니다.'} />
       <div className="grid xl:grid-cols-[1fr_320px] gap-4">
         <div className="space-y-4 min-w-0">
-          <Block title="카테고리 · 상품명">
+          <Block title="카테고리, 상품명">
             <Row label="카테고리" req>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -123,10 +123,10 @@ function FormBody({ src, categories, storeName }) {
                   </select>
                 </div>
               </div>
-              <p className="text-[12px] text-mute mt-1.5">카테고리는 운영자가 등록한 목록에서만 선택할 수 있어요 · 판매수수료는 카테고리별로 정산 때 적용돼요</p>
+              <p className="text-[12px] text-mute mt-1.5">카테고리는 운영자가 등록한 목록에서만 선택할 수 있어요, 판매수수료는 카테고리별로 정산 때 적용돼요</p>
             </Row>
             <Row label="상품명" req>
-              <input value={f.name} onChange={(e) => set({ name: e.target.value })} maxLength={100} className="field" placeholder="브랜드명 · 핵심 소재 · 상품 종류 순으로 작성하면 검색에 유리해요" />
+              <input value={f.name} onChange={(e) => set({ name: e.target.value })} maxLength={100} className="field" placeholder="브랜드명, 핵심 소재, 상품 종류 순으로 작성하면 검색에 유리해요" />
               <div className="text-right text-[11.5px] text-mute mt-1 num">{f.name.length}/100</div>
             </Row>
           </Block>
@@ -140,7 +140,7 @@ function FormBody({ src, categories, storeName }) {
             </Row>
           </Block>
 
-          <Block title="옵션 · 재고" desc="옵션은 최대 2개, 옵션값은 쉼표(,)로 구분하세요. 옵션이 없으면 비워 두고 재고만 입력하세요.">
+          <Block title="옵션, 재고" desc="옵션은 최대 2개, 옵션값은 쉼표(,)로 구분하세요. 옵션이 없으면 비워 두고 재고만 입력하세요.">
             {f.groups.map((g, i) => (
               <div key={i} className="grid grid-cols-[120px_1fr_36px] gap-2">
                 <input value={g.name} onChange={(e) => setGroup(i, { name: e.target.value })} maxLength={30} className="field" placeholder="옵션명" />
@@ -172,7 +172,7 @@ function FormBody({ src, categories, storeName }) {
             {edit && <p className="text-[12px] text-mute">저장된 조합의 재고는 상품 목록의 재고 수정에서 바꿔요. 판매 체크를 풀면 그 조합은 삭제돼요(지난 주문은 그대로).</p>}
           </Block>
 
-          <Block title="상품 이미지" desc={`최대 ${MAX_IMAGES}장 · JPG · PNG · WEBP · 한 장 10MB 이하 · 1000×1250px 이상 권장 · 첫 번째 이미지가 대표 이미지`}>
+          <Block title="상품 이미지" desc={`최대 ${MAX_IMAGES}장, JPG, PNG, WEBP, 한 장 10MB 이하, 1000×1250px 이상 권장, 첫 번째 이미지가 대표 이미지`}>
             <div className="flex flex-wrap gap-2">
               {f.images.map((img, i) => (
                 <div key={img.key} className="relative w-24 h-28">
@@ -192,12 +192,12 @@ function FormBody({ src, categories, storeName }) {
             </div>
           </Block>
 
-          <Block title="상세 설명" desc="HTML 로 작성할 수 있어요(최대 10,000자). 스크립트 · 스타일 같은 위험한 태그는 저장할 때 지워져요.">
+          <Block title="상세 설명" desc="HTML 로 작성할 수 있어요(최대 10,000자). 스크립트, 스타일 같은 위험한 태그는 저장할 때 지워져요.">
             <textarea value={f.description} onChange={(e) => set({ description: e.target.value })} maxLength={10000} rows={8} className="field font-mono text-[13px]" placeholder="<p>상품의 특징, 사이즈 가이드, 세탁 방법 등을 작성하세요.</p>" />
             <div className="text-right text-[11.5px] text-mute num">{f.description.length}/10,000</div>
           </Block>
 
-          <Block title="상품정보 제공고시" desc="그 밖의 항목(제조자 · 취급 주의사항 · 품질보증기준 등)은 상세 설명에 적어 주세요.">
+          <Block title="상품정보 제공고시" desc="그 밖의 항목(제조자, 취급 주의사항, 품질보증기준 등)은 상세 설명에 적어 주세요.">
             <Row label="소재" req><input value={f.material} onChange={(e) => set({ material: e.target.value })} maxLength={100} className="field" /></Row>
             <Row label="제조국" req><input value={f.origin} onChange={(e) => set({ origin: e.target.value })} maxLength={50} className="field" /></Row>
           </Block>
@@ -220,7 +220,7 @@ function FormBody({ src, categories, storeName }) {
               <div className="text-[13px] space-y-1">
                 <StatusPill s={src.pill} />
                 {src.statusReason && <p className="text-rust text-[12px]">사유: {src.statusReason}</p>}
-                <p className="text-mute text-[12px]">판매중지 · 재개는 상품 목록에서 바꿔요</p>
+                <p className="text-mute text-[12px]">판매중지, 재개는 상품 목록에서 바꿔요</p>
               </div>
             ) : <Segments items={['판매중', '판매중지']} value={f.status} onChange={(status) => set({ status })} />}
             <div className="grid grid-cols-2 gap-2 pt-2">
@@ -241,7 +241,7 @@ function FormBody({ src, categories, storeName }) {
       <Modal open={ask === 'delete'} onClose={() => setAsk(null)} title="상품 삭제" width={420}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setAsk(null)}>취소</button><button disabled={busy} className="btn btn-sm bg-rust text-white border-rust" onClick={doDelete}>삭제</button></>}>
         <p className="text-[14px]">이 상품을 삭제할까요?</p>
-        <p className="text-[13px] text-mute mt-2">삭제한 상품은 쇼핑몰 · 장바구니에서 구매할 수 없게 돼요. 지난 주문과 리뷰는 그대로 남아요.</p>
+        <p className="text-[13px] text-mute mt-2">삭제한 상품은 쇼핑몰, 장바구니에서 구매할 수 없게 돼요. 지난 주문과 리뷰는 그대로 남아요.</p>
       </Modal>
     </div>
   );

@@ -16,7 +16,7 @@ import MyOrders from '@/features/order/components/MyOrders';
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
-// backend OrderItemResponse · OrderDetailResponse · ClaimPreviewResponse
+// backend OrderItemResponse, OrderDetailResponse, ClaimPreviewResponse
 const ITEM = {
   orderItemId: 456, itemNo: '20261026-000001-01', storeId: 1, storeName: '곳간상회', productId: 11, productOptionId: 111,
   productName: '유기농 사과', optionName: '5kg', thumbnailUrl: 'https://img/a.jpg', unitPrice: 10000, quantity: 2, itemAmt: 20000,
@@ -32,14 +32,14 @@ const PREVIEW = { orderItemId: 456, type: 'CANCEL', reasonCode: 'CHANGE_OF_MIND'
 const httpError = (status, code, message) => Object.assign(new Error(code), { response: { status, data: { code, message } } });
 
 describe('orderView — 응답 → 화면 표시', () => {
-  it('결제 대기 · 실패 주문은 주문 상태로, 나머지는 상품주문 상태 라벨', () => {
+  it('결제 대기, 실패 주문은 주문 상태로, 나머지는 상품주문 상태 라벨', () => {
     expect(lineStatusLabel({ status: 'PENDING' }, { status: 'ORDERED' })).toBe('결제대기');
     expect(lineStatusLabel({ status: 'FAILED' }, { status: 'ORDERED' })).toBe('결제실패');
     expect(lineStatusLabel({ status: 'PAID' }, { status: 'SHIPPING' })).toBe('배송중');
     expect(lineStatusLabel({ status: 'PAID' }, { status: 'NEW_STATUS' })).toBe('NEW_STATUS');
   });
 
-  it('기간 탭 — N달 전 같은 날 0시부터, 전체 · 모르는 값은 그대로', () => {
+  it('기간 탭 — N달 전 같은 날 0시부터, 전체, 모르는 값은 그대로', () => {
     const now = new Date('2026-11-03T15:00:00');
     const at = (orderedAt) => ({ orderNo: orderedAt, orderedAt });
     const orders = [at('2026-11-01T10:00:00'), at('2026-10-03T00:00:00'), at('2026-10-02T23:59:59'), at('2026-06-01T09:00:00'), at('2026-04-30T09:00:00')];
@@ -52,7 +52,7 @@ describe('orderView — 응답 → 화면 표시', () => {
     expect(ordersInPeriod(orders, '?', now)).toBe(orders);
   });
 
-  it('진행 단계 · 진행 중 클레임 개수 — 없는 키는 0', () => {
+  it('진행 단계, 진행 중 클레임 개수 — 없는 키는 0', () => {
     expect(flowCounts({ PAYMENT_DONE: 2, SHIPPING: 1 })).toEqual([['결제완료', 2], ['배송준비', 0], ['배송중', 1], ['배송완료', 0], ['구매확정', 0]]);
     expect(flowCounts()).toHaveLength(5);
     expect(openClaimCount({ CANCEL_REQUESTED: 1, RETURN_REQUESTED: 2, CANCELLED: 5 })).toBe(3);
@@ -78,7 +78,7 @@ describe('orderView — 응답 → 화면 표시', () => {
     expect(toDate(null)).toBeNull();
   });
 
-  it('결제수단 · 클레임 접수 안내', () => {
+  it('결제수단, 클레임 접수 안내', () => {
     expect(payMethodLabel({ method: 'CARD' })).toBe('카드');
     expect(payMethodLabel({ method: 'EASY_PAY' })).toBe('간편결제');
     expect(payMethodLabel({ method: 'VIRTUAL_ACCOUNT' })).toBe('VIRTUAL_ACCOUNT');
@@ -91,13 +91,13 @@ describe('orderView — 응답 → 화면 표시', () => {
 });
 
 describe('MyOrders — 기간 탭', () => {
-  it('기본 3개월, 탭을 누르면 그 기간 주문만 · 없으면 기간 안내', async () => {
+  it('기본 3개월, 탭을 누르면 그 기간 주문만, 없으면 기간 안내', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-11-03T15:00:00'));
     const recent = { ...DETAIL, orderNo: '20261101-000001', orderedAt: '2026-11-01T10:00:00' };
     const old = { ...DETAIL, orderNo: '20260701-000001', orderedAt: '2026-07-01T10:00:00', items: [{ ...ITEM, orderItemId: 457, productName: '지난 사과' }] };
     vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({
-      data: { data: url === '/api/orders' ? { statusCounts: {}, orders: [recent, old] } : [] }, // 클레임 · 리뷰 작성 가능 목록은 배열
+      data: { data: url === '/api/orders' ? { statusCounts: {}, orders: [recent, old] } : [] }, // 클레임, 리뷰 작성 가능 목록은 배열
     }));
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={queryClient}><MemoryRouter><MyOrders /></MemoryRouter></QueryClientProvider>);
@@ -119,7 +119,7 @@ describe('MyOrders — 기간 탭', () => {
 });
 
 describe('order API', () => {
-  it('내 주문 목록 · 상세 · 환불 예정액 · 클레임 신청 경로', async () => {
+  it('내 주문 목록, 상세, 환불 예정액, 클레임 신청 경로', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: 'ok' } });
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: 'done' } });
     const params = { orderItemId: 456, type: 'CANCEL', reasonCode: 'CHANGE_OF_MIND' };
@@ -151,7 +151,7 @@ describe('훅', () => {
     expect(get).not.toHaveBeenCalled();
   });
 
-  it('useRequestClaimMutation — 성공하면 내 주문(상세 · 예정액 포함) · 포인트 무효화', async () => {
+  it('useRequestClaimMutation — 성공하면 내 주문(상세, 예정액 포함), 포인트 무효화', async () => {
     vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { type: 'CANCEL', status: 'COMPLETED' } } });
     const { client, Wrapper } = createWrapper();
     const invalidate = vi.spyOn(client, 'invalidateQueries');
@@ -163,7 +163,7 @@ describe('훅', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.user.points() });
   });
 
-  it('useConfirmPurchaseMutation — 내 주문은 바로, 포인트(user) · 리뷰 자격은 이벤트가 늦게 오므로 잠깐 뒤 다시', async () => {
+  it('useConfirmPurchaseMutation — 내 주문은 바로, 포인트(user), 리뷰 자격은 이벤트가 늦게 오므로 잠깐 뒤 다시', async () => {
     vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { orderItemId: 456, status: 'CONFIRMED' } } });
     const { client, Wrapper } = createWrapper();
     const invalidate = vi.spyOn(client, 'invalidateQueries');
@@ -241,11 +241,11 @@ describe('MyClaimRequest — 결제완료 즉시 취소', () => {
     expect(await screen.findByText('없음 (같은 스토어 상품이 남아 있어요)')).toBeInTheDocument();
   });
 
-  it('반품 철회 직후 — 옛 캐시(반품요청)로 먼저 그려졌다가 배송완료로 바뀌면 반품 사유 · 버튼이 나온다 (QA Q-경-8)', async () => {
+  it('반품 철회 직후 — 옛 캐시(반품요청)로 먼저 그려졌다가 배송완료로 바뀌면 반품 사유, 버튼이 나온다 (QA Q-경-8)', async () => {
     let status = 'RETURN_REQUESTED';
     vi.spyOn(axiosInstance, 'get').mockImplementation(async () => ({ data: { data: { ...DETAIL, items: [{ ...ITEM, status }] } } }));
     const client = renderAt('/mypage/claim/20261026-000001-01?type=RETURN');
-    expect(await screen.findByText('지금은 취소 · 반품 · 교환을 신청할 수 없는 상품이에요.')).toBeInTheDocument();
+    expect(await screen.findByText('지금은 취소, 반품, 교환을 신청할 수 없는 상품이에요.')).toBeInTheDocument();
 
     status = 'DELIVERED';
     await act(async () => { await client.invalidateQueries(); });
@@ -254,10 +254,10 @@ describe('MyClaimRequest — 결제완료 즉시 취소', () => {
     expect(screen.queryByText(/undefined/)).toBeNull();
   });
 
-  it('결제 대기 · 배송준비 상품주문은 신청 불가 안내, 없는 상품주문은 찾을 수 없음', async () => {
+  it('결제 대기, 배송준비 상품주문은 신청 불가 안내, 없는 상품주문은 찾을 수 없음', async () => {
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { ...DETAIL, items: [{ ...ITEM, status: 'PREPARING' }] } } });
     renderAt('/mypage/claim/20261026-000001-01');
-    expect(await screen.findByText('지금은 취소 · 반품 · 교환을 신청할 수 없는 상품이에요.')).toBeInTheDocument();
+    expect(await screen.findByText('지금은 취소, 반품, 교환을 신청할 수 없는 상품이에요.')).toBeInTheDocument();
     cleanup();
 
     renderAt('/mypage/claim/20261026-000001-09');

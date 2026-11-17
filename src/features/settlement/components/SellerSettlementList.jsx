@@ -42,7 +42,7 @@ function buildColumns(setDetailId) {
 }
 
 export default function SellerSettlementList() {
-  // 명세서는 지급 완료 건만 — 누를 때마다 10분짜리 링크를 받아 새 탭으로 (지급 전 · 생성 전이면 서버 메시지)
+  // 명세서는 지급 완료 건만 — 누를 때마다 10분짜리 링크를 받아 새 탭으로 (지급 전, 생성 전이면 서버 메시지)
   const report = useSettlementReportMutation();
   const openReport = (id) => report.mutate(id, {
     onSuccess: (url) => window.open(url, '_blank', 'noopener'),
@@ -60,19 +60,19 @@ export default function SellerSettlementList() {
   const rates = summary?.rates ?? [];
   return (
     <div>
-      <PageHead title="정산 내역" desc="구매확정일 기준 주 1회 정산 · 월~일 확정분을 다음 주 목요일에 등록 계좌로 지급합니다." />
+      <PageHead title="정산 내역" desc="구매확정일 기준 주 1회 정산, 월~일 확정분을 다음 주 목요일에 등록 계좌로 지급합니다." />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <Kpi label="이번 주 정산 예정" value={summary ? comma(summary.pendingPayout) : '-'} unit="원" sub="이번 주 구매확정분 · 수수료 차감 후" />
-        <Kpi label="다음 지급 예정" value={next ? comma(next.payout) : '-'} unit="원" sub={next ? (next.pay < new Date() ? `${ymd(next.pay)} 예정 · 지급 대기` : `${ymd(next.pay)} (목)`) : '지급 전 정산서 없음'} />
+        <Kpi label="이번 주 정산 예정" value={summary ? comma(summary.pendingPayout) : '-'} unit="원" sub="이번 주 구매확정분, 수수료 차감 후" />
+        <Kpi label="다음 지급 예정" value={next ? comma(next.payout) : '-'} unit="원" sub={next ? (next.pay < new Date() ? `${ymd(next.pay)} 예정, 지급 대기` : `${ymd(next.pay)} (목)`) : '지급 전 정산서 없음'} />
         <Kpi label="최근 8주 지급 완료" value={summary ? comma(summary.paidRecent8Weeks / 10000) : '-'} unit="만원" />
-        <Kpi label="적용 수수료율" value={rates.length ? rates.map((r) => pct(r.rate + PAYMENT_FEE, 1)).join(' · ') : '-'}
-          sub={rates.length ? rates.map((r) => `${r.name} ${pct(r.rate, 1)}`).join(' · ') + ' + 결제 2.2%' : '최근 구매확정 없음'} />
+        <Kpi label="적용 수수료율" value={rates.length ? rates.map((r) => pct(r.rate + PAYMENT_FEE, 1)).join(', ') : '-'}
+          sub={rates.length ? rates.map((r) => `${r.name} ${pct(r.rate, 1)}`).join(', ') + ' + 결제 2.2%' : '최근 구매확정 없음'} />
       </div>
       <div className="flex mt-4">
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="정산 주차 · 상태" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="정산 주차, 상태" className="ml-auto" />
       </div>
       <DataTable table={table} loading={isLoading} error={isError} empty="아직 정산 내역이 없어요" className="mt-3" />
-      <Modal open={detailId != null} onClose={() => setDetailId(null)} title={`정산 상세 · ${detail?.week ?? ''}`} width={600}
+      <Modal open={detailId != null} onClose={() => setDetailId(null)} title={`정산 상세, ${detail?.week ?? ''}`} width={600}
         footer={detail && <>
           <OpenChatButton basePath="/seller/chats" request={{ type: 'SELLER_SUPPORT', context: { type: 'SETTLEMENT', id: detail.id } }}>
             <MessagesSquare size={14} /> 이 정산 문의

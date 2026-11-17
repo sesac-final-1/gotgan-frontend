@@ -1,4 +1,4 @@
-// 알림 센터 API — 담당 구지훈. 게이트웨이 /api/notifications/** → admin-service (backend #119 · #120, admin.md 5절)
+// 알림 센터 API — 담당 구지훈. 게이트웨이 /api/notifications/** → admin-service (backend #119, #120, admin.md 5절)
 import { axiosInstance } from '@/shared/api/axiosInstance';
 
 // 응답 항목 { id, type, title, body, link, read, createdAt(+09:00) } → 화면 필드 (createdAt 은 Date)

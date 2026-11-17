@@ -1,4 +1,4 @@
-// 신고 모달 — 담당 구지훈. 리뷰 · 회원 신고에 공용 (구매자 리뷰 목록 · 판매자 화면 등에서 붙여 쓴다)
+// 신고 모달 — 담당 구지훈. 리뷰, 회원 신고에 공용 (구매자 리뷰 목록, 판매자 화면 등에서 붙여 쓴다)
 // 사용: <ReportModal target={{ type: 'REVIEW', id: 31, label: '리뷰' }} onClose={() => setTarget(null)} />  — target 이 있으면 열림
 import { useState } from 'react';
 import { useLocation } from 'react-router';

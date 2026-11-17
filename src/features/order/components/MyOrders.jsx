@@ -1,4 +1,4 @@
-// 마이페이지 주문 · 배송 — 담당 이경석 (GET /api/orders). 주문 카드 목록(표 아님)
+// 마이페이지 주문, 배송 — 담당 이경석 (GET /api/orders). 주문 카드 목록(표 아님)
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ChevronRight } from 'lucide-react';
@@ -18,7 +18,7 @@ import { fallbackSrc } from '@/shared/utils/imageFallback'; // 사진 없는 주
 // 클레임 신청 경로의 lineId = 상품주문번호(itemNo)
 const claimPath = (l, type) => `/mypage/claim/${l.itemNo}?type=${type}`;
 
-// 처리 결과 토스트 — 실패하면 서버 메시지 (이미 확정 · 승인됨 등)
+// 처리 결과 토스트 — 실패하면 서버 메시지 (이미 확정, 승인됨 등)
 async function run(mutation, payload, message) {
   try {
     await mutation.mutateAsync(payload);
@@ -28,8 +28,8 @@ async function run(mutation, payload, message) {
   }
 }
 
-// claim: 이 상품주문의 철회할 수 있는 클레임 (판매자 승인 전 반품 · 교환) — 없으면 철회 버튼을 숨긴다
-// writable: 리뷰 작성 가능 목록의 이 상품주문 (구매확정 후 30일 안 · 아직 안 씀) — 없으면 리뷰쓰기 버튼을 숨긴다
+// claim: 이 상품주문의 철회할 수 있는 클레임 (판매자 승인 전 반품, 교환) — 없으면 철회 버튼을 숨긴다
+// writable: 리뷰 작성 가능 목록의 이 상품주문 (구매확정 후 30일 안, 아직 안 씀) — 없으면 리뷰쓰기 버튼을 숨긴다
 function LineActions({ o, l, claim, writable, onWrite }) {
   const nav = useNavigate();
   const confirm = useConfirmPurchaseMutation();
@@ -37,9 +37,9 @@ function LineActions({ o, l, claim, writable, onWrite }) {
   const busy = confirm.isPending || withdraw.isPending;
   const b = 'btn btn-line btn-xs';
   // TODO(이경석): 배송준비 취소요청(CLM-02)
-  if (o.status !== 'PAID') return null; // 결제 대기 · 실패 주문은 할 일 없음 (대기는 서버가 정리)
+  if (o.status !== 'PAID') return null; // 결제 대기, 실패 주문은 할 일 없음 (대기는 서버가 정리)
   const confirmPurchase = () => {
-    if (!window.confirm('구매확정하면 반품 · 교환을 신청할 수 없어요. 구매확정할까요?')) return;
+    if (!window.confirm('구매확정하면 반품, 교환을 신청할 수 없어요. 구매확정할까요?')) return;
     void run(confirm, { orderNo: o.orderNo, orderItemId: l.orderItemId }, '구매확정 되었어요. 리뷰를 작성할 수 있어요');
   };
   const withdrawClaim = (label) => void run(withdraw, claim.claimId, `${label} 요청을 철회했어요`);
@@ -58,7 +58,7 @@ function LineActions({ o, l, claim, writable, onWrite }) {
   }
 }
 
-// 결제 대기 · 실패 안내 — 결제 대기 만료(ORD-07)는 서버 스케줄러가 처리하고 화면은 상태만 보여 준다
+// 결제 대기, 실패 안내 — 결제 대기 만료(ORD-07)는 서버 스케줄러가 처리하고 화면은 상태만 보여 준다
 function OrderNotice({ status }) {
   if (status === 'PENDING') return <div className="px-4 py-2.5 text-[12px] bg-cream border-b border-line text-ink-2">결제가 아직 확인되지 않았어요. 결제를 마치지 않으면 잠시 후 주문이 자동 취소되고 사용한 포인트는 돌려드려요.</div>;
   if (status === 'FAILED') return <div className="px-4 py-2.5 text-[12px] bg-cream border-b border-line text-rust">결제 시간이 지났거나 결제가 확인되지 않아 주문이 취소되었어요. 사용한 포인트는 자동으로 돌려드려요.</div>;
@@ -78,7 +78,7 @@ export default function MyOrders() {
   const counts = flowCounts(data?.statusCounts);
   return (
     <div>
-      <MyPageHead>주문 · 배송</MyPageHead>
+      <MyPageHead>주문, 배송</MyPageHead>
       <div className="grid grid-cols-5 border border-line">
         {counts.map(([s, n], i) => (
           <div key={s} className={cx('py-5 text-center relative', i && 'border-l border-line')}>
@@ -109,8 +109,8 @@ export default function MyOrders() {
                   <StatusPill s={lineStatusLabel(o, l)} />
                   <div className="mt-1.5 text-mute">{l.storeName}</div>
                   <Link to={`/products/${l.productId}`} className="font-medium text-[14px] hover:underline">{l.productName}</Link>
-                  <div className="text-mute mt-0.5">{l.optionName || '단일상품'} · {l.quantity}개 · <b className="text-ink num">{won(l.itemAmt)}</b></div>
-                  {l.status === 'DELIVERED' && <div className="text-[12px] text-moss mt-1">{ymd(toDate(l.deliveredAt))} 배송완료 · 7일 뒤 자동 구매확정</div>}
+                  <div className="text-mute mt-0.5">{l.optionName || '단일상품'}, {l.quantity}개, <b className="text-ink num">{won(l.itemAmt)}</b></div>
+                  {l.status === 'DELIVERED' && <div className="text-[12px] text-moss mt-1">{ymd(toDate(l.deliveredAt))} 배송완료, 7일 뒤 자동 구매확정</div>}
                 </div>
                 <div className="w-full sm:w-auto flex sm:flex-col gap-1.5 sm:items-stretch sm:min-w-[96px]"><LineActions o={o} l={l} claim={withdrawable[l.orderItemId]} writable={writable[l.orderItemId]} onWrite={(line) => setReviewTarget({ line })} /></div>
               </div>

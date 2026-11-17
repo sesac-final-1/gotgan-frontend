@@ -1,4 +1,4 @@
-// 판매자 상품 폼 규칙 — 담당 박지연. 화면 입력값 ↔ 등록 · 수정 요청(backend product.md 13절)
+// 판매자 상품 폼 규칙 — 담당 박지연. 화면 입력값 ↔ 등록, 수정 요청(backend product.md 13절)
 // 옵션 그룹 0~2개, 조합은 그룹 값의 곱. 그룹이 없으면 값이 null 인 조합 1개(옵션 없는 상품)
 
 export const MAX_OPTION_GROUPS = 2;
@@ -9,7 +9,7 @@ export const comboKey = (values) => values.join('\u0000');
 
 const splitValues = (text) => [...new Set(text.split(',').map((v) => v.trim()).filter(Boolean))];
 
-// 이름 · 값이 모두 있는 그룹만
+// 이름, 값이 모두 있는 그룹만
 export const activeGroups = (groups) => groups
   .map((g) => ({ name: g.name.trim(), values: splitValues(g.values) }))
   .filter((g) => g.name && g.values.length);
@@ -41,7 +41,7 @@ export function initialForm(src, categories) {
   };
 }
 
-// 조합표 한 줄 — 입력한 적 없는 조합은 새 조합(추가금 0 · 재고 0 · 판매)
+// 조합표 한 줄 — 입력한 적 없는 조합은 새 조합(추가금 0, 재고 0, 판매)
 export const rowOf = (rows, values) => rows[comboKey(values)] ?? { productOptionId: null, extraPrice: 0, stock: 0, on: true };
 
 // 화면 검사 — 서버가 같은 규칙으로 다시 검사한다(13절). 첫 번째 문제만 문구로
@@ -87,7 +87,7 @@ export function buildProductRequest(f) {
   };
 }
 
-// 상품 복사(12절 "상세를 읽어 STOPPED 로 다시 등록") — 이름 뒤 " (복사)", 옵션은 새 조합 · 재고 0(같은 재고가 두 상품에 생기지 않게), 이미지 키 재사용
+// 상품 복사(12절 "상세를 읽어 STOPPED 로 다시 등록") — 이름 뒤 " (복사)", 옵션은 새 조합, 재고 0(같은 재고가 두 상품에 생기지 않게), 이미지 키 재사용
 export function buildCopyRequest(src) {
   const f = initialForm(src, []);
   const rows = Object.fromEntries(Object.entries(f.rows).map(([k, r]) => [k, { ...r, productOptionId: null, stock: 0 }]));

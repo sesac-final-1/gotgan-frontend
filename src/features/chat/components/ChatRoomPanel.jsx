@@ -11,7 +11,7 @@ import { contextLabel, failMessage, flattenMessages, MAX_LENGTH, mySide, ROOM_TY
 const CONNECTION_TEXT = { connecting: '연결 중…', disconnected: '연결이 끊겼어요. 다시 연결하는 중…', stopped: '실시간 연결이 멈췄어요. 새로고침해 주세요.' };
 const time = (d) => d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-/** 열린 방 — 메시지 목록(위로 더 보기) · 입력 · 상담 상태(관리자). 화면에 있는 동안만 실시간 구독 */
+/** 열린 방 — 메시지 목록(위로 더 보기), 입력, 상담 상태(관리자). 화면에 있는 동안만 실시간 구독 */
 /** side: 내 자리를 직접 줄 때(관리자의 도움 요청 스토어 톡 열람) — 없으면 방에서 계산 */
 export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverride }) {
   const side = sideOverride ?? mySide(room);
@@ -94,7 +94,7 @@ export default function ChatRoomPanel({ room, basePath, onBack, side: sideOverri
         <div className="px-4 py-3 text-[13px] text-mute border-t border-line">구매자가 도움을 요청한 스토어 톡이에요. 관리자는 읽기만 할 수 있어요.</div>
       ) : (
         <div className="flex gap-2 p-3 border-t border-line shrink-0">
-          <textarea value={text} maxLength={MAX_LENGTH} rows={2} placeholder="메시지 입력 (Enter 보내기 · Shift+Enter 줄바꿈)"
+          <textarea value={text} maxLength={MAX_LENGTH} rows={2} placeholder="메시지 입력 (Enter 보내기, Shift+Enter 줄바꿈)"
             className="flex-1 resize-none border border-line-2 px-3 py-2 text-[14px] outline-none focus:border-ink"
             onChange={(e) => {
               setText(e.target.value);

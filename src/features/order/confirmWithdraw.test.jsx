@@ -35,8 +35,8 @@ function renderWith(element) {
   render(<QueryClientProvider client={client}><MemoryRouter>{element}</MemoryRouter></QueryClientProvider>);
 }
 
-describe('구매확정 · 철회 — API · 훅 · 규칙', () => {
-  it('경로, 처리 뒤 내 주문(상세 · 클레임 포함) 무효화, 철회는 승인 전 반품 · 교환만', async () => {
+describe('구매확정, 철회 — API, 훅, 규칙', () => {
+  it('경로, 처리 뒤 내 주문(상세, 클레임 포함) 무효화, 철회는 승인 전 반품, 교환만', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: 'ok' } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: 'ok' } });
     await confirmPurchase('20261027-000001', 456);
@@ -61,8 +61,8 @@ describe('구매확정 · 철회 — API · 훅 · 규칙', () => {
   });
 });
 
-describe('MyOrders — 구매확정 · 철회 버튼', () => {
-  it('구매확정은 확인 후 POST, 철회는 승인 전 클레임이 있는 상품주문만 버튼 · PATCH, 실패는 서버 메시지', async () => {
+describe('MyOrders — 구매확정, 철회 버튼', () => {
+  it('구매확정은 확인 후 POST, 철회는 승인 전 클레임이 있는 상품주문만 버튼, PATCH, 실패는 서버 메시지', async () => {
     vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({ data: { data: url === '/api/claims'
       ? [claim(9, 457, 'RETURN', 'REQUESTED'), claim(10, 458, 'EXCHANGE', 'APPROVED')] : ORDERS } }));
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValueOnce({ data: { data: {} } }).mockRejectedValueOnce(httpError(409, '지금 주문 상태에서는 처리할 수 없습니다.'));
@@ -89,7 +89,7 @@ describe('MyOrders — 구매확정 · 철회 버튼', () => {
 });
 
 describe('MyClaims — 상세에서 철회', () => {
-  it('승인 전 요청만 철회 버튼, 성공하면 토스트 · 닫힘, 실패는 서버 메시지', async () => {
+  it('승인 전 요청만 철회 버튼, 성공하면 토스트, 닫힘, 실패는 서버 메시지', async () => {
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [claim(9, 457, 'RETURN', 'REQUESTED'), claim(10, 458, 'EXCHANGE', 'APPROVED')] } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockRejectedValueOnce(httpError(409, '지금 요청 상태에서는 처리할 수 없습니다.'))
       .mockResolvedValue({ data: { data: {} } });

@@ -1,5 +1,5 @@
-// 상품 목록 · 검색 — 담당 박지연
-// 서버 페이징 · 정렬 · 필터 — GET /api/products (product.md 9절). 정렬은 신상품 · 가격 2종만(판매량 · 리뷰 · 평점 정렬은 범위 밖)
+// 상품 목록, 검색 — 담당 박지연
+// 서버 페이징, 정렬, 필터 — GET /api/products (product.md 9절). 정렬은 신상품, 가격 2종만(판매량, 리뷰, 평점 정렬은 범위 밖)
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { SlidersHorizontal, X } from 'lucide-react';
@@ -29,11 +29,11 @@ export default function ShopProductList() {
   const { data: categories = [] } = useCategoriesQuery();
   const { data: stores = [] } = useStoresQuery();
   const [sp, setSp] = useSearchParams();
-  // cat · sub 는 상위 · 하위 카테고리 id(숫자 문자열). 상위 id 로 조회하면 서버가 하위를 모두 포함한다
+  // cat, sub 는 상위, 하위 카테고리 id(숫자 문자열). 상위 id 로 조회하면 서버가 하위를 모두 포함한다
   const cat = sp.get('cat'), sub = sp.get('sub'), q = sp.get('q') || '';
   const sort = SORT_API[sp.get('sort')] ? sp.get('sort') : 'new';
   const page = Math.max(0, Number(sp.get('page')) || 0);
-  // 가격 구간(PRICES 순번) · 품절 제외도 주소에 — 새로고침 · 공유해도 그대로
+  // 가격 구간(PRICES 순번), 품절 제외도 주소에 — 새로고침, 공유해도 그대로
   const price = PRICES[sp.get('price')] ?? null;
   const excludeSoldOut = sp.get('soldout') === 'exclude';
   const [mobileFilter, setMobileFilter] = useState(false);

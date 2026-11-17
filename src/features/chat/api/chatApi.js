@@ -1,4 +1,4 @@
-// 1:1 채팅 API — 담당 구지훈. 게이트웨이 /api/chats/** → chat-service (backend #124 · #125, chat.md 1~5절)
+// 1:1 채팅 API — 담당 구지훈. 게이트웨이 /api/chats/** → chat-service (backend #124, #125, chat.md 1~5절)
 import { axiosInstance } from '@/shared/api/axiosInstance';
 
 // 메시지 { messageId, roomId, senderRole, mine, kind, content, context, createdAt(+09:00) } → createdAt 은 Date
@@ -8,7 +8,7 @@ export const toRoom = (r) => ({ ...r, lastMessage: r.lastMessage && { ...r.lastM
 
 export const PAGE_SIZE = 30;
 
-// POST /api/chats/rooms { type, storeId?, context?: { type, id } } → 방 (처음 201 · 있던 방 200)
+// POST /api/chats/rooms { type, storeId?, context?: { type, id } } → 방 (처음 201, 있던 방 200)
 export const openChatRoom = async (body) => toRoom((await axiosInstance.post('/api/chats/rooms', body)).data.data);
 
 // GET /api/chats/rooms?type=&status= → 최근 메시지순 (페이징 없음)
@@ -25,7 +25,7 @@ export const readChatRoom = async (roomId, lastMessageId) => axiosInstance.patch
 // GET /api/chats/unread-count → { count }
 export const fetchChatUnreadCount = async () => (await axiosInstance.get('/api/chats/unread-count')).data.data.count;
 
-// PATCH /api/chats/rooms/{id}/status { status: OPEN | RESOLVED } — 관리자 · 상담방만
+// PATCH /api/chats/rooms/{id}/status { status: OPEN | RESOLVED } — 관리자, 상담방만
 export const changeChatStatus = async (roomId, status) =>
   toRoom((await axiosInstance.patch(`/api/chats/rooms/${roomId}/status`, { status })).data.data);
 

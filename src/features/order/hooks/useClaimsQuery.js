@@ -16,7 +16,7 @@ export function useSellerClaimsQuery(params) {
   });
 }
 
-// 판매자 클레임 처리 — 끝나면 판매자 클레임 · 주문 목록(상품주문 상태가 바뀜) · 탭 숫자를 다시 불러온다
+// 판매자 클레임 처리 — 끝나면 판매자 클레임, 주문 목록(상품주문 상태가 바뀜), 탭 숫자를 다시 불러온다
 function useClaimMutation(mutationFn) {
   const queryClient = useQueryClient();
   return useMutation({

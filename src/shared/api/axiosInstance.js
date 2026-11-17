@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { refreshOnce } from '@/shared/api/refresh';
 
-// 모든 API 호출은 이 인스턴스로 — 상대경로 /api/... (운영: Vercel rewrite → https://api.gotgan.click, 로컬: Vite 프록시) · 쿠키(refresh) 전송
+// 모든 API 호출은 이 인스턴스로 — 상대경로 /api/... (운영: Vercel rewrite → https://api.gotgan.click, 로컬: Vite 프록시), 쿠키(refresh) 전송
 export const axiosInstance = axios.create({
   baseURL: '',
   withCredentials: true,
@@ -19,7 +19,7 @@ export function setAuthHandlers(handlers) {
   authHandlers = { ...authHandlers, ...handlers };
 }
 
-// 로그인 · 재발급 · 로그아웃 자체의 401 은 재발급 대상이 아니다 (로그인 실패 · 세션 만료를 그대로 화면에)
+// 로그인, 재발급, 로그아웃 자체의 401 은 재발급 대상이 아니다 (로그인 실패, 세션 만료를 그대로 화면에)
 const isAuthEndpoint = (url = '') => /^\/api\/auth\/(login|refresh|logout|signup|social)/.test(url);
 
 axiosInstance.interceptors.request.use((config) => {

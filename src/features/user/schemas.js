@@ -1,4 +1,4 @@
-// 회원정보 폼 검증 — 담당 이경석 (서버 UpdateMyInfoRequest · ChangePasswordRequest 와 같은 규칙. 최종 판단은 서버 · Keycloak)
+// 회원정보 폼 검증 — 담당 이경석 (서버 UpdateMyInfoRequest, ChangePasswordRequest 와 같은 규칙. 최종 판단은 서버, Keycloak)
 import { z } from 'zod';
 
 const PHONE = /^01[016789]-?\d{3,4}-?\d{4}$/;
@@ -10,7 +10,7 @@ export const profileSchema = z.object({
   phone: z.string().trim().refine((v) => v === '' || PHONE.test(v), '휴대폰 번호 형식이 올바르지 않아요'),
 });
 
-// 비밀번호 변경 — 새 비밀번호는 가입과 같은 규칙(realm 정책: 8~64자 · 영문 · 특수문자 · 이메일과 다름 — 이메일 비교는 화면에서)
+// 비밀번호 변경 — 새 비밀번호는 가입과 같은 규칙(realm 정책: 8~64자, 영문, 특수문자, 이메일과 다름 — 이메일 비교는 화면에서)
 export const passwordChangeSchema = z.object({
   currentPassword: z.string().min(1, '현재 비밀번호를 입력해주세요'),
   newPassword: z.string()
@@ -20,7 +20,7 @@ export const passwordChangeSchema = z.object({
   newPasswordConfirm: z.string(),
 }).refine((v) => v.newPassword === v.newPasswordConfirm, { path: ['newPasswordConfirm'], message: '새 비밀번호가 일치하지 않아요' });
 
-// 배송지 — 서버 AddressRequest 와 같은 규칙. 우편번호 · 기본 주소는 주소 검색으로만 채운다
+// 배송지 — 서버 AddressRequest 와 같은 규칙. 우편번호, 기본 주소는 주소 검색으로만 채운다
 export const addressSchema = z.object({
   label: z.string().trim().min(1, '배송지 이름을 입력해주세요').max(30, '배송지 이름은 30자 이하로 입력해주세요'),
   name: z.string().trim().min(1, '받는 분을 입력해주세요').max(50, '받는 분은 50자 이하로 입력해주세요'),

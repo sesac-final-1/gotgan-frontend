@@ -1,4 +1,4 @@
-// 카테고리 · 수수료 — 담당 구지훈
+// 카테고리, 수수료 — 담당 구지훈
 import { useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { PageHead, Modal } from '@/shared/components/ui';
@@ -11,7 +11,7 @@ import { PAYMENT_FEE } from '@/features/settlement/constants';
 import { toast } from '@/shared/stores/toastStore';
 import { pct, cx } from '@/shared/utils/format';
 
-// 상위 · 하위 행을 한 줄씩 펼친 데이터. 정렬은 상위 카테고리 값으로만 비교해 하위 행이 상위 바로 아래에 붙어 있게 한다
+// 상위, 하위 행을 한 줄씩 펼친 데이터. 정렬은 상위 카테고리 값으로만 비교해 하위 행이 상위 바로 아래에 붙어 있게 한다
 // (동률이면 TanStack 이 원래 순서로 정렬 → 하위 행 순서 유지). 검색은 상위 행에 하위 이름까지, 하위 행에 상위 이름까지 넣어 함께 걸리게
 const byParent = (key) => (a, b) => {
   const x = a.original.parent[key], y = b.original.parent[key];
@@ -69,7 +69,7 @@ function buildColumns({ open, toggle, setEdit, rates, setRate, toggleActive }) {
       id: 'action', header: '관리', enableSorting: false, meta: { thClass: 'text-center', search: false },
       cell: ({ row }) => {
         const { parent, sub } = row.original;
-        // 카테고리는 삭제하지 않고 사용 중지만 (store · settlement 가 category_id 를 참조 — product.md 7절)
+        // 카테고리는 삭제하지 않고 사용 중지만 (store, settlement 가 category_id 를 참조 — product.md 7절)
         const target = sub ? parent.children.find((c) => c.name === sub) : parent;
         const editOf = (c, parentId) => ({ mode: 'edit', categoryId: c.categoryId ?? c.id, parentId, name: c.name, nameEn: c.nameEn ?? c.en ?? '', sortOrder: String(c.sortOrder), active: c.active });
         return (
@@ -141,7 +141,7 @@ export default function CategoryCommission() {
 
   return (
     <div>
-      <PageHead title="카테고리 · 수수료" desc="상위 / 하위 2단계 카테고리 · 판매자는 상품 등록 시 이 목록에서만 선택합니다 · 수수료율 변경은 판매자 공지 후 7일 뒤 적용"
+      <PageHead title="카테고리, 수수료" desc="상위 / 하위 2단계 카테고리, 판매자는 상품 등록 시 이 목록에서만 선택합니다, 수수료율 변경은 판매자 공지 후 7일 뒤 적용"
         right={<>
           <button onClick={() => setEdit({ mode: 'new', parentId: '', name: '', sortOrder: '', rate: '' })} className="btn btn-line btn-sm">+ 상위 카테고리</button>
           <button onClick={handleReserve} disabled={reserveCommission.isPending} className="btn btn-ink btn-sm">수수료 변경 예약</button>
@@ -149,7 +149,7 @@ export default function CategoryCommission() {
       <div className="flex flex-wrap items-center gap-2 mb-3 text-[12.5px]">
         <button onClick={() => setOpenSel(new Set(categories.map((c) => c.id)))} className="btn btn-line btn-xs">모두 펼치기</button>
         <button onClick={() => setOpenSel(new Set())} className="btn btn-line btn-xs">모두 접기</button>
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="카테고리명 · 코드" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="카테고리명, 코드" className="ml-auto" />
       </div>
       <DataTable table={table} loading={isLoading} error={isError} />
 
@@ -159,7 +159,7 @@ export default function CategoryCommission() {
           <div className="space-y-3">
             <div>
               <label className="label" htmlFor="cat-parent">상위 카테고리</label>
-              {/* 상위 · 하위 이동은 안 됨(수수료 기준이 바뀜 — product.md 결정 11) → 수정할 때는 고정 */}
+              {/* 상위, 하위 이동은 안 됨(수수료 기준이 바뀜 — product.md 결정 11) → 수정할 때는 고정 */}
               <select id="cat-parent" className="field" value={edit.parentId} onChange={setField('parentId')} disabled={edit.mode === 'edit'}>
                 <option value="">없음 (상위 카테고리로 등록)</option>
                 {categories.map((c) => <option key={c.id} value={String(c.categoryId)}>{c.name}</option>)}

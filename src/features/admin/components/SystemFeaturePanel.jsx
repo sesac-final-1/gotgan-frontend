@@ -26,7 +26,7 @@ function FeatureRow({ feature }) {
       <span className="text-xl font-bold">{feature.label}</span>
       <span className={`ml-auto text-lg font-bold ${state.className}`}>
         {state.label}
-        {feature.causes?.length > 0 && <span className="font-normal"> · {feature.causes.map(serviceShortName).join(', ')}</span>}
+        {feature.causes?.length > 0 && <span className="font-normal">, {feature.causes.map(serviceShortName).join(', ')}</span>}
       </span>
     </li>
   );

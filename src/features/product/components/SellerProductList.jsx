@@ -48,7 +48,7 @@ function buildColumns({ sel, toggle, onStock, onCopy }) {
         <>
           <StatusPill s={p.pill} />
           {p.blocked && p.statusReason && <div className="text-[11.5px] text-rust mt-1 max-w-[180px] whitespace-normal">사유: {p.statusReason}</div>}
-          {p.hidden && <div className="text-[11.5px] text-amber mt-1">쇼핑몰 미노출 · {p.hidden}</div>}
+          {p.hidden && <div className="text-[11.5px] text-amber mt-1">쇼핑몰 미노출, {p.hidden}</div>}
         </>
       ),
     },
@@ -71,7 +71,7 @@ function buildColumns({ sel, toggle, onStock, onCopy }) {
   ];
 }
 
-// 판매자 상품은 데모 규모라 전체 1회 로드 후 화면에서 탭 · 검색 · 정렬 · 페이징 (컨벤션 4-7)
+// 판매자 상품은 데모 규모라 전체 1회 로드 후 화면에서 탭, 검색, 정렬, 페이징 (컨벤션 4-7)
 const NO_PRODUCTS = []; // 받기 전 기본값도 고정 참조 — 렌더마다 새 [] 면 useRatedProducts 가 매번 새 목록을 만든다
 
 export default function SellerProductList() {
@@ -86,7 +86,7 @@ export default function SellerProductList() {
   const [del, setDel] = useState(false);
 
   const toggle = useCallback((id) => setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
-  // 복사 — 상세를 읽어 판매중지 · 재고 0 으로 새로 등록(12절), 목록은 무효화로 갱신
+  // 복사 — 상세를 읽어 판매중지, 재고 0 으로 새로 등록(12절), 목록은 무효화로 갱신
   const onCopy = useCallback((id) => copyProduct(id, {
     onSuccess: () => toast('판매중지 상태로 복사했어요. 재고를 채운 뒤 판매를 시작하세요'),
     onError: (err) => toast(err.response?.data?.message ?? '복사하지 못했어요. 잠시 후 다시 시도해 주세요.'),
@@ -119,7 +119,7 @@ export default function SellerProductList() {
 
       <div className="panel p-4 flex flex-wrap items-center gap-3">
         <Segments items={STATUS_TABS} value={status} onChange={setStatus} counts={counts} />
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="상품명 · 카테고리 · 상태 검색" className="ml-auto sm:w-72" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="상품명, 카테고리, 상태 검색" className="ml-auto sm:w-72" />
       </div>
 
       <div className="panel mt-3 border-b-0">
@@ -138,7 +138,7 @@ export default function SellerProductList() {
       <Modal open={del} onClose={() => setDel(false)} title="상품 삭제" width={420}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setDel(false)}>취소</button><button disabled={busy} className="btn btn-sm bg-rust text-white border-rust" onClick={remove}>삭제</button></>}>
         <p className="text-[14px]">선택한 <b>{sel.size}개</b> 상품을 삭제할까요?</p>
-        <p className="text-[13px] text-mute mt-2">삭제한 상품은 쇼핑몰 · 장바구니에서 구매할 수 없게 돼요. 지난 주문과 리뷰는 그대로 남아요.</p>
+        <p className="text-[13px] text-mute mt-2">삭제한 상품은 쇼핑몰, 장바구니에서 구매할 수 없게 돼요. 지난 주문과 리뷰는 그대로 남아요.</p>
       </Modal>
     </div>
   );

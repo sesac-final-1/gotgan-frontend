@@ -1,5 +1,5 @@
-// 판매자 주문 관리 — 담당 이경석 (GET /api/seller/order-items — 서버 페이징 · 탭 · 검색, 컨벤션 4-7)
-// 발주확인 · 송장 등록 · 배송완료는 일괄 PATCH — 일부만 실패하면 그 행에 사유를 보여 준다
+// 판매자 주문 관리 — 담당 이경석 (GET /api/seller/order-items — 서버 페이징, 탭, 검색, 컨벤션 4-7)
+// 발주확인, 송장 등록, 배송완료는 일괄 PATCH — 일부만 실패하면 그 행에 사유를 보여 준다
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table';
@@ -20,7 +20,7 @@ const COURIERS = ['CJ대한통운', '롯데택배', '한진택배', '우체국�
 const TABS = ['전체', ...FLOW];
 const PAGE_SIZE = 20;
 
-// 열 정의는 선택 상태 · 실패 사유가 바뀔 때만 새로 만든다 (컨벤션 4-7). 정렬은 서버 고정(최신 주문 먼저)
+// 열 정의는 선택 상태, 실패 사유가 바뀔 때만 새로 만든다 (컨벤션 4-7). 정렬은 서버 고정(최신 주문 먼저)
 function buildColumns({ sel, toggle, failures }) {
   return [
     {
@@ -69,7 +69,7 @@ export default function SellerOrderList() {
   const { data: store } = useMyStoreQuery();
   const defaultCourier = store?.courier || COURIERS[0];
 
-  // 검색어는 입력이 멈추고 0.3초 뒤에 서버로 — 탭 · 검색이 바뀌면 1페이지로
+  // 검색어는 입력이 멈추고 0.3초 뒤에 서버로 — 탭, 검색이 바뀌면 1페이지로
   useEffect(() => {
     const t = setTimeout(() => { setQ(search.trim()); setPageIndex(0); }, 300);
     return () => clearTimeout(t);
@@ -95,7 +95,7 @@ export default function SellerOrderList() {
   const deliverMutation = useDeliverOrderItemsMutation();
   const busy = confirmMutation.isPending || shipMutation.isPending || deliverMutation.isPending;
 
-  // 처리 결과 — 실패 행은 사유 표시 · 선택 유지, 성공 행은 선택 해제
+  // 처리 결과 — 실패 행은 사유 표시, 선택 유지, 성공 행은 선택 해제
   const run = async (mutation, payload, action) => {
     try {
       const r = await mutation.mutateAsync(payload);
@@ -126,7 +126,7 @@ export default function SellerOrderList() {
     void run(deliverMutation, ids, '배송완료 처리');
   };
   const setInput = (id, field, value) => setInputs((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-  // TODO(이경석): 판매취소 · 발송지연 안내 · 송장 출력 · 엑셀 다운로드 · 조회기간 — 서버 API 가 생기면 추가 (지금은 가짜 동작을 보이지 않게 뺌)
+  // TODO(이경석): 판매취소, 발송지연 안내, 송장 출력, 엑셀 다운로드, 조회기간 — 서버 API 가 생기면 추가 (지금은 가짜 동작을 보이지 않게 뺌)
 
   return (
     <div>
@@ -135,7 +135,7 @@ export default function SellerOrderList() {
       <div className="panel p-4 space-y-3">
         <div className="flex flex-wrap gap-3 items-center">
           <span className="text-[13px] font-semibold w-14">검색</span>
-          <SearchInput value={search} onChange={setSearch} placeholder="상품주문번호 · 구매자 · 수령인 · 상품명 · 송장번호" className="sm:w-96" />
+          <SearchInput value={search} onChange={setSearch} placeholder="상품주문번호, 구매자, 수령인, 상품명, 송장번호" className="sm:w-96" />
         </div>
       </div>
 
@@ -146,14 +146,14 @@ export default function SellerOrderList() {
           <Checkbox checked={allOn} onChange={(on) => setSel(on ? new Set(rows.map((r) => r.orderItemId)) : new Set())} />
           <span className="text-ink-2 mr-2">선택 <b className="num text-ink">{sel.size}</b>건</span>
           <button disabled={!sel.size || busy} onClick={confirm} className="btn btn-ink btn-xs">발주확인</button>
-          <button disabled={!sel.size || busy} onClick={openInvoice} className="btn btn-line btn-xs">송장 입력 · 발송처리</button>
+          <button disabled={!sel.size || busy} onClick={openInvoice} className="btn btn-line btn-xs">송장 입력, 발송처리</button>
           <button disabled={!sel.size || busy} onClick={deliver} className="btn btn-line btn-xs">배송완료 처리</button>
         </div>
       </div>
       <DataTable table={table} loading={isLoading} error={isError} />
 
       {/* 송장 입력 표 — 선택한 주문의 입력 폼이라 DataTable 대신 목업 <table> 그대로 */}
-      <Modal open={invoiceModal} onClose={() => setInvoiceModal(false)} title={`송장 입력 · 발송처리 (${selRows.length}건)`} width={680}
+      <Modal open={invoiceModal} onClose={() => setInvoiceModal(false)} title={`송장 입력, 발송처리 (${selRows.length}건)`} width={680}
         footer={<><button className="btn btn-line btn-sm" onClick={() => setInvoiceModal(false)}>취소</button><button disabled={busy} className="btn btn-ink btn-sm" onClick={() => void ship()}>{shipMutation.isPending ? '처리 중…' : '발송처리'}</button></>}>
         <p className="text-[12.5px] text-mute mb-3">배송준비 상태 주문만 발송처리됩니다. 송장번호를 비우면 데모용 송장번호가 자동으로 붙어요.</p>
         <table className="tbl">

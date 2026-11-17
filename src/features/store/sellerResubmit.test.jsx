@@ -52,7 +52,7 @@ const pdf = (name) => fileOf(name, 'application/pdf');
 const lastToast = () => useToastStore.getState().current?.msg;
 
 describe('보완 재제출', () => {
-  it('제출 내용으로 채워져 열리고, 요청 서류 없이는 못 냄 → 서류 + 계좌 수정 → 바뀐 칸 · 서류만 PATCH → 심사대기', async () => {
+  it('제출 내용으로 채워져 열리고, 요청 서류 없이는 못 냄 → 서류 + 계좌 수정 → 바뀐 칸, 서류만 PATCH → 심사대기', async () => {
     let me = supplement(['ECOMMERCE_REG']);
     stubGet(() => me);
     vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [{ key: 'applications/5/new.pdf', uploadUrl: 'https://s3/new' }] } });
@@ -61,7 +61,7 @@ describe('보완 재제출', () => {
     vi.stubGlobal('fetch', put);
     await openResubmit();
 
-    // 제출 내용이 채워져 있음 · 요청 서류 칸에 지금 낸 파일
+    // 제출 내용이 채워져 있음, 요청 서류 칸에 지금 낸 파일
     expect(input('상호명')).toHaveValue('곳간상회');
     expect(input('계좌번호')).toHaveValue('000000-00-000000');
     expect(screen.getByLabelText('스토어 주소')).toHaveValue('gotgan-store');
@@ -78,7 +78,7 @@ describe('보완 재제출', () => {
     type('계좌번호', '111-111-111');
     const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: '보완 제출하기' }));
-    expect(ask).toHaveBeenLastCalledWith('바꾼 항목: 정산 계좌 · 통신판매업 신고증(다시 냄)\n제출하면 다시 심사받습니다. 제출할까요?');
+    expect(ask).toHaveBeenLastCalledWith('바꾼 항목: 정산 계좌, 통신판매업 신고증(다시 냄)\n제출하면 다시 심사받습니다. 제출할까요?');
     expect(patch).not.toHaveBeenCalled(); // 취소 → 아무것도 안 보냄, 폼에 그대로
     expect(input('계좌번호')).toHaveValue('111-111-111');
 
@@ -122,7 +122,7 @@ describe('보완 재제출', () => {
     expect(patch).toHaveBeenCalledWith('/api/seller/apply/102/resubmit', {});
   });
 
-  it('409 APPLY_INVALID_STATUS(기한 지남) → 서버 문구 토스트 · 상태 다시 조회 → 반려 화면, 취소는 보완요청 화면으로', async () => {
+  it('409 APPLY_INVALID_STATUS(기한 지남) → 서버 문구 토스트, 상태 다시 조회 → 반려 화면, 취소는 보완요청 화면으로', async () => {
     let me = supplement([]);
     stubGet(() => me);
     vi.spyOn(axiosInstance, 'patch').mockImplementation(async () => {

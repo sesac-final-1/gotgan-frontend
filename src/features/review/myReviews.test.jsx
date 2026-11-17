@@ -48,7 +48,7 @@ afterEach(async () => {
   product.catName = '패션의류';
 });
 
-// GET — 작성 가능 · 내 리뷰를 URL 로 나눠 돌려준다 (다시 불러올 때 next 로 바꿈)
+// GET — 작성 가능, 내 리뷰를 URL 로 나눠 돌려준다 (다시 불러올 때 next 로 바꿈)
 function renderMyReviews({ writable = [WRITABLE], mine = [MINE] } = {}) {
   const state = { writable, mine };
   const get = vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => ({
@@ -64,7 +64,7 @@ const openMine = async () => {
 };
 
 describe('리뷰 API', () => {
-  it('경로 · 응답을 화면 필드로', async () => {
+  it('경로, 응답을 화면 필드로', async () => {
     const get = vi.spyOn(axiosInstance, 'get')
       .mockResolvedValueOnce({ data: { data: { content: [MINE] } } })
       .mockResolvedValueOnce({ data: { data: [WRITABLE] } });
@@ -127,10 +127,10 @@ describe('리뷰 API', () => {
 });
 
 describe('MyReviews', () => {
-  it('작성 가능한 리뷰 — 상품 스냅샷 · 구매확정일 · 작성기한 D-day, 탭 숫자', async () => {
+  it('작성 가능한 리뷰 — 상품 스냅샷, 구매확정일, 작성기한 D-day, 탭 숫자', async () => {
     renderMyReviews();
     expect(await screen.findByText('린넨 오버핏 셔츠')).toBeInTheDocument();
-    expect(screen.getByText(/오트밀 \/ M · 2026.10.20 구매확정/)).toBeInTheDocument();
+    expect(screen.getByText(/오트밀 \/ M, 2026.10.20 구매확정/)).toBeInTheDocument();
     expect(screen.getByText('작성기한 D-22')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /작성 가능한 리뷰 1/ })).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /내가 쓴 리뷰 1/ })).toBeInTheDocument();
@@ -153,11 +153,11 @@ describe('MyReviews', () => {
     expect(screen.queryByText('작성 가능한 리뷰가 없어요')).not.toBeInTheDocument();
   });
 
-  it('내가 쓴 리뷰 — 사이즈 체감 · 사진 · 답글, 블라인드는 안내 · 수정 버튼 숨김', async () => {
+  it('내가 쓴 리뷰 — 사이즈 체감, 사진, 답글, 블라인드는 안내, 수정 버튼 숨김', async () => {
     renderMyReviews({ mine: [MINE, BLINDED] });
     await openMine();
     const normal = (await screen.findByText('와이드 팬츠')).closest('li');
-    expect(within(normal).getByText('· 사이즈 커요')).toBeInTheDocument();
+    expect(within(normal).getByText(', 사이즈 커요')).toBeInTheDocument();
     expect(within(normal).getByText('감사합니다')).toBeInTheDocument();
     expect(within(normal).getByRole('button', { name: '수정' })).toBeInTheDocument();
     const blinded = screen.getByText('린넨 셔츠').closest('li');
@@ -196,7 +196,7 @@ describe('MyReviewModal', () => {
     return screen.getByRole('heading', { name: '리뷰 쓰기' }).closest('div.w-full');
   };
 
-  it('작성 — 20자 미만은 막고, 별점 · 사이즈 체감 · 본문으로 POST, 작성 가능 · 내 리뷰를 다시 불러옴', async () => {
+  it('작성 — 20자 미만은 막고, 별점, 사이즈 체감, 본문으로 POST, 작성 가능, 내 리뷰를 다시 불러옴', async () => {
     const { get } = renderMyReviews();
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: { reviewId: 40 } } });
     const modal = await openWrite();
@@ -218,7 +218,7 @@ describe('MyReviewModal', () => {
     await waitFor(() => expect(get.mock.calls.filter(([url]) => url === '/api/reviews/me/writable').length).toBeGreaterThan(1));
   });
 
-  it('작성 — 사진은 presign · PUT 뒤 imageKeys 로, 사이즈 체감은 다시 누르면 해제', async () => {
+  it('작성 — 사진은 presign, PUT 뒤 imageKeys 로, 사이즈 체감은 다시 누르면 해제', async () => {
     renderMyReviews();
     const post = vi.spyOn(axiosInstance, 'post').mockImplementation(async (url) => ({ data: { data: url === '/api/reviews/images/presign'
       ? [{ key: 'reviews/4/n.jpg', uploadUrl: 'https://s3/n' }] : { reviewId: 40 } } }));
@@ -234,7 +234,7 @@ describe('MyReviewModal', () => {
     await waitFor(() => expect(post).toHaveBeenCalledWith('/api/reviews', expect.objectContaining({ fit: null, imageKeys: ['reviews/4/n.jpg'] })));
   });
 
-  it('작성 — 의류 · 신발 · 가방이 아닌 상품(식품)은 사이즈를 묻지 않는다', async () => {
+  it('작성 — 의류, 신발, 가방이 아닌 상품(식품)은 사이즈를 묻지 않는다', async () => {
     product.catName = '식품';
     renderMyReviews();
     const modal = await openWrite();
@@ -242,12 +242,12 @@ describe('MyReviewModal', () => {
     expect(within(modal).queryByRole('button', { name: '정사이즈' })).toBeNull();
   });
 
-  it('사진 — 형식 · 10MB · 3장 초과는 막고, 3장이면 추가 칸이 사라진다', async () => {
+  it('사진 — 형식, 10MB, 3장 초과는 막고, 3장이면 추가 칸이 사라진다', async () => {
     renderMyReviews();
     const modal = await openWrite();
     const input = () => within(modal).getByLabelText('사진 추가');
     fireEvent.change(input(), { target: { files: [new File(['x'], 'a.gif', { type: 'image/gif' })] } });
-    expect(within(modal).getByRole('alert')).toHaveTextContent('JPG · PNG · WEBP 만');
+    expect(within(modal).getByRole('alert')).toHaveTextContent('JPG, PNG, WEBP 만');
     fireEvent.change(input(), { target: { files: [jpg('big.jpg', 10 * 1024 * 1024 + 1)] } });
     expect(within(modal).getByRole('alert')).toHaveTextContent('10MB 이하만');
     fireEvent.change(input(), { target: { files: [jpg('1.jpg'), jpg('2.jpg'), jpg('3.jpg'), jpg('4.jpg')] } });
@@ -289,7 +289,7 @@ describe('MyReviewModal', () => {
   });
 });
 
-it('queryKeys — 내 리뷰 · 작성 가능은 my() 아래 (작성 · 수정 · 삭제 뒤 함께 무효화)', () => {
+it('queryKeys — 내 리뷰, 작성 가능은 my() 아래 (작성, 수정, 삭제 뒤 함께 무효화)', () => {
   expect(queryKeys.review.myList().slice(0, 2)).toEqual(queryKeys.review.my());
   expect(queryKeys.review.writable().slice(0, 2)).toEqual(queryKeys.review.my());
 });

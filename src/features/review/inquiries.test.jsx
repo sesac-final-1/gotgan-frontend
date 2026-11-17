@@ -68,7 +68,7 @@ function mockGet(state) {
 const getParams = (get, url) => get.mock.calls.filter(([u]) => u === url).map(([, opts]) => opts?.params);
 
 describe('상품 문의 API', () => {
-  it('경로 · 요청 · 응답을 화면 필드로', async () => {
+  it('경로, 요청, 응답을 화면 필드로', async () => {
     const get = vi.spyOn(axiosInstance, 'get')
       .mockResolvedValueOnce({ data: { data: page([OPEN, SECRET]) } })
       .mockResolvedValueOnce({ data: { data: page([MINE_ANSWERED]) } })
@@ -113,7 +113,7 @@ describe('상품 문의 API', () => {
 });
 
 describe('상품 상세 Q&A', () => {
-  it('목록 — 답변 상태 · 작성자, 볼 수 없는 비밀글은 가림, 내 문의만 수정(답변 전) · 삭제', async () => {
+  it('목록 — 답변 상태, 작성자, 볼 수 없는 비밀글은 가림, 내 문의만 수정(답변 전), 삭제', async () => {
     mockGet({ '/api/inquiries': page([OPEN, SECRET, ANSWERED_MINE]) });
     renderAt(<ShopProductQna p={{ id: 101 }} />);
 
@@ -138,7 +138,7 @@ describe('상품 상세 Q&A', () => {
     expect(await screen.findByText('로그인 화면')).toBeInTheDocument();
   });
 
-  it('문의하기 — 빈 내용 막고, 공백 제거 · 비밀글로 POST, 목록 다시 불러옴', async () => {
+  it('문의하기 — 빈 내용 막고, 공백 제거, 비밀글로 POST, 목록 다시 불러옴', async () => {
     useAuthStore.setState({ accessToken: 'at', user: { userId: 4, roles: ['BUYER'] }, isAuthReady: true });
     const state = { '/api/inquiries': page([]) };
     const get = mockGet(state);
@@ -164,7 +164,7 @@ describe('상품 상세 Q&A', () => {
     expect(getParams(get, '/api/inquiries').length).toBeGreaterThan(1);
   });
 
-  it('수정 — 기존 값으로 열려 PUT, 삭제 — 확인 후 DELETE · 취소하면 그대로', async () => {
+  it('수정 — 기존 값으로 열려 PUT, 삭제 — 확인 후 DELETE, 취소하면 그대로', async () => {
     useAuthStore.setState({ accessToken: 'at', user: { userId: 4, roles: ['BUYER'] }, isAuthReady: true });
     mockGet({ '/api/inquiries': page([OPEN]) });
     const put = vi.spyOn(axiosInstance, 'put').mockResolvedValue({ data: { data: {} } });
@@ -187,7 +187,7 @@ describe('상품 상세 Q&A', () => {
     await waitFor(() => expect(lastToast()).toBe('문의를 삭제했어요'));
   });
 
-  it('삭제 실패 · 목록 오류 — 서버 메시지 토스트 · 안내', async () => {
+  it('삭제 실패, 목록 오류 — 서버 메시지 토스트, 안내', async () => {
     mockGet({ '/api/inquiries': page([OPEN]) });
     vi.spyOn(axiosInstance, 'delete').mockRejectedValue(apiError(404, 'INQUIRY_NOT_FOUND', '상품 문의를 찾을 수 없습니다.'));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -203,7 +203,7 @@ describe('상품 상세 Q&A', () => {
 });
 
 describe('마이페이지 내 문의', () => {
-  it('목록 — 상품 · 비밀글 · 답변, 답변 전만 수정 · 빈 목록 안내', async () => {
+  it('목록 — 상품, 비밀글, 답변, 답변 전만 수정, 빈 목록 안내', async () => {
     mockGet({ '/api/inquiries/me': page([MINE, MINE_ANSWERED]) });
     renderAt(<MyQna />);
 
@@ -244,7 +244,7 @@ describe('마이페이지 내 문의', () => {
 });
 
 describe('판매자 문의 관리', () => {
-  it('탭 숫자 · 기본 미답변 · 탭 → 서버 tab, 비밀글 자물쇠 · 작성자', async () => {
+  it('탭 숫자, 기본 미답변, 탭 → 서버 tab, 비밀글 자물쇠, 작성자', async () => {
     const get = mockGet({ '/api/seller/inquiries': page([SELLER_ROW]), '/api/seller/inquiries/summary': SUMMARY });
     renderAt(<SellerQnaList />);
 
@@ -280,7 +280,7 @@ describe('판매자 문의 관리', () => {
     expect(lastToast()).toBe('답변을 등록했어요');
   });
 
-  it('답변 수정 — 기존 답변으로 열림 · 취소 · 저장, 실패는 토스트', async () => {
+  it('답변 수정 — 기존 답변으로 열림, 취소, 저장, 실패는 토스트', async () => {
     mockGet({ '/api/seller/inquiries': page([SELLER_ANSWERED]), '/api/seller/inquiries/summary': SUMMARY });
     const put = vi.spyOn(axiosInstance, 'put').mockRejectedValue(apiError(404, 'INQUIRY_NOT_FOUND', '상품 문의를 찾을 수 없습니다.'));
     renderAt(<SellerQnaList />);
@@ -292,10 +292,10 @@ describe('판매자 문의 관리', () => {
     expect(within(row).queryByPlaceholderText('답변을 입력하세요')).toBeNull();
 
     fireEvent.click(within(row).getByRole('button', { name: '수정' }));
-    fireEvent.change(within(row).getByPlaceholderText('답변을 입력하세요'), { target: { value: '찬물 단독세탁 · 그늘 건조 추천드려요' } });
+    fireEvent.change(within(row).getByPlaceholderText('답변을 입력하세요'), { target: { value: '찬물 단독세탁, 그늘 건조 추천드려요' } });
     fireEvent.click(within(row).getByRole('button', { name: '답변 저장' }));
-    await waitFor(() => expect(put).toHaveBeenCalledWith('/api/seller/inquiries/32/answer', { content: '찬물 단독세탁 · 그늘 건조 추천드려요' }));
+    await waitFor(() => expect(put).toHaveBeenCalledWith('/api/seller/inquiries/32/answer', { content: '찬물 단독세탁, 그늘 건조 추천드려요' }));
     await waitFor(() => expect(lastToast()).toBe('상품 문의를 찾을 수 없습니다.'));
-    expect(within(row).getByPlaceholderText('답변을 입력하세요')).toHaveValue('찬물 단독세탁 · 그늘 건조 추천드려요');
+    expect(within(row).getByPlaceholderText('답변을 입력하세요')).toHaveValue('찬물 단독세탁, 그늘 건조 추천드려요');
   });
 });

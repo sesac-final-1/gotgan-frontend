@@ -1,6 +1,6 @@
 // 결제 흐름 — 담당 구지훈. 주문 생성 응답 → 결제창 → 결제 확인. 결과는 던지지 않고 status 로 돌려준다:
-//   PAID(결제 완료) · CANCELLED(결제창 닫음) · FAILED(결제 실패 · 주문 취소) · PENDING(결과 모름) · REDIRECTED(결제사 페이지로 이동)
-// CANCELLED · 결제창 FAILED · PENDING 은 주문이 결제 대기로 남는다 — 15분 뒤 서버가 확정하거나 재고 · 포인트를 되돌린다 (ORD-07)
+//   PAID(결제 완료), CANCELLED(결제창 닫음), FAILED(결제 실패, 주문 취소), PENDING(결과 모름), REDIRECTED(결제사 페이지로 이동)
+// CANCELLED, 결제창 FAILED, PENDING 은 주문이 결제 대기로 남는다 — 15분 뒤 서버가 확정하거나 재고, 포인트를 되돌린다 (ORD-07)
 import { confirmOrderPayment } from '@/features/payment/api/paymentApi';
 import { readPaymentRedirect, requestPortOnePayment } from '@/features/payment/portone';
 
@@ -19,7 +19,7 @@ async function confirm(orderNo) {
     return { status: 'PAID', orderNo, payAmt, message: '' };
   } catch (err) {
     const res = err.response;
-    // 409 미결제 · 5xx · 네트워크 오류 = 결과 모름 → 주문은 결제 대기 그대로
+    // 409 미결제, 5xx, 네트워크 오류 = 결과 모름 → 주문은 결제 대기 그대로
     if (!res || res.status >= 500 || res.data?.code === 'ORDER_PAYMENT_NOT_COMPLETED') {
       return { status: 'PENDING', orderNo, message: PENDING_MESSAGE };
     }

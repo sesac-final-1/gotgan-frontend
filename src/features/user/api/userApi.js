@@ -11,7 +11,7 @@ export const toMe = (r) => ({
   nick: r.nick ?? '',
   phone: r.phone ?? '',
   grade: r.grade,
-  signupProvider: r.signupProvider, // LOCAL 이 아니면(소셜 가입) 비밀번호 변경 불가 · 휴대폰이 비어 있을 수 있음
+  signupProvider: r.signupProvider, // LOCAL 이 아니면(소셜 가입) 비밀번호 변경 불가, 휴대폰이 비어 있을 수 있음
   point: r.point,
   spent: r.totalSpent,
   joined: r.joinedAt ? new Date(r.joinedAt) : null,
@@ -23,14 +23,14 @@ export const fetchMe = async () => toMe((await axiosInstance.get('/api/users/me'
 // PATCH /api/users/me — { name?, nick?, phone? } 보낸 항목만 수정(닉네임 '' = 삭제) → 수정 후 내 정보
 export const updateMe = async (request) => toMe((await axiosInstance.patch('/api/users/me', request)).data.data);
 
-// PATCH /api/users/me/password — { currentPassword, newPassword }. 토큰 · 세션은 그대로 (로그인 유지)
+// PATCH /api/users/me/password — { currentPassword, newPassword }. 토큰, 세션은 그대로 (로그인 유지)
 export const changePassword = (request) => axiosInstance.patch('/api/users/me/password', request);
 
-// DELETE /api/users/me — 탈퇴 (Keycloak 계정 삭제 → 로그인 · 재발급 불가). 판매자는 스토어 폐점 전 409
+// DELETE /api/users/me — 탈퇴 (Keycloak 계정 삭제 → 로그인, 재발급 불가). 판매자는 스토어 폐점 전 409
 export const withdraw = () => axiosInstance.delete('/api/users/me');
 
 // 배송지 — 응답 Address { id, label, name, phone, zip, addr, detail, main } 가 화면 필드와 같아 변환 없음
-// GET 은 기본 배송지 먼저 · 최근 등록순, 최대 5개라 페이징 없음
+// GET 은 기본 배송지 먼저, 최근 등록순, 최대 5개라 페이징 없음
 export const fetchMyAddresses = async () => (await axiosInstance.get('/api/users/me/addresses')).data.data;
 
 // POST — 201 등록된 배송지. 첫 배송지는 main 과 관계없이 기본, 5개 초과 409 ADDRESS_LIMIT_EXCEEDED

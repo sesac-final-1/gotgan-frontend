@@ -3,9 +3,9 @@
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { withRealType } from '@/shared/utils/fileType';
 
-// ── 판매자 리뷰 관리 (review.md 6 · 7절) — 스토어는 게이트웨이가 넣는 X-Store-Id
+// ── 판매자 리뷰 관리 (review.md 6, 7절) — 스토어는 게이트웨이가 넣는 X-Store-Id
 
-// GET /api/seller/reviews?tab&productId&page&size — 내 스토어 리뷰(삭제 제외 · 블라인드 포함) 최신순, 서버 페이징
+// GET /api/seller/reviews?tab&productId&page&size — 내 스토어 리뷰(삭제 제외, 블라인드 포함) 최신순, 서버 페이징
 export const toSellerReview = (r) => ({
   id: r.reviewId,
   productId: r.productId,
@@ -27,15 +27,15 @@ export const fetchSellerReviews = async (params) => {
   return { ...page, content: page.content.map(toSellerReview) };
 };
 
-// GET /api/seller/reviews/summary — 평균 · 분포(5→1) · 상품별(평균 높은순)은 블라인드 · 삭제 제외, tabCounts 는 목록 탭과 같은 조건
+// GET /api/seller/reviews/summary — 평균, 분포(5→1), 상품별(평균 높은순)은 블라인드, 삭제 제외, tabCounts 는 목록 탭과 같은 조건
 export const fetchSellerReviewSummary = async () => (await axiosInstance.get('/api/seller/reviews/summary')).data.data;
 
-// PUT /api/seller/reviews/{id}/reply — 리뷰당 1개, 없으면 작성 · 있으면 덮어씀. 블라인드면 409 REVIEW_BLINDED
+// PUT /api/seller/reviews/{id}/reply — 리뷰당 1개, 없으면 작성, 있으면 덮어씀. 블라인드면 409 REVIEW_BLINDED
 export const replyToReview = async (id, content) => (await axiosInstance.put(`/api/seller/reviews/${id}/reply`, { content })).data.data;
 
-// ── 상품 상세 공개 리뷰 (review.md 9절) — 블라인드 · 삭제 제외
+// ── 상품 상세 공개 리뷰 (review.md 9절) — 블라인드, 삭제 제외
 
-// GET /api/reviews?productId&rating&photoOnly&sort&page&size — sort: LATEST · RATING_HIGH · RATING_LOW
+// GET /api/reviews?productId&rating&photoOnly&sort&page&size — sort: LATEST, RATING_HIGH, RATING_LOW
 export const toProductReview = (r) => ({
   id: r.reviewId,
   writer: r.writerDisplayName, // 닉네임, 없으면 마스킹 실명 — 그대로 표시
@@ -44,7 +44,7 @@ export const toProductReview = (r) => ({
   title: r.title ?? '',
   body: r.content,
   option: r.optionName ?? '',
-  fit: r.fit, // SMALL · TRUE_TO_SIZE · LARGE · null — 문구는 FIT_LABELS
+  fit: r.fit, // SMALL, TRUE_TO_SIZE, LARGE, null — 문구는 FIT_LABELS
   reply: r.replyContent,
   date: new Date(r.createdAt),
   photos: r.imageUrls,
@@ -55,11 +55,11 @@ export const fetchProductReviews = async (params) => {
   return { ...page, content: page.content.map(toProductReview) };
 };
 
-// GET /api/reviews/summary?productId — 평균 · 리뷰 수 · 별점 분포(5→1) · 사이즈 체감 분포(작아요 · 정사이즈 · 커요)
+// GET /api/reviews/summary?productId — 평균, 리뷰 수, 별점 분포(5→1), 사이즈 체감 분포(작아요, 정사이즈, 커요)
 export const fetchProductReviewSummary = async (productId) =>
   (await axiosInstance.get('/api/reviews/summary', { params: { productId } })).data.data;
 
-// GET /api/reviews/ratings/products?ids= — 여러 상품 평점(review.md 10절). 요청 순서대로 · 리뷰 없으면 0 · 0, 1~100개
+// GET /api/reviews/ratings/products?ids= — 여러 상품 평점(review.md 10절). 요청 순서대로, 리뷰 없으면 0, 0, 1~100개
 // 100개가 넘으면(판매자 상품 전체) 100개씩 나눠 묻고 순서대로 합친다
 const RATING_IDS_MAX = 100;
 export const fetchProductRatings = async (ids) => {
@@ -70,9 +70,9 @@ export const fetchProductRatings = async (ids) => {
   return pages.flat();
 };
 
-// ── 마이페이지 리뷰 관리 (review.md 1 ~ 5 · 12절)
+// ── 마이페이지 리뷰 관리 (review.md 1 ~ 5, 12절)
 
-// GET /api/reviews/me — 내가 쓴 리뷰(삭제 제외 · 블라인드 포함) 최신순. 마이페이지는 한 화면에 다 보여 주므로 한 페이지(최대 50)
+// GET /api/reviews/me — 내가 쓴 리뷰(삭제 제외, 블라인드 포함) 최신순. 마이페이지는 한 화면에 다 보여 주므로 한 페이지(최대 50)
 export const toMyReview = (r) => ({
   id: r.reviewId,
   lineId: r.orderItemId,
@@ -83,7 +83,7 @@ export const toMyReview = (r) => ({
   rating: r.rating,
   title: r.title ?? '',
   body: r.content,
-  fit: r.fit, // SMALL · TRUE_TO_SIZE · LARGE · null — 문구는 FIT_LABELS
+  fit: r.fit, // SMALL, TRUE_TO_SIZE, LARGE, null — 문구는 FIT_LABELS
   blinded: r.blinded,
   reply: r.replyContent,
   date: new Date(r.createdAt),
@@ -93,7 +93,7 @@ export const toMyReview = (r) => ({
 export const fetchMyReviews = async () =>
   (await axiosInstance.get('/api/reviews/me', { params: { page: 0, size: 50 } })).data.data.content.map(toMyReview);
 
-// GET /api/reviews/me/writable — 구매확정 후 30일 안 · 리뷰 없는 상품주문, 기한 임박순
+// GET /api/reviews/me/writable — 구매확정 후 30일 안, 리뷰 없는 상품주문, 기한 임박순
 export const toWritable = (e) => ({
   lineId: e.orderItemId,
   productId: e.productId,

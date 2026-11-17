@@ -1,4 +1,4 @@
-// 로그인 세션 — 담당 이경석. 재발급 결과를 authStore 에 반영하는 곳은 여기 하나 (부팅 · 401 인터셉터 · 소셜 콜백이 같이 쓴다)
+// 로그인 세션 — 담당 이경석. 재발급 결과를 authStore 에 반영하는 곳은 여기 하나 (부팅, 401 인터셉터, 소셜 콜백이 같이 쓴다)
 import { refreshOnce } from '@/shared/api/refresh';
 import { refreshToken } from '@/features/auth/api/authApi';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -11,7 +11,7 @@ export async function refreshAndStore() {
   return result;
 }
 
-// RT 쿠키로 재발급 — 동시에 불려도(부팅 · 401 · 소셜 콜백) 요청은 한 번. 성공하면 { accessToken, expiresIn, user }
+// RT 쿠키로 재발급 — 동시에 불려도(부팅, 401, 소셜 콜백) 요청은 한 번. 성공하면 { accessToken, expiresIn, user }
 export function refreshSession() {
   return refreshOnce(refreshAndStore);
 }

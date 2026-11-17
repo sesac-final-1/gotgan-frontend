@@ -9,14 +9,14 @@ export const queryKeys = {
     application: (id) => ['admin', 'applications', id],
     stores: () => ['admin', 'stores'],
     storeList: () => ['admin', 'stores', 'list'], // 실제 목록 — stores() 아래라 함께 무효화
-    store: (storeId) => ['admin', 'stores', 'detail', storeId], // 상세(1절 확장) — 정지 · 해제 후 stores() 무효화로 함께 갱신
+    store: (storeId) => ['admin', 'stores', 'detail', storeId], // 상세(1절 확장) — 정지, 해제 후 stores() 무효화로 함께 갱신
     users: () => ['admin', 'users'],
     user: (userId) => ['admin', 'users', userId], // users() 아래라 목록을 무효화하면 상세도 함께
     userPoints: (userId) => ['admin', 'users', userId, 'points'],
     userReviews: (userId) => ['admin', 'users', userId, 'reviews'],
     settlements: () => ['admin', 'settlements'],
     settlement: (id) => ['admin', 'settlements', 'detail', id],
-    storeSettlements: (storeId) => ['admin', 'settlements', 'store', storeId], // settlements() 아래라 지급 · 보류 후 함께 갱신
+    storeSettlements: (storeId) => ['admin', 'settlements', 'store', storeId], // settlements() 아래라 지급, 보류 후 함께 갱신
     settlementWeek: (week) => ['admin', 'settlements', 'week', week ?? 'last'], // settlements() 아래라 목록을 무효화하면 함께
     reports: () => ['admin', 'reports'],
     report: (type, id) => ['admin', 'reports', type, id], // reports() 아래라 처리 후 목록을 무효화하면 상세도 함께
@@ -27,7 +27,7 @@ export const queryKeys = {
     systemMetrics: () => ['admin', 'system', 'metrics'],
     systemEvents: () => ['admin', 'system', 'events'],
     systemLoadTest: () => ['admin', 'system', 'loadtest'], // 관리자 화면 부하테스트(11/16)
-    systemMonitor: (part) => ['admin', 'system', 'monitor', part], // 실시간 모니터링(11/16) — overview · calls · errors · summary · trace
+    systemMonitor: (part) => ['admin', 'system', 'monitor', part], // 실시간 모니터링(11/16) — overview, calls, errors, summary, trace
     systemReport: (from, to) => ['admin', 'system', 'report', from, to], // 장애 분석 리포트(11/17)
   },
 
@@ -46,7 +46,7 @@ export const queryKeys = {
     detail: (storeId) => ['store', 'detail', String(storeId)], // 공개 스토어 홈
     rating: (storeId) => ['store', 'rating', String(storeId)], // 스토어 홈 별점(review API)
     mine: () => ['store', 'mine'],
-    myApplication: () => ['store', 'my-application'], // 내 입점 신청 상태 — 제출 · 재제출 뒤 무효화
+    myApplication: () => ['store', 'my-application'], // 내 입점 신청 상태 — 제출, 재제출 뒤 무효화
     sellerDashboard: () => ['store', 'seller', 'dashboard'], // 판매자 대시보드(15절)
   },
 
@@ -54,9 +54,9 @@ export const queryKeys = {
   product: {
     all: ['product'],
     categories: () => ['product', 'categories'],
-    list: (params) => ['product', 'list', params ?? {}], // 서버 페이징 목록 · 검색 — 조건이 키에 들어감 (컨벤션 4-7)
+    list: (params) => ['product', 'list', params ?? {}], // 서버 페이징 목록, 검색 — 조건이 키에 들어감 (컨벤션 4-7)
     detail: (productId) => ['product', 'detail', String(productId)],
-    seller: () => ['product', 'seller'], // 판매자 상품 — 등록 · 수정 · 상태 변경 · 삭제 뒤 목록 · 상세를 함께 무효화
+    seller: () => ['product', 'seller'], // 판매자 상품 — 등록, 수정, 상태 변경, 삭제 뒤 목록, 상세를 함께 무효화
     sellerList: () => ['product', 'seller', 'list'],
     sellerDetail: (productId) => ['product', 'seller', 'detail', String(productId)],
   },
@@ -65,11 +65,11 @@ export const queryKeys = {
   order: {
     all: ['order'],
     my: () => ['order', 'my'],
-    cart: () => ['order', 'cart'], // 장바구니 — 담기 · 수량 · 선택 · 삭제 · 결제 완료 뒤 무효화
-    myOrder: (orderNo) => ['order', 'my', orderNo], // my() 아래라 목록을 무효화하면 상세 · 환불 예정액도 함께
+    cart: () => ['order', 'cart'], // 장바구니 — 담기, 수량, 선택, 삭제, 결제 완료 뒤 무효화
+    myOrder: (orderNo) => ['order', 'my', orderNo], // my() 아래라 목록을 무효화하면 상세, 환불 예정액도 함께
     claimPreview: (orderNo, params) => ['order', 'my', orderNo, 'claim-preview', params],
     myClaims: () => ['order', 'my', 'claims'], // my() 아래 — 클레임 신청 뒤 함께 무효화
-    seller: () => ['order', 'seller'], // 판매자 처리(발주확인 · 송장 · 배송완료) 뒤 목록 · 상세를 함께 무효화
+    seller: () => ['order', 'seller'], // 판매자 처리(발주확인, 송장, 배송완료) 뒤 목록, 상세를 함께 무효화
     sellerItems: (params) => ['order', 'seller', 'items', params ?? {}], // 서버 페이징 대상 (컨벤션 4-7)
     sellerItem: (orderItemId) => ['order', 'seller', 'item', String(orderItemId)],
     sellerClaims: (params) => ['order', 'seller', 'claims', params ?? {}], // seller() 아래 — 서버 페이징
@@ -78,16 +78,16 @@ export const queryKeys = {
   // ── review (이경석)
   review: {
     all: ['review'],
-    my: () => ['review', 'my'], // 마이페이지 — 작성 · 수정 · 삭제 뒤 내가 쓴 리뷰 · 작성 가능 목록을 함께 무효화
+    my: () => ['review', 'my'], // 마이페이지 — 작성, 수정, 삭제 뒤 내가 쓴 리뷰, 작성 가능 목록을 함께 무효화
     myList: () => ['review', 'my', 'list'],
     writable: () => ['review', 'my', 'writable'],
-    seller: () => ['review', 'seller'], // 판매자 리뷰 관리 — 답글 뒤 목록 · 요약을 함께 무효화
+    seller: () => ['review', 'seller'], // 판매자 리뷰 관리 — 답글 뒤 목록, 요약을 함께 무효화
     sellerList: (params) => ['review', 'seller', 'list', params ?? {}], // 서버 페이징
     sellerSummary: () => ['review', 'seller', 'summary'],
     productList: (params) => ['review', 'product', 'list', params], // 상품 상세 공개 리뷰 — 서버 페이징
     productSummary: (productId) => ['review', 'product', 'summary', productId],
     productRatings: (ids) => ['review', 'product', 'ratings', ids], // 상품 카드 별점 — 받은 상품 페이지의 id 묶음
-    inquiry: () => ['review', 'inquiry'], // 상품 문의 — 등록 · 수정 · 삭제 · 답변 뒤 상품 Q&A · 내 문의 · 판매자 목록 · 숫자를 함께 무효화
+    inquiry: () => ['review', 'inquiry'], // 상품 문의 — 등록, 수정, 삭제, 답변 뒤 상품 Q&A, 내 문의, 판매자 목록, 숫자를 함께 무효화
     productInquiries: (params) => ['review', 'inquiry', 'product', params], // 서버 페이징
     myInquiries: (params) => ['review', 'inquiry', 'my', params],
     sellerInquiries: (params) => ['review', 'inquiry', 'seller', 'list', params],
@@ -117,7 +117,7 @@ export const queryKeys = {
     unread: () => ['chat', 'unread'],
   },
 
-  // ── payment (구지훈) — 포트원 결제창 · 결제 확인
+  // ── payment (구지훈) — 포트원 결제창, 결제 확인
   payment: {
     all: ['payment'],
     redirect: (orderNo, search) => ['payment', 'redirect', orderNo, search], // 모바일 리다이렉트 결과 → 결제 확인

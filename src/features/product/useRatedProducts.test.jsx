@@ -17,7 +17,7 @@ function wrapper({ children }) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
-describe('useRatedProducts — 상품 카드에 별점 · 리뷰 수', () => {
+describe('useRatedProducts — 상품 카드에 별점, 리뷰 수', () => {
   it('평점을 받기 전에는 다시 렌더해도 같은 목록(새 배열을 만들지 않음)', () => {
     // given — 평점 응답이 오지 않는 동안
     vi.spyOn(axiosInstance, 'get').mockReturnValue(new Promise(() => {}));
@@ -31,7 +31,7 @@ describe('useRatedProducts — 상품 카드에 별점 · 리뷰 수', () => {
     expect(result.current).toBe(first);
   });
 
-  it('평점을 받으면 해당 상품에만 별점 · 리뷰 수를 붙임', async () => {
+  it('평점을 받으면 해당 상품에만 별점, 리뷰 수를 붙임', async () => {
     // given
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [{ productId: 101, averageRating: 4.5, reviewCount: 12 }] } });
 

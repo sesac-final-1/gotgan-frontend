@@ -11,7 +11,7 @@ import { toast } from '@/shared/stores/toastStore';
 import { ymd } from '@/shared/utils/format';
 
 const ANSWER_MAX = 1000;
-// 탭 이름 → 서버 tab 값 · 숫자 응답 필드
+// 탭 이름 → 서버 tab 값, 숫자 응답 필드
 const TABS = { 미답변: ['UNANSWERED', 'unanswered'], 답변완료: ['ANSWERED', 'answered'], 전체: ['ALL', 'all'] };
 
 // 답변 입력칸 — 행마다 입력 중인 글을 따로 들고 있다. 답변이 있으면 보여 주고 "수정"으로 다시 연다 (서버는 덮어씀)
@@ -49,7 +49,7 @@ function buildColumns({ onAnswer, answerPending }) {
     },
     { accessorKey: 'productName', header: '상품', meta: { tdClass: 'text-ink-2 min-w-[160px]' } },
     {
-      id: 'qa', header: '문의 · 답변',
+      id: 'qa', header: '문의, 답변',
       cell: ({ row: { original: q } }) => (
         <div className="min-w-[320px] py-2">
           <p className="text-[14px] whitespace-pre-line"><b className="mr-2">Q</b>{q.content}</p>

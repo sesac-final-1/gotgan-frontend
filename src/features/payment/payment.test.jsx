@@ -19,7 +19,7 @@ const CREATED = { orderNo: '20261023-000001', status: 'PENDING', payAmt: 64400, 
 const PAID = { orderNo: CREATED.orderNo, status: 'PAID', payAmt: 64400 };
 const httpError = (status, code) => Object.assign(new Error(code), { response: { status, data: { code, message: `서버 메시지 ${code}` } } });
 
-describe('toPaymentResult — 결제창 응답 · 리다이렉트 쿼리 정리', () => {
+describe('toPaymentResult — 결제창 응답, 리다이렉트 쿼리 정리', () => {
   it('code 없음 = 결제창 끝남(APPROVED), 사용자 취소 코드 = CANCELLED, 그 밖은 FAILED + PG 메시지 우선', () => {
     expect(toPaymentResult({ paymentId: 'p' }).status).toBe('APPROVED');
     expect(toPaymentResult({ code: 'FAILURE_TYPE_PG', pgCode: 'PAY_PROCESS_CANCELED' }).status).toBe('CANCELLED');
@@ -30,7 +30,7 @@ describe('toPaymentResult — 결제창 응답 · 리다이렉트 쿼리 정리'
 });
 
 describe('requestPortOnePayment — 포트원 SDK 호출', () => {
-  it('주문 생성 응답 그대로 카드 · KRW 결제창, 응답을 결과로', async () => {
+  it('주문 생성 응답 그대로 카드, KRW 결제창, 응답을 결과로', async () => {
     PortOne.requestPayment.mockResolvedValue({ transactionType: 'PAYMENT', txId: 't', paymentId: CREATED.portonePaymentId });
 
     const result = await requestPortOnePayment({ ...CREATED, redirectUrl: 'https://x/order/complete' });
@@ -82,7 +82,7 @@ describe('payOrder — 결제창 → 결제 확인', () => {
     expect(post).toHaveBeenCalledWith('/api/orders/20261023-000001/payment/confirm');
   });
 
-  it('0원(전액 포인트)은 결제창 · 결제 확인 없이 PAID', async () => {
+  it('0원(전액 포인트)은 결제창, 결제 확인 없이 PAID', async () => {
     const post = vi.spyOn(axiosInstance, 'post');
 
     expect((await payOrder({ ...CREATED, payAmt: 0, portonePaymentId: null, status: 'PAID' })).status).toBe('PAID');
@@ -90,7 +90,7 @@ describe('payOrder — 결제창 → 결제 확인', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('결제창 취소 · 실패 · 리다이렉트는 결제 확인을 부르지 않음', async () => {
+  it('결제창 취소, 실패, 리다이렉트는 결제 확인을 부르지 않음', async () => {
     const post = vi.spyOn(axiosInstance, 'post');
     PortOne.requestPayment.mockResolvedValueOnce({ code: 'FAILURE_TYPE_PG', pgCode: 'PAY_PROCESS_CANCELED' });
     expect((await payOrder(CREATED)).status).toBe('CANCELLED');
@@ -101,7 +101,7 @@ describe('payOrder — 결제창 → 결제 확인', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('결제 확인 응답 — 409 미결제 · 502 · 네트워크 오류는 PENDING, 결제 실패 · 그 밖의 4xx 는 FAILED', async () => {
+  it('결제 확인 응답 — 409 미결제, 502, 네트워크 오류는 PENDING, 결제 실패, 그 밖의 4xx 는 FAILED', async () => {
     PortOne.requestPayment.mockResolvedValue({ paymentId: CREATED.portonePaymentId });
     const post = vi.spyOn(axiosInstance, 'post');
     const statusOf = async (error) => { post.mockRejectedValueOnce(error); return payOrder(CREATED); };

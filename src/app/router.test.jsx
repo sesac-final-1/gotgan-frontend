@@ -11,7 +11,7 @@ const lazyRoutes = (routes, parent = '') =>
 describe('router', () => {
   const all = lazyRoutes(router.routes);
 
-  it('판매자 · 관리자 · 마이페이지 틀과 화면을 모두 지연 로딩한다', () => {
+  it('판매자, 관리자, 마이페이지 틀과 화면을 모두 지연 로딩한다', () => {
     expect(all.length).toBeGreaterThanOrEqual(46);
   });
 

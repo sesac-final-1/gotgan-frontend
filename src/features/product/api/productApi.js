@@ -1,9 +1,9 @@
-// product 도메인 API — 담당 박지연. 공개 API(카테고리 · 목록 · 상세)는 실제 호출, 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절)
-// 계약: backend docs/api/product.md 8 · 9 · 10절. 상품 · 스토어 · 카테고리 id 는 숫자다 (목업 'p601' · 's6' · 'fashion' 아님)
+// product 도메인 API — 담당 박지연. 공개 API(카테고리, 목록, 상세)는 실제 호출, 응답은 화면이 쓰던 목업 필드 이름으로 바꿔 넘긴다 (docs/MOCK-TO-API.md 2절)
+// 계약: backend docs/api/product.md 8, 9, 10절. 상품, 스토어, 카테고리 id 는 숫자다 (목업 'p601', 's6', 'fashion' 아님)
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { withRealType } from '@/shared/utils/fileType';
 
-// GET /api/categories — [{ id, name, nameEn, children[{ id, name, nameEn }] }] 사용 중인 것만 · sortOrder 순. 수수료율은 없음(settlement 소관, 관리자 화면만 admin 이 합침)
+// GET /api/categories — [{ id, name, nameEn, children[{ id, name, nameEn }] }] 사용 중인 것만, sortOrder 순. 수수료율은 없음(settlement 소관, 관리자 화면만 admin 이 합침)
 export const toCategory = (c) => ({
   id: c.id,
   name: c.name,
@@ -14,10 +14,10 @@ export const toCategory = (c) => ({
 
 export const fetchCategories = async () => (await axiosInstance.get('/api/categories')).data.data.map(toCategory);
 
-// 상태 문구 — 목록은 노출 가능 상품만 오므로 품절 · 판매중, 상세는 purchasable=false 면 판매중지(화면 "현재 구매할 수 없는 상품")
+// 상태 문구 — 목록은 노출 가능 상품만 오므로 품절, 판매중, 상세는 purchasable=false 면 판매중지(화면 "현재 구매할 수 없는 상품")
 const statusOf = ({ purchasable = true, soldOut }) => (!purchasable ? '판매중지' : soldOut ? '품절' : '판매중');
 
-// 목록 · 상세 공통 — 목업에만 있던 값(별점 · 리뷰 수 · 판매량 · 태그)은 기본값: 별점 · 리뷰 수는 화면이 review API(GET /api/reviews/ratings/products?ids=)로 붙인다
+// 목록, 상세 공통 — 목업에만 있던 값(별점, 리뷰 수, 판매량, 태그)은 기본값: 별점, 리뷰 수는 화면이 review API(GET /api/reviews/ratings/products?ids=)로 붙인다
 const common = (r) => ({
   id: r.productId,
   storeId: r.storeId,
@@ -25,7 +25,7 @@ const common = (r) => ({
   catId: r.categoryId, // 하위 카테고리 id
   name: r.name,
   price: r.price,
-  discount: Number(r.discountRate ?? 0) / 100, // 15.00(%) → 0.15 — 화면 salePrice() · Price 가 비율을 쓴다
+  discount: Number(r.discountRate ?? 0) / 100, // 15.00(%) → 0.15 — 화면 salePrice(), Price 가 비율을 쓴다
   salePrice: r.salePrice, // 서버 계산 판매가(10원 단위 반올림) — 화면 salePrice(p) 와 같은 값
   status: statusOf(r),
   soldOut: r.soldOut,
@@ -39,12 +39,12 @@ const common = (r) => ({
 // GET /api/products 한 건 — ProductSummary { productId, name, storeId, categoryId, topCategoryId, price, discountRate, salePrice, imageUrl, soldOut, createdAt }
 export const toProductCard = (r) => ({ ...common(r), images: r.imageUrl ? [r.imageUrl] : [], options: [] });
 
-// 비어 있는 조건(undefined · null · '')을 뺀 조회 조건 — 요청과 캐시 키(useProductSearchQuery)가 같은 값을 쓴다
-// ({ q: '' } · { q: undefined } · {} 가 같은 요청인데 키가 달라 같은 목록을 여러 번 받던 것)
+// 비어 있는 조건(undefined, null, '')을 뺀 조회 조건 — 요청과 캐시 키(useProductSearchQuery)가 같은 값을 쓴다
+// ({ q: '' }, { q: undefined }, {} 가 같은 요청인데 키가 달라 같은 목록을 여러 번 받던 것)
 export const cleanParams = (params = {}) =>
   Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''));
 
-// 서버 페이징 목록 · 검색 — params { categoryId(상위면 하위 전부), storeId, q, minPrice, maxPrice(미포함), excludeSoldOut, sort(NEW · PRICE_ASC · PRICE_DESC), page(0부터), size(최대 100) }
+// 서버 페이징 목록, 검색 — params { categoryId(상위면 하위 전부), storeId, q, minPrice, maxPrice(미포함), excludeSoldOut, sort(NEW, PRICE_ASC, PRICE_DESC), page(0부터), size(최대 100) }
 // 비어 있는 값은 보내지 않는다 → 응답 { content[], page, size, totalElements, totalPages, hasNext }
 export const fetchProducts = async (params = {}) => {
   const page = (await axiosInstance.get('/api/products', { params: cleanParams(params) })).data.data;
@@ -56,7 +56,7 @@ const optionAxes = (r) => [[r.option1Name, 'option1Value'], [r.option2Name, 'opt
   .filter(([name]) => name)
   .map(([name, key]) => ({ name, values: [...new Set(r.options.map((o) => o[key]).filter((v) => v != null))] }));
 
-// GET /api/products/{id} — 상세. 장바구니는 언제나 productOptionId 로 담으므로 optionItems 에 옵션 조합별 id · 추가금 · 품절을 둔다
+// GET /api/products/{id} — 상세. 장바구니는 언제나 productOptionId 로 담으므로 optionItems 에 옵션 조합별 id, 추가금, 품절을 둔다
 export const toProductDetail = (r) => ({
   ...common(r),
   sub: r.categoryName,
@@ -75,17 +75,17 @@ export const toProductDetail = (r) => ({
   })),
 });
 
-// 없거나 삭제된 상품은 404 PRODUCT_NOT_FOUND · 판매중지 · 스토어 정지 상품도 200 (purchasable=false)
+// 없거나 삭제된 상품은 404 PRODUCT_NOT_FOUND, 판매중지, 스토어 정지 상품도 200 (purchasable=false)
 export const fetchProduct = async (productId) => toProductDetail((await axiosInstance.get(`/api/products/${productId}`)).data.data);
 
-// ── 판매자 상품 (product.md 11 · 15 · 16절) — SELLER, 게이트웨이가 넣은 X-Store-Id 스토어 상품만 온다
-// 화면 상태 탭은 판매중 · 품절 · 판매중지 3개 — BLOCKED(관리자 강제 판매중지)는 판매중지 탭에 사유와 함께 (11절)
+// ── 판매자 상품 (product.md 11, 15, 16절) — SELLER, 게이트웨이가 넣은 X-Store-Id 스토어 상품만 온다
+// 화면 상태 탭은 판매중, 품절, 판매중지 3개 — BLOCKED(관리자 강제 판매중지)는 판매중지 탭에 사유와 함께 (11절)
 export const sellerStatusOf = ({ status, soldOut }) => {
   if (status === 'ON_SALE') return soldOut ? '품절' : '판매중';
-  return '판매중지'; // STOPPED · BLOCKED
+  return '판매중지'; // STOPPED, BLOCKED
 };
 
-// 쇼핑몰에 안 보이는 이유 중 상태로 드러나지 않는 것만 문구로 — STOPPED · BLOCKED 는 상태 칸에 이미 보인다
+// 쇼핑몰에 안 보이는 이유 중 상태로 드러나지 않는 것만 문구로 — STOPPED, BLOCKED 는 상태 칸에 이미 보인다
 const HIDDEN_REASON = { CATEGORY_INACTIVE: '카테고리 사용 중지', STORE_INACTIVE: '스토어 운영 중지' };
 
 // GET /api/seller/products 한 건 — { productId, name, categoryId, categoryName, topCategoryId, topCategoryName, price, discountRate, salePrice,
@@ -103,7 +103,7 @@ export const toSellerProductRow = (r) => ({
   images: r.imageUrl ? [r.imageUrl] : [],
   stock: r.totalStock,
   soldOut: r.soldOut,
-  status: sellerStatusOf(r), // 탭 · 필터 값
+  status: sellerStatusOf(r), // 탭, 필터 값
   pill: r.status === 'BLOCKED' ? '강제중지' : sellerStatusOf(r), // 상태 칸 표시
   blocked: r.status === 'BLOCKED',
   statusReason: r.statusReason ?? '',
@@ -113,12 +113,12 @@ export const toSellerProductRow = (r) => ({
   reviews: 0,
 });
 
-// 전체 조회(페이징 없음) — 탭 개수 · 검색 · 정렬 · 페이징은 화면에서 (컨벤션 4-7)
+// 전체 조회(페이징 없음) — 탭 개수, 검색, 정렬, 페이징은 화면에서 (컨벤션 4-7)
 export const fetchSellerProducts = async () => (await axiosInstance.get('/api/seller/products')).data.data.map(toSellerProductRow);
 
 const API_STATUS = { 판매중: 'ON_SALE', 판매중지: 'STOPPED' };
 
-// PATCH /api/seller/products/status — 판매중지 · 재개 일괄(최대 100개). 건마다 처리 → { success[id], failed[{ productId, code, message }] }
+// PATCH /api/seller/products/status — 판매중지, 재개 일괄(최대 100개). 건마다 처리 → { success[id], failed[{ productId, code, message }] }
 export const updateSellerProductStatus = async ({ productIds, status }) =>
   (await axiosInstance.patch('/api/seller/products/status', { productIds, status: API_STATUS[status] })).data.data;
 
@@ -133,8 +133,8 @@ export const deleteSellerProducts = async (productIds) => {
   };
 };
 
-// GET /api/seller/products/{id} — 수정 화면용 (12절). 공개 상세(10절) + 상태 · 사유 · 옵션별 재고 · 이미지 { key, url }
-// 폼은 요청 모양(13절)에 가까운 값을 쓰므로 이름만 화면 쪽으로 바꾸고 옵션 · 이미지는 그대로 둔다
+// GET /api/seller/products/{id} — 수정 화면용 (12절). 공개 상세(10절) + 상태, 사유, 옵션별 재고, 이미지 { key, url }
+// 폼은 요청 모양(13절)에 가까운 값을 쓰므로 이름만 화면 쪽으로 바꾸고 옵션, 이미지는 그대로 둔다
 export const toSellerProductDetail = (r) => ({
   id: r.productId,
   catId: r.categoryId,
@@ -156,7 +156,7 @@ export const toSellerProductDetail = (r) => ({
 
 export const fetchSellerProduct = async (productId) => toSellerProductDetail((await axiosInstance.get(`/api/seller/products/${productId}`)).data.data);
 
-// POST /api/seller/products(201) · PUT /api/seller/products/{id}(200) — 옵션 · 이미지 통째로 (13절). 응답은 12절과 같은 모양
+// POST /api/seller/products(201), PUT /api/seller/products/{id}(200) — 옵션, 이미지 통째로 (13절). 응답은 12절과 같은 모양
 export const saveSellerProduct = async ({ productId, request }) => {
   const res = productId
     ? await axiosInstance.put(`/api/seller/products/${productId}`, request)
@@ -169,7 +169,7 @@ export const saveSellerProduct = async ({ productId, request }) => {
 export const updateSellerProductStocks = async ({ productId, items }) =>
   (await axiosInstance.patch(`/api/seller/products/${productId}/stocks`, { items })).data.data;
 
-// 이미지 업로드 (17절) — 발급 → 브라우저가 S3 에 직접 PUT → 키를 13절 imageKeys 에. Content-Type · 크기가 서명에 들어간다(입점 서류와 같은 방식)
+// 이미지 업로드 (17절) — 발급 → 브라우저가 S3 에 직접 PUT → 키를 13절 imageKeys 에. Content-Type, 크기가 서명에 들어간다(입점 서류와 같은 방식)
 export const PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']; // upload-guard 허용 형식과 같음
 export const PRODUCT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 

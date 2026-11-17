@@ -29,10 +29,10 @@ const DETAIL = {
 };
 
 describe('fetchCategories — GET /api/categories 를 화면 필드로', () => {
-  it('id 숫자 그대로 · nameEn → en · 하위는 이름 배열(subs) + id 포함(children), 수수료는 없음', async () => {
+  it('id 숫자 그대로, nameEn → en, 하위는 이름 배열(subs) + id 포함(children), 수수료는 없음', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [
       { id: 3, name: '패션의류', nameEn: 'Apparel', children: [{ id: 301, name: '셔츠', nameEn: null }, { id: 302, name: '팬츠', nameEn: null }] },
-      { id: 6, name: '디지털·가전', nameEn: null, children: [] },
+      { id: 6, name: '디지털, 가전', nameEn: null, children: [] },
     ] } });
 
     const cats = await fetchCategories();
@@ -40,14 +40,14 @@ describe('fetchCategories — GET /api/categories 를 화면 필드로', () => {
     expect(get).toHaveBeenCalledWith('/api/categories');
     expect(cats).toEqual([
       { id: 3, name: '패션의류', en: 'Apparel', subs: ['셔츠', '팬츠'], children: [{ id: 301, name: '셔츠' }, { id: 302, name: '팬츠' }] },
-      { id: 6, name: '디지털·가전', en: '', subs: [], children: [] },
+      { id: 6, name: '디지털, 가전', en: '', subs: [], children: [] },
     ]);
     expect(toCategory({ id: 1, name: '식품', nameEn: 'Food', children: [] })).not.toHaveProperty('commission');
   });
 });
 
 describe('fetchProducts — GET /api/products (서버 페이징) 를 카드 필드로', () => {
-  it('비어 있는 조건은 보내지 않고, content 만 변환 · 페이지 정보는 그대로', async () => {
+  it('비어 있는 조건은 보내지 않고, content 만 변환, 페이지 정보는 그대로', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { content: [SUMMARY], page: 0, size: 8, totalElements: 1, totalPages: 1, hasNext: false } } });
 
     const page = await fetchProducts({ categoryId: 1, sort: 'NEW', size: 8, q: '', storeId: undefined, minPrice: null });
@@ -88,7 +88,7 @@ describe('fetchProduct — GET /api/products/{id} 를 상세 필드로', () => {
     ]);
   });
 
-  it('옵션 없는 상품(값 null 옵션 1개) → options 빈 배열 · optionItems 1개 · 소재 · 원산지 null 은 빈 문자열', () => {
+  it('옵션 없는 상품(값 null 옵션 1개) → options 빈 배열, optionItems 1개, 소재, 원산지 null 은 빈 문자열', () => {
     const p = toProductDetail({ ...DETAIL, option1Name: null, option2Name: null, material: null, origin: null, description: null,
       options: [{ productOptionId: 20001, option1Value: null, option2Value: null, extraPrice: 0, soldOut: false }] });
 
@@ -111,7 +111,7 @@ const SELLER_ROW = {
 };
 
 describe('판매자 상품 목록 — GET /api/seller/products 를 표 행으로', () => {
-  it('전체 배열 변환 — 카테고리 이름 · 재고 합계 · 할인 비율 · Date, 평점은 기본값', async () => {
+  it('전체 배열 변환 — 카테고리 이름, 재고 합계, 할인 비율, Date, 평점은 기본값', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [SELLER_ROW] } });
 
     const rows = await fetchSellerProducts();
@@ -122,7 +122,7 @@ describe('판매자 상품 목록 — GET /api/seller/products 를 표 행으로
       statusReason: '', hidden: '', created: new Date('2026-10-20T10:00:00+09:00'), rating: 0, reviews: 0 }]);
   });
 
-  it('상태 — 품절 · 판매중지 · 강제중지(판매중지 탭 + 사유), 이미지 없으면 빈 배열', () => {
+  it('상태 — 품절, 판매중지, 강제중지(판매중지 탭 + 사유), 이미지 없으면 빈 배열', () => {
     expect(toSellerProductRow({ ...SELLER_ROW, soldOut: true })).toMatchObject({ status: '품절', pill: '품절' });
     // 상위 카테고리가 없으면(삭제) 대체 이미지는 기본 그림 — data-cat 비움
     expect(toSellerProductRow({ ...SELLER_ROW, topCategoryId: null }).cat).toBeNull();
@@ -131,14 +131,14 @@ describe('판매자 상품 목록 — GET /api/seller/products 를 표 행으로
       .toMatchObject({ status: '판매중지', pill: '강제중지', blocked: true, statusReason: '허위 표시', hidden: '', images: [] });
   });
 
-  it('판매중인데 쇼핑몰 미노출 — 카테고리 · 스토어 이유를 문구로', () => {
+  it('판매중인데 쇼핑몰 미노출 — 카테고리, 스토어 이유를 문구로', () => {
     expect(toSellerProductRow({ ...SELLER_ROW, displayable: false, hiddenReason: 'CATEGORY_INACTIVE' }).hidden).toBe('카테고리 사용 중지');
     expect(toSellerProductRow({ ...SELLER_ROW, displayable: false, hiddenReason: 'STORE_INACTIVE' }).hidden).toBe('스토어 운영 중지');
   });
 });
 
-describe('판매자 상품 변경 — 판매중지 · 재개 일괄 · 삭제', () => {
-  it('화면 상태 이름을 API 값으로 보내고 결과(success · failed)를 그대로', async () => {
+describe('판매자 상품 변경 — 판매중지, 재개 일괄, 삭제', () => {
+  it('화면 상태 이름을 API 값으로 보내고 결과(success, failed)를 그대로', async () => {
     const result = { success: [3], failed: [{ productId: 7, code: 'PRODUCT_BLOCKED', message: '관리자가 판매중지한 상품은 재개할 수 없습니다.' }] };
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: result } });
 
@@ -149,7 +149,7 @@ describe('판매자 상품 변경 — 판매중지 · 재개 일괄 · 삭제', 
     expect(patch).toHaveBeenNthCalledWith(2, '/api/seller/products/status', { productIds: [3], status: 'STOPPED' });
   });
 
-  it('일괄 삭제는 건마다 DELETE — 실패한 건은 서버 코드 · 메시지로 failed 에', async () => {
+  it('일괄 삭제는 건마다 DELETE — 실패한 건은 서버 코드, 메시지로 failed 에', async () => {
     const del = vi.spyOn(axiosInstance, 'delete').mockImplementation(async (url) => {
       if (url.endsWith('/9')) throw Object.assign(new Error('404'), { response: { data: { code: 'PRODUCT_NOT_FOUND', message: '상품을 찾을 수 없습니다.' } } });
       if (url.endsWith('/8')) throw new Error('Network Error');
@@ -167,15 +167,15 @@ describe('판매자 상품 변경 — 판매중지 · 재개 일괄 · 삭제', 
   });
 });
 
-// product.md 12절 응답 — 10절 + 상태 · 사유 · 옵션별 재고 · 이미지 { key, url }
+// product.md 12절 응답 — 10절 + 상태, 사유, 옵션별 재고, 이미지 { key, url }
 const SELLER_DETAIL = {
   ...DETAIL, status: 'BLOCKED', statusReason: '허위 표시', hiddenReason: 'BLOCKED', discountRate: 15.0,
   options: [{ productOptionId: 10101, option1Value: '오트밀', option2Value: 'M', extraPrice: 0, soldOut: false, stock: 30 }],
   images: [{ key: 'products/1/a.jpg', url: 'https://img/products/1/a.jpg' }],
 };
 
-describe('판매자 상품 상세 · 등록 · 수정', () => {
-  it('GET /api/seller/products/{id} — 폼에 쓰는 값으로(할인율 정수 · 옵션 재고 · 이미지 key · 강제중지 사유)', async () => {
+describe('판매자 상품 상세, 등록, 수정', () => {
+  it('GET /api/seller/products/{id} — 폼에 쓰는 값으로(할인율 정수, 옵션 재고, 이미지 key, 강제중지 사유)', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: SELLER_DETAIL } });
 
     const p = await fetchSellerProduct(101);
@@ -203,7 +203,7 @@ describe('uploadProductImages — 발급 → S3 PUT → 키', () => {
   afterEach(() => vi.unstubAllGlobals());
   const file = (name, type) => fileOf(name, type);
 
-  it('파일 형식 · 크기로 발급받고, 같은 Content-Type 으로 PUT 한 뒤 키를 순서대로', async () => {
+  it('파일 형식, 크기로 발급받고, 같은 Content-Type 으로 PUT 한 뒤 키를 순서대로', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [
       { key: 'products/1/a.jpg', uploadUrl: 'https://s3/a' }, { key: 'products/1/b.png', uploadUrl: 'https://s3/b' }] } });
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
@@ -215,7 +215,7 @@ describe('uploadProductImages — 발급 → S3 PUT → 키', () => {
     expect(fetchMock).toHaveBeenCalledWith('https://s3/b', { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: files[1] });
   });
 
-  it('S3 가 거절하면 오류 · 파일이 없으면 요청 안 함', async () => {
+  it('S3 가 거절하면 오류, 파일이 없으면 요청 안 함', async () => {
     const post = vi.spyOn(axiosInstance, 'post').mockResolvedValue({ data: { data: [{ key: 'k', uploadUrl: 'https://s3/a' }] } });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
 
@@ -236,8 +236,8 @@ describe('updateSellerProductStocks — PATCH /api/seller/products/{id}/stocks',
   });
 });
 
-describe('cleanParams — 목록 조회 조건 정리(요청 · 캐시 키 공통)', () => {
-  it('undefined · null · 빈 문자열만 빼고, 0 · false 는 남김', () => {
+describe('cleanParams — 목록 조회 조건 정리(요청, 캐시 키 공통)', () => {
+  it('undefined, null, 빈 문자열만 빼고, 0, false 는 남김', () => {
     expect(cleanParams({ q: '', categoryId: undefined, storeId: null, page: 0, excludeSoldOut: false, sort: 'NEW' }))
       .toEqual({ page: 0, excludeSoldOut: false, sort: 'NEW' });
     expect(cleanParams()).toEqual({});

@@ -1,4 +1,4 @@
-// 신고 관리 — 담당 구지훈. 리뷰 · 회원 신고를 대상별로 묶어 처리 (블라인드 · 이용정지 · 해제 · 기각). backend docs/api/admin.md
+// 신고 관리 — 담당 구지훈. 리뷰, 회원 신고를 대상별로 묶어 처리 (블라인드, 이용정지, 해제, 기각). backend docs/api/admin.md
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { PageHead, Segments, Pill, Modal, KV } from '@/shared/components/ui';
@@ -18,7 +18,7 @@ const TYPES = ['전체', '리뷰', '회원'];
 const TYPE_LABEL = { REVIEW: '리뷰', USER: '회원' };
 const STATUS_TONE = { OPEN: 'amber', RESOLVED: 'moss', DISMISSED: 'mute' };
 const inTab = (t, tab) => (tab === '처리 대기' ? t.openCount > 0 : tab === '처리 완료' ? t.openCount === 0 : true);
-const reasonText = (counts) => Object.entries(counts).map(([code, n]) => `${REPORT_REASON_LABEL[code] ?? code} ${n}`).join(' · ');
+const reasonText = (counts) => Object.entries(counts).map(([code, n]) => `${REPORT_REASON_LABEL[code] ?? code} ${n}`).join(', ');
 
 // 처리 버튼이 setTarget 을 써서 함수로 만들고 컴포넌트에서 useMemo (컨벤션 4-7)
 function buildColumns(setTarget) {
@@ -55,11 +55,11 @@ export default function ReportModeration() {
 
   return (
     <div>
-      <PageHead title="신고 관리" desc="회원 · 리뷰 신고를 대상별로 모아 처리 · 판매자의 리뷰 검토 요청도 여기로 · 신고가 쌓여도 자동 블라인드는 하지 않음" />
+      <PageHead title="신고 관리" desc="회원, 리뷰 신고를 대상별로 모아 처리, 판매자의 리뷰 검토 요청도 여기로, 신고가 쌓여도 자동 블라인드는 하지 않음" />
       <div className="flex flex-wrap gap-3 items-center">
         <Segments items={TABS} value={tab} onChange={setTab} counts={counts} />
         <Segments items={TYPES} value={type} onChange={setType} />
-        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="내용 · 사유" className="ml-auto" />
+        <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="내용, 사유" className="ml-auto" />
       </div>
       <div className="mt-3">
         <DataTable table={table} loading={isLoading} error={isError} empty="해당하는 신고가 없습니다." />
@@ -78,7 +78,7 @@ function ReportDetailModal({ target, onClose }) {
   );
 }
 
-// 대상 현재 값 · 신고 목록 · 조치 이력 · 처리 폼 — 회원 상세의 제재 이력도 같은 상세 응답
+// 대상 현재 값, 신고 목록, 조치 이력, 처리 폼 — 회원 상세의 제재 이력도 같은 상세 응답
 function ReportDetailBody({ d, onDone }) {
   const actions = REPORT_ACTIONS[d.targetType];
   const [action, setAction] = useState(actions[0].value);
@@ -90,7 +90,7 @@ function ReportDetailBody({ d, onDone }) {
 
   const submit = () =>
     resolve.mutate({ type: d.targetType, id: d.targetId, action, reason: reason.trim(), days }, {
-      onSuccess: (r) => { toast(`${REPORT_ACTION_LABEL[action]} 처리 · 신고 ${r.closedReports}건 닫음`); onDone(); },
+      onSuccess: (r) => { toast(`${REPORT_ACTION_LABEL[action]} 처리, 신고 ${r.closedReports}건 닫음`); onDone(); },
       onError: (err) => toast(err.response?.data?.message ?? '처리하지 못했어요. 잠시 후 다시 시도해 주세요.'),
     });
 
@@ -103,7 +103,7 @@ function ReportDetailBody({ d, onDone }) {
             // 리뷰 사진 (review #164) — 원본은 새 탭
             ...(t.imageUrls?.length ? [['사진', <div className="flex flex-wrap gap-1.5">{t.imageUrls.map((u) => (
               <a key={u} href={u} target="_blank" rel="noopener noreferrer"><img src={u} alt="리뷰 사진" className="w-14 h-14 object-cover bg-white" /></a>))}</div>]] : []),
-            ['별점 · 상품', t.rating ? `${t.rating}점 · 상품 #${t.productId ?? '-'}` : '-'], ['상태', t.blinded ? `블라인드 (${t.blindReason ?? ''})` : '노출 중']]} />
+            ['별점, 상품', t.rating ? `${t.rating}점, 상품 #${t.productId ?? '-'}` : '-'], ['상태', t.blinded ? `블라인드 (${t.blindReason ?? ''})` : '노출 중']]} />
         )}
         {t && d.targetType === 'USER' && (
           <KV rows={[['회원', <Link to={`/admin/users/${d.targetId}`} className="hover:underline">{t.name} {t.nick && `(${t.nick})`}</Link>], ['이메일', t.email ?? '-'], ['상태', t.status === 'SUSPENDED' ? '이용정지' : '정상']]} />
@@ -118,7 +118,7 @@ function ReportDetailBody({ d, onDone }) {
               <Pill tone={STATUS_TONE[r.status]}>{REPORT_STATUS_LABEL[r.status]}</Pill>
               <div className="flex-1">
                 <div>{REPORT_REASON_LABEL[r.reasonCode] ?? r.reasonCode}{r.detail && <span className="text-ink-2"> — {r.detail}</span>}</div>
-                <div className="text-[11.5px] text-mute num">{ymdhm(r.createdAt)} · {r.reporterRole === 'SELLER' ? '판매자' : '구매자'} #{r.reporterId}</div>
+                <div className="text-[11.5px] text-mute num">{ymdhm(r.createdAt)}, {r.reporterRole === 'SELLER' ? '판매자' : '구매자'} #{r.reporterId}</div>
               </div>
             </li>
           ))}
@@ -130,7 +130,7 @@ function ReportDetailBody({ d, onDone }) {
           <div className="font-semibold mb-1">조치 이력</div>
           <ol className="space-y-1 text-[12.5px]">
             {d.actions.map((a) => (
-              <li key={a.moderationActionId} className="text-ink-2"><span className="num text-mute">{ymdhm(a.createdAt)}</span> · <b>{REPORT_ACTION_LABEL[a.action]}</b>{a.action === 'SUSPEND' && ` (${a.suspendDays ? `${a.suspendDays}일` : '영구'})`} · {a.reason} · 신고 {a.reportCount}건</li>
+              <li key={a.moderationActionId} className="text-ink-2"><span className="num text-mute">{ymdhm(a.createdAt)}</span>, <b>{REPORT_ACTION_LABEL[a.action]}</b>{a.action === 'SUSPEND' && ` (${a.suspendDays ? `${a.suspendDays}일` : '영구'})`}, {a.reason}, 신고 {a.reportCount}건</li>
             ))}
           </ol>
         </div>

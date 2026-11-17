@@ -1,4 +1,4 @@
-// 관리자 상수 — 담당 구지훈 (회원 이용정지 · 해제 매핑은 user 내부 API 계약 기준, 10/22 노션 "user 내부 API 연동 안내")
+// 관리자 상수 — 담당 구지훈 (회원 이용정지, 해제 매핑은 user 내부 API 계약 기준, 10/22 노션 "user 내부 API 연동 안내")
 
 // 정지 기간 — 모달 선택값 → 요청 days (생략 = 영구, 기간이 끝나면 user-service 가 자동 해제)
 export const SUSPEND_DURATIONS = [
@@ -8,10 +8,10 @@ export const SUSPEND_DURATIONS = [
 ];
 
 // 정지 사유 — 선택한 문구가 그대로 reason (user users.status_reason, 255자 이하)
-export const SUSPEND_REASONS = ['허위 리뷰 / 리뷰 어뷰징', '결제 도용 의심', '욕설 · 비방'];
+export const SUSPEND_REASONS = ['허위 리뷰 / 리뷰 어뷰징', '결제 도용 의심', '욕설, 비방'];
 
 /**
- * PATCH /api/admin/users/{id}/status 요청 본문 — 정지 {status: SUSPENDED, reason, days?} · 해제 {status: ACTIVE, reason}
+ * PATCH /api/admin/users/{id}/status 요청 본문 — 정지 {status: SUSPENDED, reason, days?}, 해제 {status: ACTIVE, reason}
  * days 가 없으면(영구) 키를 보내지 않는다. 사유는 앞뒤 공백 제거 (빈 사유는 서버가 400 USER_STATUS_REASON_REQUIRED)
  */
 export function toUserStatusRequest({ suspend, duration, reason }) {
@@ -38,10 +38,10 @@ export const recentWeeks = (today = new Date()) =>
     return { key: isoWeek(start), start };
   });
 
-// 입점 심사 — store 내부 API 값 → 화면 라벨 (store.md 2 · 3절)
+// 입점 심사 — store 내부 API 값 → 화면 라벨 (store.md 2, 3절)
 export const APPLICATION_STATUS_LABEL = { PENDING: '심사대기', SUPPLEMENT: '보완요청', APPROVED: '승인', REJECTED: '반려' };
 export const STORE_STATUS_LABEL = { ACTIVE: '운영중', SUSPENDED: '정지', CLOSED: '폐점' };
-export const STORE_STATUS_REQUEST = { 운영중: 'ACTIVE', 정지: 'SUSPENDED' }; // 정지 · 해제 본문 — 폐점은 판매자만(관리자 400)
+export const STORE_STATUS_REQUEST = { 운영중: 'ACTIVE', 정지: 'SUSPENDED' }; // 정지, 해제 본문 — 폐점은 판매자만(관리자 400)
 // 관리자 스토어 상세 상품 표 — product 판매자 상품 목록 응답의 status (product.md 11절). 판매중이어도 재고 0 이면 품절
 export const productStatusLabel = (p) => (p.status === 'BLOCKED' ? '강제중지' : p.status === 'STOPPED' ? '판매중지' : p.soldOut ? '품절' : '판매중');
 export const STORE_GRADE_LABEL = { SPROUT: '새싹', POWER: '파워', BIG_POWER: '빅파워' };
@@ -65,7 +65,7 @@ export const REPORT_ACTIONS = {
 export const REPORT_ACTION_LABEL = { BLIND: '블라인드', UNBLIND: '블라인드 해제', SUSPEND: '이용정지', UNSUSPEND: '정지 해제', DISMISS: '기각' };
 export const REPORT_STATUS_LABEL = { OPEN: '처리대기', RESOLVED: '조치완료', DISMISSED: '기각' };
 
-/** 시스템 상태 — 최근 1분 5xx 건수(11/17 피드백: 퍼센트 대신 건수). 값이 없으면(Prometheus 실패 · 아직 못 받음) '-' */
+/** 시스템 상태 — 최근 1분 5xx 건수(11/17 피드백: 퍼센트 대신 건수). 값이 없으면(Prometheus 실패, 아직 못 받음) '-' */
 export const formatErrorCount = (count) => (count == null ? '-' : `${count}건/분`);
 
 /** 시스템 상태 — 화면에 쓰는 서비스 이름. order-service → order */

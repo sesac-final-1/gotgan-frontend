@@ -9,7 +9,7 @@ export default function ShopNotice() {
     <div className="max-w-[860px] mx-auto px-4 md:px-6 pt-10">
       <div className="eyebrow">Notice</div>
       <h1 className="mt-2 text-[28px] font-bold tracking-tight">공지사항</h1>
-      <p className="mt-2 mb-6 text-[13px] text-ink-2">곳간 이용 · 결제 · 정산 정책 안내입니다.</p>
+      <p className="mt-2 mb-6 text-[13px] text-ink-2">곳간 이용, 결제, 정산 정책 안내입니다.</p>
       <AccordionList items={ITEMS} />
     </div>
   );

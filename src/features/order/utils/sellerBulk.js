@@ -1,10 +1,10 @@
 // 판매자 일괄 처리 결과 { succeeded, failed[{ orderItemId, code, message }] } → 화면 표시 — 담당 이경석
 import { FLOW, FLOW_STATUS } from '@/features/order/constants';
 
-// 토스트 요약 — "2건 발주확인 완료" / "2건 발주확인 완료 · 1건 실패"
+// 토스트 요약 — "2건 발주확인 완료" / "2건 발주확인 완료, 1건 실패"
 export function bulkSummary(action, { succeeded, failed }) {
   const done = succeeded.length ? `${succeeded.length}건 ${action} 완료` : `${action}하지 못했어요`;
-  return failed.length ? `${done} · ${failed.length}건 실패 (표에서 사유 확인)` : done;
+  return failed.length ? `${done}, ${failed.length}건 실패 (표에서 사유 확인)` : done;
 }
 
 // 행마다 실패 사유 — orderItemId → message

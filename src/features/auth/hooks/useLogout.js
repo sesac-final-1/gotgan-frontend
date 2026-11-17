@@ -12,7 +12,7 @@ export function useLogout() {
     try {
       await logout();
     } catch {
-      // RT 쿠키 · Keycloak 세션은 만료(14일)까지 남을 수 있음 — 화면 상태는 그대로 정리
+      // RT 쿠키, Keycloak 세션은 만료(14일)까지 남을 수 있음 — 화면 상태는 그대로 정리
     }
     useAuthStore.getState().clearAuth();
     queryClient.clear(); // 이전 사용자 데이터가 다음 로그인 화면에 보이지 않게

@@ -37,7 +37,7 @@ function Harness() {
 }
 
 describe('useClientTable + DataTable', () => {
-  it('받아온 목록 안에서 검색 · 정렬 · 페이징', () => {
+  it('받아온 목록 안에서 검색, 정렬, 페이징', () => {
     render(<Harness />);
     expect(screen.getAllByRole('row')).toHaveLength(11); // 헤더 1 + 10행
     expect(screen.getByRole('button', { name: '5' })).toBeInTheDocument(); // 45건 / 10 = 5페이지

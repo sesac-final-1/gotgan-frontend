@@ -1,4 +1,4 @@
-// 판매자 취소 · 반품 · 교환 — 담당 이경석 (GET /api/seller/claims — 서버 페이징 · 단계 · 유형 탭, CLM-05)
+// 판매자 취소, 반품, 교환 — 담당 이경석 (GET /api/seller/claims — 서버 페이징, 단계, 유형 탭, CLM-05)
 // 반품: 승인(수거 요청) → 수거 완료(환불) / 교환: 승인 → 수거 완료 → 재배송 송장 → 주문 관리에서 배송완료(또는 자동)하면 교환완료
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router';
@@ -124,7 +124,7 @@ export default function SellerClaimList() {
 
   return (
     <div>
-      <PageHead title="취소 · 반품 · 교환" desc="요청 접수 후 3영업일 내 처리해주세요. 반품은 수거 완료 시 결제 취소 → 재고 복원 → 구매자 포인트 환원 · 회수가 함께 진행됩니다." />
+      <PageHead title="취소, 반품, 교환" desc="요청 접수 후 3영업일 내 처리해주세요. 반품은 수거 완료 시 결제 취소 → 재고 복원 → 구매자 포인트 환원, 회수가 함께 진행됩니다." />
       <div className="flex flex-wrap gap-2 items-center">
         <Segments items={Object.keys(STAGES)} value={stage} onChange={(s) => { setStage(s); setPageIndex(0); }} counts={stageCounts} />
         <Segments items={Object.keys(TYPES)} value={type} onChange={(t) => { setType(t); setPageIndex(0); }} counts={typeCounts} />
@@ -139,10 +139,10 @@ export default function SellerClaimList() {
           </> : <button className="btn btn-line btn-sm" onClick={() => setDetail(null)}>닫기</button>}>
           <div className="flex gap-3 pb-4 border-b border-line text-[13px]">
             <img src={detail.thumbnailUrl || fallbackSrc()} alt="" className="w-14 h-16 object-cover bg-cream" />
-            <div className="flex-1"><div className="font-semibold">{detail.productName}</div><div className="text-mute">{detail.optionName || '단일상품'} · {detail.quantity}개</div><div className="num text-mute">{detail.itemNo}</div></div>
+            <div className="flex-1"><div className="font-semibold">{detail.productName}</div><div className="text-mute">{detail.optionName || '단일상품'}, {detail.quantity}개</div><div className="num text-mute">{detail.itemNo}</div></div>
             <StatusPill s={claimStatusLabel(detail)} />
           </div>
-          <div className="mt-4"><KV rows={[['유형', CLAIM_TYPE_LABEL[detail.type]], ['사유', `${reasonLabel(detail.reasonCode)}${detail.reasonDetail ? ` · ${detail.reasonDetail}` : ''}`], ['요청일', ymd(toDate(detail.requestedAt))], ['구매자', detail.buyerName], ['진행', claimProgress(detail)], ['송장', detail.trackingNo ? <span className="num">{detail.courier} {detail.trackingNo}</span> : '-']]} /></div>
+          <div className="mt-4"><KV rows={[['유형', CLAIM_TYPE_LABEL[detail.type]], ['사유', `${reasonLabel(detail.reasonCode)}${detail.reasonDetail ? `, ${detail.reasonDetail}` : ''}`], ['요청일', ymd(toDate(detail.requestedAt))], ['구매자', detail.buyerName], ['진행', claimProgress(detail)], ['송장', detail.trackingNo ? <span className="num">{detail.courier} {detail.trackingNo}</span> : '-']]} /></div>
           {detail.type !== 'EXCHANGE' && (
             <div className="mt-4 bg-cream p-4 text-[13px] space-y-1.5">
               <div className="flex justify-between"><span className="text-ink-2">상품 결제금액</span><span className="num">{won(detail.itemAmt)}</span></div>
@@ -150,7 +150,7 @@ export default function SellerClaimList() {
               <div className="flex justify-between font-bold border-t border-line-2 pt-1.5"><span>결제수단 환불액 (부분 취소)</span><span className="num">{won(detail.refundAmt)}</span></div>
             </div>
           )}
-          <p className="text-[12px] text-mute mt-2">{detail.type === 'EXCHANGE' ? '교환은 결제 · 재고 변동 없이 회수 확인 후 같은 옵션으로 재배송합니다.' : '환불액은 신청 때 계산된 금액(반품 배송비 차감 포함)이에요. 판매자 정산에서는 해당 상품주문이 제외됩니다.'}</p>
+          <p className="text-[12px] text-mute mt-2">{detail.type === 'EXCHANGE' ? '교환은 결제, 재고 변동 없이 회수 확인 후 같은 옵션으로 재배송합니다.' : '환불액은 신청 때 계산된 금액(반품 배송비 차감 포함)이에요. 판매자 정산에서는 해당 상품주문이 제외됩니다.'}</p>
         </Modal>
       )}
 
@@ -159,7 +159,7 @@ export default function SellerClaimList() {
         <label className="label">거부 사유</label>
         <select value={rejectForm.reason} onChange={(e) => setRejectForm({ ...rejectForm, reason: e.target.value })} className="field mb-3">{REJECT_REASONS.map((r) => <option key={r}>{r}</option>)}</select>
         <textarea rows={3} value={rejectForm.text} onChange={(e) => setRejectForm({ ...rejectForm, text: e.target.value })} maxLength={400} className="field" placeholder="구매자에게 전달할 상세 사유" />
-        <p className="text-[12px] text-mute mt-2">거부 사유는 구매자의 취소 · 반품 · 교환 내역에 표시됩니다.</p>
+        <p className="text-[12px] text-mute mt-2">거부 사유는 구매자의 취소, 반품, 교환 내역에 표시됩니다.</p>
       </Modal>
 
       <Modal open={!!reship} onClose={() => setReship(null)} title="교환 재배송 송장" width={460}

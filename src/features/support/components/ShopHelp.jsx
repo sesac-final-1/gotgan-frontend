@@ -1,4 +1,4 @@
-// 고객센터 FAQ — 담당 공통 (FAQ 는 프론트 정적 데이터 · 목업 검색 · 카테고리 UI 유지)
+// 고객센터 FAQ — 담당 공통 (FAQ 는 프론트 정적 데이터, 목업 검색, 카테고리 UI 유지)
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { ChevronDown, Search } from 'lucide-react';
@@ -43,7 +43,7 @@ export default function ShopHelp() {
       <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border border-ink p-6">
         <div>
           <div className="font-bold text-[16px]">1:1 상담</div>
-          <p className="mt-1 text-[13px] text-ink-2">주문 · 결제 · 계정 문제는 곳간 운영팀과 실시간으로 이야기해요.</p>
+          <p className="mt-1 text-[13px] text-ink-2">주문, 결제, 계정 문제는 곳간 운영팀과 실시간으로 이야기해요.</p>
         </div>
         <OpenChatButton className="btn btn-ink btn-sm" basePath="/mypage/chats" request={{ type: 'BUYER_SUPPORT' }}>운영팀과 채팅</OpenChatButton>
       </div>
@@ -52,7 +52,7 @@ export default function ShopHelp() {
         <div className="bg-white p-6">
           <div className="eyebrow">Q&amp;A</div>
           <div className="mt-1.5 font-bold text-[16px]">상품문의는 판매자에게</div>
-          <p className="mt-2 text-[13px] text-ink-2 leading-relaxed">상품 · 배송 · 재입고 문의는 상품 상세의 Q&amp;A 탭에서 남기면 판매자가 직접 답변해요.</p>
+          <p className="mt-2 text-[13px] text-ink-2 leading-relaxed">상품, 배송, 재입고 문의는 상품 상세의 Q&amp;A 탭에서 남기면 판매자가 직접 답변해요.</p>
           <div className="mt-4 flex gap-2">
             <Link to="/products/101#qna" className="btn btn-ink btn-sm">상품 Q&amp;A 예시</Link>
             <Link to="/mypage/qna" className="btn btn-line btn-sm">내 상품 문의</Link>
@@ -60,10 +60,10 @@ export default function ShopHelp() {
         </div>
         <div className="bg-white p-6">
           <div className="eyebrow">Claims</div>
-          <div className="mt-1.5 font-bold text-[16px]">취소 · 반품 · 교환</div>
+          <div className="mt-1.5 font-bold text-[16px]">취소, 반품, 교환</div>
           <p className="mt-2 text-[13px] text-ink-2 leading-relaxed">주문 상태에 따라 마이페이지에서 바로 신청하고 처리 상태를 확인할 수 있어요.</p>
           <div className="mt-4 flex gap-2">
-            <Link to="/mypage/orders" className="btn btn-ink btn-sm">주문 · 배송</Link>
+            <Link to="/mypage/orders" className="btn btn-ink btn-sm">주문, 배송</Link>
             <Link to="/mypage/claims" className="btn btn-line btn-sm">신청 내역</Link>
           </div>
         </div>

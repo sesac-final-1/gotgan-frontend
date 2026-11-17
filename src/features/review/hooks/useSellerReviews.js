@@ -7,11 +7,11 @@ export function useSellerReviewsQuery(params) {
   return useQuery({
     queryKey: queryKeys.review.sellerList(params),
     queryFn: () => fetchSellerReviews(params),
-    placeholderData: keepPreviousData, // 탭 · 상품 · 페이지를 바꾸는 동안 이전 목록 유지
+    placeholderData: keepPreviousData, // 탭, 상품, 페이지를 바꾸는 동안 이전 목록 유지
   });
 }
 
-// 상단 평균 · 분포 · 상품별 평균 · 탭 숫자
+// 상단 평균, 분포, 상품별 평균, 탭 숫자
 export function useSellerReviewSummaryQuery() {
   return useQuery({
     queryKey: queryKeys.review.sellerSummary(),
@@ -19,7 +19,7 @@ export function useSellerReviewSummaryQuery() {
   });
 }
 
-// 답글 작성 · 수정 — 성공하면 목록 · 탭 숫자(답글 미작성)를 다시 불러온다
+// 답글 작성, 수정 — 성공하면 목록, 탭 숫자(답글 미작성)를 다시 불러온다
 export function useReplyReviewMutation() {
   const queryClient = useQueryClient();
   return useMutation({

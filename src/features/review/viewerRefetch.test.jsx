@@ -10,7 +10,7 @@ const wrapper = ({ children }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>
 );
 
-describe('상품 상세 리뷰 · 문의 — 보는 사람이 바뀌면 다시 받기', () => {
+describe('상품 상세 리뷰, 문의 — 보는 사람이 바뀌면 다시 받기', () => {
   afterEach(() => { act(() => useAuthStore.getState().clearAuth()); vi.restoreAllMocks(); });
 
   it.each([

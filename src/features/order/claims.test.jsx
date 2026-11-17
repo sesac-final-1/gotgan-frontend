@@ -24,20 +24,20 @@ const PAGE = (content) => ({ stageCounts: { OPEN: 3, DONE: 1 }, typeCounts: { CA
   items: { content, page: 0, size: 20, totalElements: content.length, totalPages: 1, hasNext: false } });
 const httpError = (status, message) => Object.assign(new Error(String(status)), { response: { status, data: { code: 'X', message } } });
 
-describe('claimView — 상태 · 다음 처리 · 안내', () => {
-  it('상태 배지 · 사유 라벨', () => {
+describe('claimView — 상태, 다음 처리, 안내', () => {
+  it('상태 배지, 사유 라벨', () => {
     expect(claimStatusLabel({ type: 'RETURN', status: 'REQUESTED' })).toBe('반품요청');
     expect(claimStatusLabel({ type: 'EXCHANGE', status: 'RESHIPPED' })).toBe('교환재배송중');
     expect(claimStatusLabel({ type: 'CANCEL', status: 'APPROVED' })).toBe('취소중');
     expect(claimStatusLabel({ type: 'NEW', status: 'NEW' })).toBe('NEWNEW');
     expect(reasonLabel('ETC')).toBe('기타');
-    expect(reasonLabel('DEFECTIVE')).toBe('상품 불량 · 파손');
+    expect(reasonLabel('DEFECTIVE')).toBe('상품 불량, 파손');
     expect(reasonLabel('UNKNOWN')).toBe('UNKNOWN');
   });
 
-  it('다음 처리 — 요청: 승인 · 거부, 승인: 수거, 교환 수거완료: 재배송, 그 밖 · 취소는 없음', () => {
+  it('다음 처리 — 요청: 승인, 거부, 승인: 수거, 교환 수거완료: 재배송, 그 밖, 취소는 없음', () => {
     expect(nextAction({ type: 'RETURN', status: 'REQUESTED' })).toMatchObject({ action: 'approve', rejectable: true });
-    expect(nextAction({ type: 'RETURN', status: 'APPROVED' })).toMatchObject({ action: 'collect', label: '수거 완료 · 환불' });
+    expect(nextAction({ type: 'RETURN', status: 'APPROVED' })).toMatchObject({ action: 'collect', label: '수거 완료, 환불' });
     expect(nextAction({ type: 'EXCHANGE', status: 'APPROVED' }).label).toBe('수거 완료');
     expect(nextAction({ type: 'EXCHANGE', status: 'COLLECTED' }).action).toBe('reship');
     expect(nextAction({ type: 'RETURN', status: 'COLLECTED' })).toBeNull();
@@ -56,7 +56,7 @@ describe('claimView — 상태 · 다음 처리 · 안내', () => {
   });
 });
 
-describe('클레임 API · 훅', () => {
+describe('클레임 API, 훅', () => {
   it('경로', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: 'ok' } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: 'done' } });
@@ -73,7 +73,7 @@ describe('클레임 API · 훅', () => {
     ]);
   });
 
-  it('처리 뒤 판매자 클레임 · 주문 전체 무효화', async () => {
+  it('처리 뒤 판매자 클레임, 주문 전체 무효화', async () => {
     vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: claim(1, 'RETURN', 'APPROVED') } });
     const { client, Wrapper } = createWrapper();
     const invalidate = vi.spyOn(client, 'invalidateQueries');
@@ -89,8 +89,8 @@ function renderWith(element) {
 }
 const lastToast = () => useToastStore.getState().current?.msg;
 
-describe('SellerClaimList — 서버 목록 · 단계별 처리', () => {
-  it('탭 숫자 · 단계 전환 조회, 요청 승인 · 반품 수거 완료(환불) · 교환 재배송 송장', async () => {
+describe('SellerClaimList — 서버 목록, 단계별 처리', () => {
+  it('탭 숫자, 단계 전환 조회, 요청 승인, 반품 수거 완료(환불), 교환 재배송 송장', async () => {
     const get = vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: PAGE([
       claim(1, 'RETURN', 'REQUESTED'), claim(2, 'RETURN', 'APPROVED'), claim(3, 'EXCHANGE', 'COLLECTED', { itemStatus: 'EXCHANGE_REQUESTED' }),
     ]) } });
@@ -104,7 +104,7 @@ describe('SellerClaimList — 서버 목록 · 단계별 처리', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '승인 (수거 요청)' }));
     await waitFor(() => expect(lastToast()).toBe('승인했어요. 상품을 회수해 주세요'));
-    fireEvent.click(screen.getByRole('button', { name: '수거 완료 · 환불' }));
+    fireEvent.click(screen.getByRole('button', { name: '수거 완료, 환불' }));
     await waitFor(() => expect(lastToast()).toBe('반품 완료 — 18,000원 환불했어요'));
 
     fireEvent.click(screen.getByRole('button', { name: '재배송 송장' }));
@@ -120,7 +120,7 @@ describe('SellerClaimList — 서버 목록 · 단계별 처리', () => {
     await waitFor(() => expect(get).toHaveBeenCalledWith('/api/seller/claims', { params: { stage: 'DONE', type: 'EXCHANGE', page: 0, size: 20 } }));
   });
 
-  it('거부 — 사유(선택 + 상세)로 요청, 상세 모달에서 승인 · 거부, 처리 실패는 서버 메시지', async () => {
+  it('거부 — 사유(선택 + 상세)로 요청, 상세 모달에서 승인, 거부, 처리 실패는 서버 메시지', async () => {
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: PAGE([claim(1, 'RETURN', 'REQUESTED')]) } });
     const patch = vi.spyOn(axiosInstance, 'patch').mockResolvedValue({ data: { data: claim(1, 'RETURN', 'REJECTED') } });
     renderWith(<SellerClaimList />);
@@ -141,7 +141,7 @@ describe('SellerClaimList — 서버 목록 · 단계별 처리', () => {
 });
 
 describe('MyClaims — 내 클레임 내역', () => {
-  it('유형 탭 숫자 · 상태 배지 · 상세에 진행 안내 · 거부 사유 · 재배송 송장', async () => {
+  it('유형 탭 숫자, 상태 배지, 상세에 진행 안내, 거부 사유, 재배송 송장', async () => {
     vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: [
       claim(1, 'RETURN', 'REJECTED', { rejectReason: '기간 지남' }),
       claim(2, 'EXCHANGE', 'RESHIPPED', { courier: 'CJ대한통운', trackingNo: '651200000402', refundAmt: 0, restorePoint: 0 }),

@@ -7,7 +7,7 @@ import MyOrderDetail from '@/features/order/components/MyOrderDetail';
 import ReportModal from '@/features/report/components/ReportModal';
 import { useToastStore } from '@/shared/stores/toastStore';
 
-// 다른 화면의 채팅 진입 버튼 — 어떤 방 · 문맥 카드로 여는지 (chat.md "문맥 카드")
+// 다른 화면의 채팅 진입 버튼 — 어떤 방, 문맥 카드로 여는지 (chat.md "문맥 카드")
 const ROOM = { roomId: 21, type: 'BUYER_SUPPORT', status: 'OPEN', counterpart: { name: '곳간 운영팀', role: 'ADMIN' }, lastMessage: null, unreadCount: 0 };
 
 const ORDER = {
@@ -55,9 +55,9 @@ describe('주문 상세 진입 버튼', () => {
     expect(post).toHaveBeenCalledWith('/api/chats/rooms', { type: 'STORE_INQUIRY', storeId: 3, context: { type: 'ORDER_ITEM', id: 456 } });
   });
 
-  it('결제 · 환불 문의 — 고객센터 상담에 주문 카드(id = 주문번호의 숫자)', async () => {
+  it('결제, 환불 문의 — 고객센터 상담에 주문 카드(id = 주문번호의 숫자)', async () => {
     renderAt('/mypage/orders/20261027-000001', '/mypage/orders/:id', <MyOrderDetail />);
-    fireEvent.click(await screen.findByText('결제 · 환불 문의'));
+    fireEvent.click(await screen.findByText('결제, 환불 문의'));
     await waitFor(() => expect(post).toHaveBeenCalledWith('/api/chats/rooms',
       { type: 'BUYER_SUPPORT', context: { type: 'ORDER', id: 20261027000001 } }));
   });
@@ -87,7 +87,7 @@ describe('신고 접수 후 처리 문의', () => {
     expect(post).toHaveBeenLastCalledWith('/api/chats/rooms', { type: 'BUYER_SUPPORT', context: { type: 'REPORT', id: 77 } });
   });
 
-  it('판매자센터에서 신고했으면 판매자 운영 상담으로 · 닫기는 그냥 닫음', async () => {
+  it('판매자센터에서 신고했으면 판매자 운영 상담으로, 닫기는 그냥 닫음', async () => {
     const onClose = vi.fn();
     renderAt('/seller/reviews', '/seller/reviews', <ReportModal target={target} onClose={onClose} />);
     fireEvent.click(screen.getByText('신고하기'));

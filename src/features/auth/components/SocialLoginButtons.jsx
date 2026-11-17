@@ -1,4 +1,4 @@
-// 소셜 로그인 버튼 — 담당 이경석. 모양 · 심볼은 각 개발자 사이트 가이드 (constants.js SOCIAL_PROVIDERS)
+// 소셜 로그인 버튼 — 담당 이경석. 모양, 심볼은 각 개발자 사이트 가이드 (constants.js SOCIAL_PROVIDERS)
 import { SOCIAL_PROVIDERS } from '@/features/auth/constants';
 import { socialLoginUrl } from '@/features/auth/api/authApi';
 import { cx } from '@/shared/utils/format';
@@ -11,7 +11,7 @@ export default function SocialLoginButtons() {
       </div>
       <div className="mt-4 space-y-2">
         {SOCIAL_PROVIDERS.map((p) => (
-          // 링크 이동 — 백엔드가 302 로 Keycloak · 제공자 로그인 화면으로 보낸다
+          // 링크 이동 — 백엔드가 302 로 Keycloak, 제공자 로그인 화면으로 보낸다
           p.image ? (
             // 제공자가 버튼 이미지째 주는 경우(네이버) — 비율 그대로, 늘리지 않음
             <a key={p.id} href={socialLoginUrl(p.id)} className="block">

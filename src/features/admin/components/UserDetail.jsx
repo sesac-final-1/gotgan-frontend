@@ -32,13 +32,13 @@ export default function UserDetail() {
   const { data: u, isLoading } = useAdminUserQuery(id);
   if (isLoading) return <p className="text-mute py-10 text-center">불러오는 중…</p>;
   if (!u) return <p className="text-mute py-10 text-center">회원을 찾을 수 없어요</p>;
-  return <DetailBody key={u.id} u={u} />; // key: 다른 회원으로 이동하면 모달 · 검색 상태 초기화
+  return <DetailBody key={u.id} u={u} />; // key: 다른 회원으로 이동하면 모달, 검색 상태 초기화
 }
 
 function DetailBody({ u }) {
   const [modal, setModal] = useState(null);
   const { data: ph = [], isLoading: pointsLoading } = useAdminUserPointsQuery(u.id);
-  const { data: moderation } = useAdminReportQuery('USER', u.id); // 이 회원이 받은 신고 · 신고 관리에서 한 조치
+  const { data: moderation } = useAdminReportQuery('USER', u.id); // 이 회원이 받은 신고, 신고 관리에서 한 조치
   const { data: urev = [] } = useAdminUserReviewsQuery(u.id);
   const next = nextGrade(u.spent);
   const { table, globalFilter, setGlobalFilter } = useClientTable({ data: ph, columns: POINT_COLUMNS, initialSorting: [{ id: 'date', desc: true }] });
@@ -64,7 +64,7 @@ function DetailBody({ u }) {
 
   return (
     <div>
-      <PageHead crumbs="회원 · 콘텐츠 > 회원 관리" title={<span className="flex items-center gap-2">{u.name} <GradeBadge grade={u.grade} /></span>} desc={`${u.email} · 가입 ${ymd(u.joined)}`}
+      <PageHead crumbs="회원, 콘텐츠 > 회원 관리" title={<span className="flex items-center gap-2">{u.name} <GradeBadge grade={u.grade} /></span>} desc={`${u.email}, 가입 ${ymd(u.joined)}`}
         right={<button onClick={() => setModal('ban')} className={cx('btn btn-sm', suspended ? 'btn-ink' : 'btn-line text-rust')}>{suspended ? '정지 해제' : '이용 정지'}</button>} />
       <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
         <Kpi label="회원등급" value={u.grade} sub={next ? `${next.id}까지 ${won(next.min - u.spent)}` : '최고 등급'} />
@@ -86,7 +86,7 @@ function DetailBody({ u }) {
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <span className="panel-title">포인트 내역</span>
               <span className="text-[12px] text-mute">최근 {ph.length}건</span>
-              <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="구분 · 내용" className="ml-auto" />
+              <SearchInput value={globalFilter} onChange={setGlobalFilter} placeholder="구분, 내용" className="ml-auto" />
             </div>
             <DataTable table={table} loading={pointsLoading} empty="포인트 내역이 없어요" />
           </div>
@@ -95,19 +95,19 @@ function DetailBody({ u }) {
             {urev.length === 0 && <div className="py-10 text-center text-mute text-sm">작성한 리뷰가 없습니다.</div>}
             {urev.map((r) => (
               <div key={r.reviewId} className="px-5 py-3.5 border-b border-line last:border-0 text-[13px]">
-                <div className="flex items-center gap-2"><Stars value={r.rating} size={11} /><span className="text-mute">{ymd(r.createdAt)} · {r.productName}</span>{r.blinded && <Pill tone="rust">블라인드</Pill>}</div>
+                <div className="flex items-center gap-2"><Stars value={r.rating} size={11} /><span className="text-mute">{ymd(r.createdAt)}, {r.productName}</span>{r.blinded && <Pill tone="rust">블라인드</Pill>}</div>
                 <p className="mt-1 text-ink-2">{r.content}</p>
               </div>
             ))}
           </div>
           <div className="panel">
-            <div className="panel-head"><span className="panel-title">받은 신고 · 제재 이력</span><span className="text-[11.5px] text-mute">신고 관리에서 처리한 조치</span></div>
+            <div className="panel-head"><span className="panel-title">받은 신고, 제재 이력</span><span className="text-[11.5px] text-mute">신고 관리에서 처리한 조치</span></div>
             {!moderation?.reports.length && !moderation?.actions.length && <div className="py-8 text-center text-mute text-sm">받은 신고가 없습니다.</div>}
             {moderation?.actions.map((a) => (
-              <div key={`a${a.moderationActionId}`} className="px-5 py-2.5 border-b border-line text-[13px]"><Pill tone={a.action === 'SUSPEND' ? 'rust' : 'mute'}>{REPORT_ACTION_LABEL[a.action]}</Pill> <span className="text-ink-2">{a.reason}</span>{a.action === 'SUSPEND' && <span className="text-mute"> · {a.suspendDays ? `${a.suspendDays}일` : '영구'}</span>}<div className="text-[11.5px] text-mute num">{ymdhm(a.createdAt)} · 신고 {a.reportCount}건</div></div>
+              <div key={`a${a.moderationActionId}`} className="px-5 py-2.5 border-b border-line text-[13px]"><Pill tone={a.action === 'SUSPEND' ? 'rust' : 'mute'}>{REPORT_ACTION_LABEL[a.action]}</Pill> <span className="text-ink-2">{a.reason}</span>{a.action === 'SUSPEND' && <span className="text-mute">, {a.suspendDays ? `${a.suspendDays}일` : '영구'}</span>}<div className="text-[11.5px] text-mute num">{ymdhm(a.createdAt)}, 신고 {a.reportCount}건</div></div>
             ))}
             {moderation?.reports.map((r) => (
-              <div key={`r${r.reportId}`} className="px-5 py-2.5 border-b border-line last:border-0 text-[13px]">{REPORT_REASON_LABEL[r.reasonCode] ?? r.reasonCode}{r.detail && <span className="text-ink-2"> — {r.detail}</span>}<div className="text-[11.5px] text-mute num">{ymdhm(r.createdAt)} · 신고자 #{r.reporterId}</div></div>
+              <div key={`r${r.reportId}`} className="px-5 py-2.5 border-b border-line last:border-0 text-[13px]">{REPORT_REASON_LABEL[r.reasonCode] ?? r.reasonCode}{r.detail && <span className="text-ink-2"> — {r.detail}</span>}<div className="text-[11.5px] text-mute num">{ymdhm(r.createdAt)}, 신고자 #{r.reporterId}</div></div>
             ))}
           </div>
         </div>
@@ -130,7 +130,7 @@ function DetailBody({ u }) {
             <select id="suspend-reason" className="field" value={reason} onChange={(e) => setReason(e.target.value)}>
               {SUSPEND_REASONS.map((r) => <option key={r}>{r}</option>)}
             </select>
-            <p className="mt-2 text-[12px] text-mute">정지하면 로그인 · 토큰 재발급이 막히고, 기간 정지는 끝나는 시각에 자동 해제돼요.</p>
+            <p className="mt-2 text-[12px] text-mute">정지하면 로그인, 토큰 재발급이 막히고, 기간 정지는 끝나는 시각에 자동 해제돼요.</p>
           </>
         )}
       </Modal>

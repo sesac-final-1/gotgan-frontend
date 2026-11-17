@@ -8,7 +8,7 @@ import {
   barLayout, buildReportHtml, escapeHtml, issueCount, issueImpact, overview, presets, reportFileName, summarizeEvents,
 } from '@/features/admin/incidentReport';
 
-// 장애 분석 리포트 — 계약 backend admin.md 10절. 기간 버튼 · 운영팀 화면 · 개발자 상세 · 내려받기 HTML
+// 장애 분석 리포트 — 계약 backend admin.md 10절. 기간 버튼, 운영팀 화면, 개발자 상세, 내려받기 HTML
 const at = (hhmm) => new Date(`2026-11-17T${hhmm}:00+09:00`).getTime();
 
 const report = () => ({
@@ -35,7 +35,7 @@ const report = () => ({
     {
       no: 2, kind: 'ATTACK', startMs: at('11:24'), endMs: at('11:25'), services: [], serverErrors: 0, suspicious: 3, rateLimited: 0,
       intended: false, sentence: '11/17 11:24~11:25 공격 의심 요청 3건. 원인: 공격 의심(자동 스캐너 탐색).',
-      causes: [{ code: 'ATTACK', label: '공격 의심(자동 스캐너 탐색)', detail: '탐색 요청 3건 — 설정 · 비밀 파일 탐색(/.env 등) 3건' }],
+      causes: [{ code: 'ATTACK', label: '공격 의심(자동 스캐너 탐색)', detail: '탐색 요청 3건 — 설정, 비밀 파일 탐색(/.env 등) 3건' }],
       logs: [],
     },
   ],
@@ -51,7 +51,7 @@ const report = () => ({
 });
 
 describe('장애 분석 리포트 — 규칙', () => {
-  it('기간 버튼 — 최근 1시간 · 오늘 · 어제 퇴근 후(전날 18시 ~ 오늘 9시) · 최근 24시간', () => {
+  it('기간 버튼 — 최근 1시간, 오늘, 어제 퇴근 후(전날 18시 ~ 오늘 9시), 최근 24시간', () => {
     const now = new Date('2026-11-17T11:30:00+09:00');
     const byKey = Object.fromEntries(presets(now).map((p) => [p.key, p]));
     expect(byKey['1h'].from).toBe(at('10:30'));
@@ -71,7 +71,7 @@ describe('장애 분석 리포트 — 규칙', () => {
     expect(l.rects[2].color).toBe('#9aa0a6');
   });
 
-  it('대표 건수 · 파일 이름 · escape', () => {
+  it('대표 건수, 파일 이름, escape', () => {
     const [error, attack] = report().issues;
     expect(issueCount(error)).toBe(827);
     expect(issueCount(attack)).toBe(3);
@@ -119,14 +119,14 @@ describe('장애 분석 리포트 — 화면', () => {
     return render(<MemoryRouter><QueryClientProvider client={queryClient}><IncidentReport /></QueryClientProvider></MemoryRouter>);
   };
 
-  it('API — from · to 를 ISO 로 보낸다', async () => {
+  it('API — from, to 를 ISO 로 보낸다', async () => {
     await fetchIncidentReport(at('10:50'), at('11:30'));
     expect(axiosInstance.get).toHaveBeenCalledWith('/api/admin/system/report', {
       params: { from: '2026-11-17T01:50:00.000Z', to: '2026-11-17T02:30:00.000Z' },
     });
   });
 
-  it('요약 문장 · 이슈 표(실제 장애 / 의도한 시험) · 이벤트를 보여 주고, 기간 버튼을 누르면 다시 조회한다', async () => {
+  it('요약 문장, 이슈 표(실제 장애 / 의도한 시험), 이벤트를 보여 주고, 기간 버튼을 누르면 다시 조회한다', async () => {
     renderPage();
     expect((await screen.findByLabelText('상태')).textContent).toBe('실제 장애 1건');
     const table = screen.getByRole('table', { name: '이슈 목록' });

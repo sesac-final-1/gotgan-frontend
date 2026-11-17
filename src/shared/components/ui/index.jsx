@@ -68,7 +68,7 @@ export function GradeBadge({ grade, dark = false, className = '' }) {
 }
 
 /* ─── 가격 ─── */
-// 판매가는 서버 값(p.salePrice)이 있으면 그대로 — 주문 · 결제와 같은 금액. 없을 때(상품 폼 미리보기)만 화면 계산
+// 판매가는 서버 값(p.salePrice)이 있으면 그대로 — 주문, 결제와 같은 금액. 없을 때(상품 폼 미리보기)만 화면 계산
 export function Price({ p, size = 'md' }) {
   const sp = p.salePrice ?? salePrice(p);
   const big = size === 'lg';
@@ -216,7 +216,7 @@ export function BarChart({ data, height = 220, valueKey = 'amount', color = 'var
         <div className="pointer-events-none absolute top-0 bg-ink text-white text-xs px-2.5 py-1.5 whitespace-nowrap"
           style={{ left: `${((pad.l + hover * bw + bw / 2) / W) * 100}%`, transform: 'translateX(-50%)' }}>
           <div className="text-white/60 num">{md(data[hover].date)}</div>
-          <div className="font-semibold num">{won(data[hover][valueKey])} · {data[hover].orders}건</div>
+          <div className="font-semibold num">{won(data[hover][valueKey])}, {data[hover].orders}건</div>
         </div>
       )}
     </div>

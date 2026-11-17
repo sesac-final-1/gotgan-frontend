@@ -1,4 +1,4 @@
-// 리뷰 작성 · 수정 모달 — 담당 이경석 (backend review.md 1 · 2 · 12절)
+// 리뷰 작성, 수정 모달 — 담당 이경석 (backend review.md 1, 2, 12절)
 // target: { line } 이면 작성(작성 가능 목록의 상품주문), { review } 면 수정(내가 쓴 리뷰)
 import { useEffect, useMemo, useState } from 'react';
 import { Star, Camera, X } from 'lucide-react';
@@ -20,7 +20,7 @@ export default function MyReviewModal({ target, onClose }) {
 
 function ReviewForm({ target, onClose }) {
   const editing = target.review;
-  const item = editing ?? target.line; // productName · option · thumbnail 은 둘 다 같은 이름
+  const item = editing ?? target.line; // productName, option, thumbnail 은 둘 다 같은 이름
   const [star, setStar] = useState(editing?.rating ?? 5);
   const [hover, setHover] = useState(0);
   const [fit, setFit] = useState(editing?.fit ?? null);
@@ -31,7 +31,7 @@ function ReviewForm({ target, onClose }) {
   const create = useCreateReviewMutation();
   const update = useUpdateReviewMutation();
   const saving = create.isPending || update.isPending;
-  // 사이즈 질문 — 상품의 상위 카테고리가 의류 · 신발 · 가방일 때만 (이미 사이즈를 고른 리뷰를 고칠 때는 그대로 보여 준다)
+  // 사이즈 질문 — 상품의 상위 카테고리가 의류, 신발, 가방일 때만 (이미 사이즈를 고른 리뷰를 고칠 때는 그대로 보여 준다)
   const { data: product } = useProductQuery(item.productId);
   const askFit = FIT_CATEGORIES.includes(product?.catName) || Boolean(editing?.fit);
 
@@ -40,7 +40,7 @@ function ReviewForm({ target, onClose }) {
 
   const addFiles = (fileList) => {
     const picked = Array.from(fileList ?? []);
-    if (picked.some((f) => !IMAGE_TYPES.includes(f.type))) return setError('사진은 JPG · PNG · WEBP 만 올릴 수 있어요');
+    if (picked.some((f) => !IMAGE_TYPES.includes(f.type))) return setError('사진은 JPG, PNG, WEBP 만 올릴 수 있어요');
     if (picked.some((f) => f.size > MAX_IMAGE_SIZE)) return setError('사진은 10MB 이하만 올릴 수 있어요');
     if (keepImages.length + newFiles.length + picked.length > MAX_IMAGES) return setError(`사진은 최대 ${MAX_IMAGES}장까지 올릴 수 있어요`);
     setError('');
@@ -113,7 +113,7 @@ function ReviewForm({ target, onClose }) {
           </label>
         )}
       </div>
-      <p className="mt-3 text-[12px] text-mute">사진은 최대 {MAX_IMAGES}장 · 10MB 이하 · 상품과 무관한 내용, 욕설은 운영 정책에 따라 블라인드 처리될 수 있습니다.</p>
+      <p className="mt-3 text-[12px] text-mute">사진은 최대 {MAX_IMAGES}장, 10MB 이하, 상품과 무관한 내용, 욕설은 운영 정책에 따라 블라인드 처리될 수 있습니다.</p>
       {error && <p role="alert" className="mt-3 text-[13px] text-rust">{error}</p>}
     </Modal>
   );
