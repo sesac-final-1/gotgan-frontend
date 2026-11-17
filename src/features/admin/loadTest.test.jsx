@@ -205,13 +205,13 @@ describe('부하테스트 진행, 원인 해석과 현재 접속자', () => {
     expect(failureCauses({ failed: 0 })).toEqual(['실패 없음: 모든 요청이 정상 응답(2xx)']);
   });
 
-  it('현재 접속자 — 5초 폴링 값을 그래프로 쌓는다', async () => {
-    vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { visitors: 12, members: 5, windowSeconds: 120 } } });
+  it('현재 접속자 — 총, 비회원(총 - 회원), 구매자, 판매자, 관리자', async () => {
+    vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { visitors: 12, members: 5, buyers: 3, sellers: 1, admins: 1, windowSeconds: 60 } } });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><SystemVisitors /></QueryClientProvider>);
 
-    expect(await screen.findByText('12명')).toBeTruthy();
-    expect(screen.getByText('5명')).toBeTruthy();
+    const list = await screen.findByRole('list', { name: '접속자 구분' });
+    await waitFor(() => expect(list.textContent).toBe('총 접속자12명비회원7명구매자3명판매자1명관리자1명'));
     expect(axiosInstance.get).toHaveBeenCalledWith('/api/admin/system/monitor/visitors');
     client.clear();
   });

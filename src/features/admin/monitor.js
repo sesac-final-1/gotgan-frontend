@@ -30,3 +30,16 @@ export const formatClock = (ms) => {
 };
 
 export const isServerError = (status) => status != null && status >= 500;
+
+// 현재 접속자 구분 — 총, 비회원(총 - 로그인 회원), 구매자, 판매자, 관리자(대표 역할 하나). 값이 없으면 null
+export function visitorBreakdown(data) {
+  if (!data || data.visitors == null) return [];
+  const guests = data.members == null ? null : Math.max(0, data.visitors - data.members);
+  return [
+    { key: 'total', label: '총 접속자', value: data.visitors },
+    { key: 'guest', label: '비회원', value: guests },
+    { key: 'buyer', label: '구매자', value: data.buyers },
+    { key: 'seller', label: '판매자', value: data.sellers },
+    { key: 'admin', label: '관리자', value: data.admins },
+  ];
+}

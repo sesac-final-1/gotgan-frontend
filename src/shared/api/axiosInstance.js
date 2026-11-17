@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { refreshOnce } from '@/shared/api/refresh';
+import { VISITOR_HEADER, visitorId } from '@/shared/utils/visitorId';
 
 // 모든 API 호출은 이 인스턴스로 — 상대경로 /api/... (운영: Vercel rewrite → https://api.gotgan.click, 로컬: Vite 프록시), 쿠키(refresh) 전송
 export const axiosInstance = axios.create({
@@ -25,6 +26,8 @@ const isAuthEndpoint = (url = '') => /^\/api\/auth\/(login|refresh|logout|signup
 axiosInstance.interceptors.request.use((config) => {
   const accessToken = authHandlers.getAccessToken();
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  // 같은 사이트(/api/...) 요청에만 방문자 ID — 다른 출처로 직접 가는 요청은 CORS 허용 헤더에 없어서 붙이지 않는다
+  if (!/^https?:\/\//.test(config.url ?? '')) config.headers[VISITOR_HEADER] = visitorId();
   return config;
 });
 
