@@ -4,7 +4,11 @@ const KEY = 'gotgan-visitor';
 export const VISITOR_HEADER = 'X-Gotgan-Visitor';
 let memo = null;
 
-const random = () => (globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`);
+// 브라우저 암호 난수만 쓴다(randomUUID 가 없는 오래된 브라우저는 getRandomValues 로 16바이트)
+const random = () => {
+  if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+};
 
 export function visitorId() {
   if (memo) return memo;
