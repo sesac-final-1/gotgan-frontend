@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import SystemKillDialog from '@/features/admin/components/SystemKillDialog';
-import { formatErrorRate, serviceShortName } from '@/features/admin/constants';
+import { formatErrorCount, serviceShortName } from '@/features/admin/constants';
 
 // 서비스 상태 패널 — 담당 박지연. 강의실 전자칠판에서 멀리서도 보이게 카드 전체를 상태 색으로 칠하고, 색만으로 구분하지 않도록 글자를 같이 쓴다(설계 3절)
 const STATE = {
@@ -29,7 +29,7 @@ function PodDots({ ready, desired }) {
   );
 }
 
-function ServiceCard({ service, errorRate, chaosEnabled, onKill, highlighted }) {
+function ServiceCard({ service, errors, chaosEnabled, onKill, highlighted }) {
   const state = stateOf(service);
   const name = serviceShortName(service.name);
   return (
@@ -40,7 +40,7 @@ function ServiceCard({ service, errorRate, chaosEnabled, onKill, highlighted }) 
       </div>
       <div className="flex flex-wrap items-center justify-between gap-x-2 mt-2">
         <PodDots ready={service.ready} desired={service.desired} />
-        <span className="text-lg tabular-nums whitespace-nowrap">오류 {formatErrorRate(errorRate)}</span>
+        <span className={`text-lg tabular-nums whitespace-nowrap ${errors > 0 ? 'text-rust font-bold' : ''}`}>5xx {formatErrorCount(errors)}</span>
       </div>
       <button type="button" className="btn btn-line btn-sm w-full mt-2" disabled={!chaosEnabled || service.state !== 'UP'} onClick={() => onKill(service)}
         aria-label={`${name} 내리기`}>내리기</button>
@@ -49,14 +49,14 @@ function ServiceCard({ service, errorRate, chaosEnabled, onKill, highlighted }) 
 }
 
 // 입구 · 관리자 · 로그인 — 시연에서 내리지 않으니 한 줄로 줄인다
-function FixedService({ service, errorRate }) {
+function FixedService({ service, errors }) {
   const state = stateOf(service);
   return (
     <li className="inline-flex items-center gap-2">
       <span className="text-lg font-bold">{serviceShortName(service.name)}</span>
       <PodDots ready={service.ready} desired={service.desired} />
       <span className={`px-2 text-base font-bold whitespace-nowrap ${state.pill}`}>{state.label}</span>
-      <span className="text-base tabular-nums whitespace-nowrap">오류 {formatErrorRate(errorRate)}</span>
+      <span className={`text-base tabular-nums whitespace-nowrap ${errors > 0 ? 'text-rust font-bold' : ''}`}>5xx {formatErrorCount(errors)}</span>
     </li>
   );
 }
@@ -64,7 +64,7 @@ function FixedService({ service, errorRate }) {
 // 복구 중에는 내리기를 막는다. highlighted = 부하테스트 시나리오가 쓰는 서비스(카드 바깥 테두리)
 export default function SystemServicePanel({ services, metrics, chaosEnabled = false, highlighted = [] }) {
   const [killTarget, setKillTarget] = useState(null);
-  const errorRateOf = Object.fromEntries((metrics?.services ?? []).map((m) => [m.name, m.errorRate]));
+  const errorsOf = Object.fromEntries((metrics?.services ?? []).map((m) => [m.name, m.errorsPerMinute]));
   const killable = services.filter((s) => s.killable);
   const fixed = services.filter((s) => !s.killable);
   return (
@@ -74,13 +74,13 @@ export default function SystemServicePanel({ services, metrics, chaosEnabled = f
         {!chaosEnabled && <p className="text-sm text-mute">내리기 기능이 꺼져 있어요. 시연 때만 켭니다.</p>}
       </div>
       <ul aria-label="내릴 수 있는 서비스" className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {killable.map((s) => <ServiceCard key={s.name} service={s} errorRate={errorRateOf[s.name]} chaosEnabled={chaosEnabled} onKill={setKillTarget} highlighted={highlighted.includes(s.name)} />)}
+        {killable.map((s) => <ServiceCard key={s.name} service={s} errors={errorsOf[s.name]} chaosEnabled={chaosEnabled} onKill={setKillTarget} highlighted={highlighted.includes(s.name)} />)}
       </ul>
       {fixed.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-3">
           <span className="text-sm text-mute whitespace-nowrap">내릴 수 없음</span>
           <ul aria-label="내릴 수 없는 서비스" className="contents">
-            {fixed.map((s) => <FixedService key={s.name} service={s} errorRate={errorRateOf[s.name]} />)}
+            {fixed.map((s) => <FixedService key={s.name} service={s} errors={errorsOf[s.name]} />)}
           </ul>
         </div>
       )}

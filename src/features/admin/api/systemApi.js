@@ -42,7 +42,7 @@ export const prepareLoadTestAccounts = async () => (await axiosInstance.post(`${
 // ── 실시간 모니터링(11/16, admin.md 9절) — 실제 트래픽 기준. 실패해도 200 에 빈 값
 const MONITOR = `${BASE}/monitor`;
 
-// { serverTime, total: { rps, avgMs, errorRate }, services: [{ name, series, db }] } — 점 [{ t, v }]
+// { serverTime, total: { rps, avgMs, errors }, services: [{ name, series, db }] } — 점 [{ t, v }], errors = 최근 1분 5xx 건수
 export const fetchMonitorOverview = async () => (await axiosInstance.get(`${MONITOR}/overview`)).data.data;
 
 // [{ traceId, timestampMs, method, path, service, status, durationMs }] 최신순. 액추에이터는 서버가 뺀다, service 가 있으면 그 서비스만
@@ -58,3 +58,8 @@ export const fetchMonitorTrace = async (traceId) => (await axiosInstance.get(`${
 
 // { topErrors, slowest, statuses } 최근 5분
 export const fetchMonitorSummary = async () => (await axiosInstance.get(`${MONITOR}/summary`)).data.data;
+
+// ── 장애 분석 리포트(11/17, admin.md 10절) — from · to 는 epoch ms, 서버에는 ISO 로. 최근 7일 안
+// { summary, buckets, issues, events, suspicious, fromMs, toMs, bucketSeconds }
+export const fetchIncidentReport = async (from, to) =>
+  (await axiosInstance.get(`${BASE}/report`, { params: { from: new Date(from).toISOString(), to: new Date(to).toISOString() } })).data.data;

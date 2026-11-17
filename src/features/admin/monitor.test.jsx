@@ -11,8 +11,8 @@ import { formatClock, hasErrors, isLatencySpike, isServerError, SCENARIO_SERVICE
 // 실시간 모니터링 — 계약 backend admin.md 9절. 탭 · 이상 표시(빨간 배경 · 빨간 줄) · 트레이스 · 서비스 카드 색
 const M = '/api/admin/system/monitor';
 const pts = (...vs) => vs.map((v, i) => ({ t: i * 5000, v }));
-const normal = { rps: pts(10, 12, 11), avgMs: pts(30, 32, 31), errorRate: pts(0, 0, 0) };
-const failing = { rps: pts(10, 6, 5), avgMs: pts(30, 31, 2100), errorRate: pts(0, 0, 0.38) };
+const normal = { rps: pts(10, 12, 11), avgMs: pts(30, 32, 31), errors: pts(0, 0, 0) };
+const failing = { rps: pts(10, 6, 5), avgMs: pts(30, 31, 2100), errors: pts(0, 0, 12) };
 
 const overview = (product = normal) => ({
   serverTime: '2026-11-16T16:00:00+09:00',
@@ -105,7 +105,7 @@ describe('실시간 모니터링 패널', () => {
     state.overview = overview(failing);
     await queryClient.refetchQueries();
     await waitFor(() => expect(screen.getByText('장애 감지')).toBeTruthy());
-    expect(screen.getByRole('figure', { name: '에러율 (5xx)' }).dataset.alert).toBe('true');
+    expect(screen.getByRole('figure', { name: '5xx 건수 (최근 1분)' }).dataset.alert).toBe('true');
     expect(screen.getByRole('figure', { name: '평균 응답' }).dataset.alert).toBe('true');
 
     fireEvent.click(screen.getByRole('tab', { name: '서비스별' }));

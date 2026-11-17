@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { fetchSystemEvents, fetchSystemMetrics, fetchSystemStatus, killOneEach, killService } from '@/features/admin/api/systemApi';
 import SystemDashboard from '@/features/admin/components/SystemDashboard';
@@ -8,7 +9,7 @@ import SystemScenarioPanel from '@/features/admin/components/SystemScenarioPanel
 import SystemLinks from '@/features/admin/components/SystemLinks';
 import SystemServicePanel from '@/features/admin/components/SystemServicePanel';
 import SystemTimeline from '@/features/admin/components/SystemTimeline';
-import { formatErrorRate } from '@/features/admin/constants';
+import { formatErrorCount } from '@/features/admin/constants';
 import { useToastStore } from '@/shared/stores/toastStore';
 
 // 장애 시연 화면 — 계약 backend admin.md 7절. 서버를 흉내 내는 작은 상태 하나로 내리기 흐름까지 확인한다
@@ -30,7 +31,7 @@ function resetServer({ chaosEnabled = true } = {}) {
 function stubServer() {
   vi.spyOn(axiosInstance, 'get').mockImplementation(async (url) => {
     if (url === `${BASE}/status`) return { data: { data: { chaosEnabled: server.chaosEnabled, serverTime: '2026-11-09T14:00:00+09:00', services: server.services, features: server.features } } };
-    if (url === `${BASE}/metrics`) return { data: { data: { services: server.services.map((s) => ({ name: s.name, requestsPerSecond: 1, errorRate: s.ready ? 0 : 1 })) } } };
+    if (url === `${BASE}/metrics`) return { data: { data: { services: server.services.map((s) => ({ name: s.name, requestsPerSecond: 1, errorRate: s.ready ? 0 : 1, errorsPerMinute: s.ready ? 0 : 30 })) } } };
     return { data: { data: [] } };
   });
   vi.spyOn(axiosInstance, 'post').mockImplementation(async (url, { scope }) => {
@@ -80,7 +81,7 @@ describe('시스템 상태 화면', () => {
   });
   const renderPage = () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    return render(<QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider>);
+    return render(<MemoryRouter><QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider></MemoryRouter>);
   };
 
   it('받은 값이 없이 실패하면 다시 시도 안내를 보여 준다', async () => {
@@ -110,14 +111,13 @@ describe('서비스 상태 패널', () => {
     expect(screen.getByRole('img', { name: '파드 2개 중 1개 준비' }).textContent).toContain('1/2');
   });
 
-  it('오류율은 퍼센트로, 값이 없으면 - 로 표시한다', () => {
-    expect(formatErrorRate(0)).toBe('0%');
-    expect(formatErrorRate(0.123)).toBe('12.3%');
-    expect(formatErrorRate(1)).toBe('100%');
-    expect(formatErrorRate(null)).toBe('-');
-    render(<SystemServicePanel services={[svc('order-service', 'UP', 2, 2), svc('review-service', 'UP', 1, 1)]} metrics={{ services: [{ name: 'order-service', errorRate: 0.05 }, { name: 'review-service', errorRate: null }] }} />);
-    expect(screen.getByText('오류 5%')).toBeTruthy();
-    expect(screen.getByText('오류 -')).toBeTruthy();
+  it('5xx 는 최근 1분 건수로, 값이 없으면 - 로 표시한다', () => {
+    expect(formatErrorCount(0)).toBe('0건/분');
+    expect(formatErrorCount(12)).toBe('12건/분');
+    expect(formatErrorCount(null)).toBe('-');
+    render(<SystemServicePanel services={[svc('order-service', 'UP', 2, 2), svc('review-service', 'UP', 1, 1)]} metrics={{ services: [{ name: 'order-service', errorsPerMinute: 3 }, { name: 'review-service', errorsPerMinute: null }] }} />);
+    expect(screen.getByText('5xx 3건/분')).toBeTruthy();
+    expect(screen.getByText('5xx -')).toBeTruthy();
   });
 
   it('내릴 수 없는 서비스는 카드와 나눠 버튼 없이 보여 준다', () => {
@@ -161,7 +161,7 @@ describe('서비스 내리기', () => {
   beforeEach(() => { resetServer(); stubServer(); });
   const renderPage = async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(<QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider>);
+    render(<MemoryRouter><QueryClientProvider client={queryClient}><SystemDashboard /></QueryClientProvider></MemoryRouter>);
     await screen.findByRole('button', { name: 'order 내리기' });
   };
   const rowOf = (name) => within(screen.getByRole('region', { name: '서비스 상태' })).getByText(name).closest('li'); // 타임라인에도 같은 이름이 나온다
@@ -257,7 +257,7 @@ describe('타임라인 · 바로가기', () => {
   });
 
   it('쇼핑몰은 새 창으로 열고 Grafana 는 접속 명령을 안내한다', () => {
-    render(<SystemLinks />);
+    render(<MemoryRouter><SystemLinks /></MemoryRouter>);
     const shop = screen.getByRole('link', { name: /쇼핑몰 새 창으로 열기/ });
     expect(shop.getAttribute('target')).toBe('_blank');
     expect(shop.getAttribute('rel')).toContain('noopener');

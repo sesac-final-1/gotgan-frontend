@@ -19,16 +19,16 @@ const TABS = [
 
 const fmtRps = (v) => `${v.toFixed(1)}건`;
 const fmtMs = (v) => `${v.toFixed(0)}ms`;
-const fmtRate = (v) => `${(v * 100).toFixed(1)}%`;
+const fmtCount = (v) => `${Math.round(v)}건`;
 
 function SeriesCharts({ series, compact = false }) {
-  const errors = hasErrors(series?.errorRate);
+  const errors = hasErrors(series?.errors);
   const spike = isLatencySpike(series?.avgMs);
   return (
     <>
       <LoadTestChart label="초당 요청" points={series?.rps} floor={compact ? 1 : 5} format={fmtRps} compact={compact} />
       <LoadTestChart label="평균 응답" points={series?.avgMs} floor={100} format={fmtMs} alert={spike} alertText="급등" compact={compact} />
-      <LoadTestChart label="에러율 (5xx)" points={series?.errorRate} floor={0.05} format={fmtRate} alert={errors} alertText="장애" compact={compact} />
+      <LoadTestChart label="5xx 건수 (최근 1분)" points={series?.errors} floor={5} format={fmtCount} alert={errors} alertText="장애" compact={compact} />
     </>
   );
 }
@@ -54,7 +54,7 @@ function ServicesTab({ overview }) {
   return (
     <ul className="grid md:grid-cols-2 xl:grid-cols-3 gap-3" aria-label="서비스별 현황">
       {(overview?.services ?? []).map((s) => {
-        const bad = hasErrors(s.series.errorRate) || isLatencySpike(s.series.avgMs);
+        const bad = hasErrors(s.series.errors) || isLatencySpike(s.series.avgMs);
         return (
           <li key={s.name} className={`border-2 p-2 ${bad ? 'border-rust' : 'border-line'}`}>
             <div className="flex items-center justify-between mb-1">
@@ -180,7 +180,7 @@ export default function SystemMonitorPanel() {
   const [traceId, setTraceId] = useState(null);
   const [service, setService] = useState('');   // '' = 전체 서비스
   const { data: overview } = useMonitorOverviewQuery();
-  const alerting = hasErrors(overview?.total?.errorRate);
+  const alerting = hasErrors(overview?.total?.errors);
 
   return (
     <section aria-label="실시간 모니터링" className="panel">
