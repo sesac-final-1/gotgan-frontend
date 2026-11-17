@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import LoadTestChart from '@/features/admin/components/LoadTestChart';
 import { useVisitorsQuery } from '@/features/admin/hooks/useSystemQueries';
 
-// 현재 접속자(11/17) — 담당 구지훈. 서버가 최근 120초 안에 요청한 사람을 5초마다 다시 센다(부하테스트 요청 제외).
+// 현재 접속자(11/17) — 담당 구지훈. 서버가 최근 60초 안에 신호가 있는 사람을 5초마다 다시 센다(부하테스트 요청 제외).
+// 쇼핑몰 탭은 보이는 동안 20초마다 접속 신호, 숨기거나 닫으면 나감 신호를 보낸다(app/usePresence)
 // 화면을 보는 동안 받은 값으로 추이를 그린다(최근 10분, 새로 열면 다시 쌓임)
 const KEEP = 120;
 
@@ -23,7 +24,7 @@ export default function SystemVisitors() {
     <section aria-label="현재 접속자" className="grid sm:grid-cols-2 gap-3">
       <LoadTestChart label="현재 접속자 (회원 + 비회원)" points={history.visitors} floor={5} format={(v) => `${v}명`} />
       <LoadTestChart label="로그인 회원" points={history.members} floor={5} format={(v) => `${v}명`} />
-      <p className="sm:col-span-2 -mt-1 text-xs text-mute">최근 2분 안에 요청한 사람 기준, 5초마다 갱신. 부하테스트 가상 사용자는 빼고 셉니다.</p>
+      <p className="sm:col-span-2 -mt-1 text-xs text-mute">탭을 열면 바로 늘고 닫으면 바로 줄어요(브라우저가 강제 종료되면 최대 1분 뒤). 5초마다 갱신, 부하테스트 가상 사용자는 빼고 셉니다.</p>
     </section>
   );
 }
