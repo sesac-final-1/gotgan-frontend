@@ -77,8 +77,10 @@ const monitorQuery = (part, queryFn, refetchInterval, enabled = true) => ({
 });
 
 export const useMonitorOverviewQuery = () => useQuery(monitorQuery('overview', () => fetchMonitorOverview(), MONITOR_OVERVIEW_POLL_MS));
-export const useMonitorCallsQuery = (enabled) => useQuery(monitorQuery('calls', () => fetchMonitorCalls(), MONITOR_LIST_POLL_MS, enabled));
-export const useMonitorErrorsQuery = (enabled) => useQuery(monitorQuery('errors', () => fetchMonitorErrors(), MONITOR_LIST_POLL_MS, enabled));
+export const useMonitorCallsQuery = (enabled, service) =>
+  useQuery(monitorQuery(['calls', service ?? 'all'], () => fetchMonitorCalls(service), MONITOR_LIST_POLL_MS, enabled));
+export const useMonitorErrorsQuery = (enabled, service) =>
+  useQuery(monitorQuery(['errors', service ?? 'all'], () => fetchMonitorErrors(service), MONITOR_LIST_POLL_MS, enabled));
 export const useMonitorSummaryQuery = (enabled) => useQuery(monitorQuery('summary', () => fetchMonitorSummary(), MONITOR_SUMMARY_POLL_MS, enabled));
 
 // 트레이스는 고른 줄만 한 번 — 끝난 요청이라 다시 부르지 않는다

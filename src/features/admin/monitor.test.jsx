@@ -80,6 +80,10 @@ describe('모니터링 규칙', () => {
     await fetchMonitorSummary();
     await fetchMonitorTrace('abc');
     expect(get.mock.calls.map((c) => c[0])).toEqual([`${M}/overview`, `${M}/calls`, `${M}/errors`, `${M}/summary`, `${M}/traces/abc`]);
+    await fetchMonitorCalls('order-service');
+    await fetchMonitorErrors('order-service');
+    expect(get.mock.calls.at(-2)).toEqual([`${M}/calls`, { params: { service: 'order-service' } }]);
+    expect(get.mock.calls.at(-1)).toEqual([`${M}/errors`, { params: { service: 'order-service' } }]);
     get.mockRestore();
   });
 });
@@ -162,5 +166,39 @@ describe('서비스 카드 색 · 시나리오 강조', () => {
     const cards = screen.getByRole('list', { name: '내릴 수 있는 서비스' }).children;
     expect(cards[0].dataset.highlighted).toBe('true');
     expect(cards[1].dataset.highlighted).toBeUndefined();
+  });
+});
+
+describe('호출 · 장애 서비스 필터', () => {
+  let queryClient;
+  beforeEach(() => {
+    state = { overview: overview() };
+    vi.spyOn(axiosInstance, 'get').mockImplementation(async (url, config) => {
+      if (url === `${M}/overview`) return { data: { data: state.overview } };
+      const service = config?.params?.service;
+      const rows = [
+        { traceId: 'p1', timestampMs: 2, method: 'GET', path: '/api/products', service: 'product-service', status: 200, durationMs: 3 },
+        { traceId: 'r1', timestampMs: 1, method: 'GET', path: '/api/reviews', service: 'review-service', status: 200, durationMs: 4 },
+      ];
+      return { data: { data: url === `${M}/calls` ? rows.filter((r) => !service || r.service === service) : [] } };
+    });
+  });
+  afterEach(() => { cleanup(); queryClient?.clear(); vi.restoreAllMocks(); });
+
+  it('서비스를 고르면 그 서비스로 다시 조회하고, 탭이 호출 · 장애일 때만 보인다', async () => {
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><SystemMonitorPanel /></QueryClientProvider>);
+    expect(screen.queryByRole('combobox', { name: '서비스 필터' })).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: '호출' }));
+    expect(await screen.findByText('GET /api/reviews')).toBeTruthy();
+
+    const select = await screen.findByRole('combobox', { name: '서비스 필터' });
+    await waitFor(() => expect(within(select).getByRole('option', { name: 'review' })).toBeTruthy());
+    fireEvent.change(select, { target: { value: 'review-service' } });
+    await waitFor(() => expect(screen.queryByText('GET /api/products')).toBeNull());
+    expect(axiosInstance.get).toHaveBeenCalledWith(`${M}/calls`, { params: { service: 'review-service' } });
+
+    fireEvent.click(screen.getByRole('tab', { name: '장애' }));
+    expect(await screen.findByText('최근 10분 동안 review 장애가 없어요.')).toBeTruthy();
   });
 });
