@@ -82,7 +82,8 @@ describe('장애 분석 리포트 — 규칙', () => {
   });
 
   it('한눈에 보기, 영향 한 줄, 이벤트 요약표 — 파드 이벤트는 종류별 한 줄로 묶는다', () => {
-    expect(overview(report()).statusText).toBe('실제 장애 1건');
+    expect(overview(report()).statusText).toBe('실제 장애 없음, 외부 탐색 1건');   // 공격 의심은 서비스 장애와 따로
+    expect(overview({ ...report(), issues: [{ ...report().issues[0], intended: false }] }).statusText).toBe('실제 장애 1건');
     expect(issueImpact(report().issues[0])).toBe('상품, 5xx 827건');
     expect(issueImpact(report().issues[1])).toBe('탐색 요청 3건');
     expect(summarizeEvents(report().events)).toEqual([
@@ -95,11 +96,11 @@ describe('장애 분석 리포트 — 규칙', () => {
   it('내려받기 HTML — 섹션 5개(한눈에 보기, 이슈, 이벤트 요약, 시간대별, 개발자 상세), 로그는 escape', () => {
     const html = buildReportHtml(report(), new Date('2026-11-17T11:31:00+09:00'));
     ['1. 한눈에 보기', '2. 이슈', '3. 운영 이벤트 요약', '4. 시간대별 건수', '5. 개발자 상세'].forEach((h) => expect(html).toContain(`<h2>${h}</h2>`));
-    expect(html).toContain('실제 장애 1건');
+    expect(html).toContain('실제 장애 없음, 외부 탐색 1건');
     expect(html).toContain('<td>파드 종료</td><td>3</td><td>장애 주입 2, 자동 축소</td>');
     expect(html).toContain('<svg');
     expect(html).toContain('의도한 시험');
-    expect(html).toContain('<b class="bad">실제 장애</b>');
+    expect(html).toContain('<td>외부 탐색</td>');
     expect(html).toContain('<code>abc123</code>');
     expect(html).toContain('업무 서비스 연결 실패 &lt;route&gt;');
     expect(html).not.toContain('업무 서비스 연결 실패 <route>');
@@ -128,10 +129,10 @@ describe('장애 분석 리포트 — 화면', () => {
 
   it('요약 문장, 이슈 표(실제 장애 / 의도한 시험), 이벤트를 보여 주고, 기간 버튼을 누르면 다시 조회한다', async () => {
     renderPage();
-    expect((await screen.findByLabelText('상태')).textContent).toBe('실제 장애 1건');
+    expect((await screen.findByLabelText('상태')).textContent).toBe('실제 장애 없음, 외부 탐색 1건');
     const table = screen.getByRole('table', { name: '이슈 목록' });
     expect(within(table).getByText('의도한 시험')).toBeTruthy();
-    expect(within(table).getByText('실제 장애')).toBeTruthy();
+    expect(within(table).getByText('외부 탐색')).toBeTruthy();
     expect(within(table).getByText('상품, 5xx 827건')).toBeTruthy();
     const events = screen.getByRole('table', { name: '운영 이벤트 요약' });
     expect(within(events).getByText('장애 주입 2, 자동 축소')).toBeTruthy();

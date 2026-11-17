@@ -108,13 +108,29 @@ export function issueImpact(issue) {
   return where ? `${where}, ${what}` : what;
 }
 
-/** 한눈에 보기 — 상태 배지와 숫자 카드. 실제 장애 = 의도한 시험이 아닌 이슈 */
+/**
+ * 이슈 구분 — 외부 탐색(자동 스캐너, 공격 의심), 의도한 시험(장애 주입, 부하테스트), 실제 장애(그 밖).
+ * 외부 탐색은 대부분 인증 단계에서 막혀 서비스 영향이 없어 실제 장애와 따로 센다
+ */
+export const ISSUE_CLASS = {
+  attack: { short: '외부 탐색', long: '외부 탐색(인터넷 자동 스캐너), 서비스 영향은 응답 실패 건수로 확인' },
+  intended: { short: '의도한 시험', long: '의도한 시험(장애 주입 또는 부하테스트)' },
+  real: { short: '실제 장애', long: '실제 장애, 확인 필요' },
+};
+export const issueClass = (issue) => {
+  if (issue.kind === 'ATTACK') return 'attack';
+  return issue.intended ? 'intended' : 'real';
+};
+
+/** 한눈에 보기 — 상태 배지와 숫자 카드. 배지는 서비스 장애만 세고 외부 탐색은 따로 덧붙인다 */
 export function overview(report) {
   const s = report.summary;
-  const real = s.issues - s.intendedIssues;
+  const real = report.issues.filter((i) => issueClass(i) === 'real').length;
+  const attacks = report.issues.filter((i) => issueClass(i) === 'attack').length;
+  const base = real > 0 ? `실제 장애 ${real}건` : '실제 장애 없음';
   return {
     status: real > 0 ? 'bad' : 'ok',
-    statusText: real > 0 ? `실제 장애 ${real}건` : '실제 장애 없음',
+    statusText: attacks > 0 ? `${base}, 외부 탐색 ${attacks}건` : base,
     cards: [
       { label: '이슈', value: s.issues, sub: `의도한 시험 ${s.intendedIssues}` },
       { label: '응답 실패(5xx)', value: s.serverErrors },
@@ -202,15 +218,15 @@ function summarySection(report, period) {
 
 function issueCard(i) {
   const causes = i.causes.map((c, k) => `<li><b>${k === 0 ? '원인' : '관련'}</b>${escapeHtml(c.label)}: ${escapeHtml(c.detail)}</li>`).join('');
-  return `<div class="issue${i.intended ? '' : ' real'}"><h4>#${i.no} ${KIND_LABEL[i.kind] ?? i.kind}<small>${escapeHtml(issueWindow(i))}, ${issueMinutes(i)}분</small></h4>
-<ul><li><b>영향</b>${escapeHtml(issueImpact(i))}</li>${causes}<li><b>구분</b>${i.intended ? '의도한 시험(장애 주입 또는 부하테스트)' : '실제 장애, 확인 필요'}</li></ul></div>`;
+  return `<div class="issue${issueClass(i) === 'real' ? ' real' : ''}"><h4>#${i.no} ${KIND_LABEL[i.kind] ?? i.kind}<small>${escapeHtml(issueWindow(i))}, ${issueMinutes(i)}분</small></h4>
+<ul><li><b>영향</b>${escapeHtml(issueImpact(i))}</li>${causes}<li><b>구분</b>${ISSUE_CLASS[issueClass(i)].long}</li></ul></div>`;
 }
 
 function issueSection(report) {
   if (report.issues.length === 0) return `<section><h2>2. 이슈</h2>${mute('이 기간에는 이슈가 없습니다.')}</section>`;
   const summary = table(['#', '시간', '길이', '종류', '영향', '주 원인', '구분'], report.issues.map((i) => row([
     i.no, escapeHtml(issueWindow(i)), `${issueMinutes(i)}분`, KIND_LABEL[i.kind] ?? i.kind, escapeHtml(issueImpact(i)),
-    escapeHtml(i.causes[0]?.label ?? '-'), i.intended ? '의도한 시험' : '<b class="bad">실제 장애</b>',
+    escapeHtml(i.causes[0]?.label ?? '-'), issueClass(i) === 'real' ? '<b class="bad">실제 장애</b>' : ISSUE_CLASS[issueClass(i)].short,
   ])));
   return `<section><h2>2. 이슈</h2>${summary}${report.issues.map(issueCard).join('')}</section>`;
 }

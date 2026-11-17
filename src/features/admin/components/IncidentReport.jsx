@@ -8,7 +8,7 @@ import { PageHead } from '@/shared/components/ui';
 import { ListStatus } from '@/features/product/components/ListStatus';
 import { useIncidentReportQuery } from '@/features/admin/hooks/useSystemQueries';
 import {
-  EVENT_LABEL, KIND_LABEL, barLayout, downloadReport, formatDayTime, formatSeconds, fromLocalInput, issueImpact, issueMinutes,
+  EVENT_LABEL, ISSUE_CLASS, KIND_LABEL, barLayout, downloadReport, formatDayTime, formatSeconds, fromLocalInput, issueClass, issueImpact, issueMinutes,
   issueWindow, overview, presets, serviceColor, serviceLabel, summarizeEvents, toLocalInput,
 } from '@/features/admin/incidentReport';
 
@@ -63,14 +63,14 @@ function Overview({ report, period }) {
 
 function IssueCard({ issue }) {
   return (
-    <li className={`border border-line border-l-4 px-3 py-2 ${issue.intended ? 'border-l-line' : 'border-l-rust'}`}>
+    <li className={`border border-line border-l-4 px-3 py-2 ${issueClass(issue) === 'real' ? 'border-l-rust' : 'border-l-line'}`}>
       <p className="font-bold">#{issue.no} {KIND_LABEL[issue.kind]}<span className="ml-2 text-sm font-normal text-mute tabular-nums">{issueWindow(issue)}, {issueMinutes(issue)}분</span></p>
       <ul className="mt-1 text-sm grid gap-0.5">
         <li><b className="inline-block w-10 text-ink-2">영향</b>{issueImpact(issue)}</li>
         {issue.causes.map((c, k) => (
           <li key={c.code}><b className="inline-block w-10 text-ink-2">{k === 0 ? '원인' : '관련'}</b>{c.label}: <span className="text-mute">{c.detail}</span></li>
         ))}
-        <li><b className="inline-block w-10 text-ink-2">구분</b>{issue.intended ? '의도한 시험(장애 주입 또는 부하테스트)' : <b className="text-rust">실제 장애, 확인 필요</b>}</li>
+        <li><b className="inline-block w-10 text-ink-2">구분</b>{issueClass(issue) === 'real' ? <b className="text-rust">{ISSUE_CLASS.real.long}</b> : ISSUE_CLASS[issueClass(issue)].long}</li>
       </ul>
     </li>
   );
@@ -96,7 +96,7 @@ function Issues({ issues }) {
                     <td className="pr-2 whitespace-nowrap">{KIND_LABEL[i.kind]}</td>
                     <td className="pr-2">{issueImpact(i)}</td>
                     <td className="pr-2">{i.causes[0]?.label ?? '-'}</td>
-                    <td className="whitespace-nowrap">{i.intended ? <span className="text-mute">의도한 시험</span> : <b className="text-rust">실제 장애</b>}</td>
+                    <td className="whitespace-nowrap">{issueClass(i) === 'real' ? <b className="text-rust">실제 장애</b> : <span className="text-mute">{ISSUE_CLASS[issueClass(i)].short}</span>}</td>
                   </tr>
                 ))}
               </tbody>
