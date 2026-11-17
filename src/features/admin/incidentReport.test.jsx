@@ -5,7 +5,7 @@ import { axiosInstance } from '@/shared/api/axiosInstance';
 import { fetchIncidentReport } from '@/features/admin/api/systemApi';
 import IncidentReport from '@/features/admin/components/IncidentReport';
 import {
-  barLayout, buildReportHtml, escapeHtml, issueCount, presets, reportFileName,
+  barLayout, buildReportHtml, escapeHtml, issueCount, issueImpact, overview, presets, reportFileName, summarizeEvents,
 } from '@/features/admin/incidentReport';
 
 // 장애 분석 리포트 — 계약 backend admin.md 10절. 기간 버튼 · 운영팀 화면 · 개발자 상세 · 내려받기 HTML
@@ -39,7 +39,14 @@ const report = () => ({
       logs: [],
     },
   ],
-  events: [{ t: at('11:06'), type: 'CHAOS_KILL', service: 'product-service', detail: '관리자가 파드 2개 강제 종료(ALL)' }],
+  events: [
+    { t: at('11:06'), type: 'CHAOS_KILL', service: 'product-service', detail: '관리자가 파드 2개 강제 종료(ALL)' },
+    { t: at('11:07'), type: 'CHAOS_RECOVER', service: 'product-service', detail: '복구 완료(21초)' },
+    { t: at('11:06'), type: 'POD_STOP', service: 'product-service', detail: 'product-service-a 종료(장애 주입)' },
+    { t: at('11:06'), type: 'POD_STOP', service: 'product-service', detail: 'product-service-b 종료(장애 주입)' },
+    { t: at('11:20'), type: 'POD_STOP', service: 'order-service', detail: 'order-service-c 종료(자동 축소)' },
+    { t: at('11:07'), type: 'POD_START', service: 'product-service', detail: 'product-service-d 시작' },
+  ],
   suspicious: [{ kind: 'LOG', timestampMs: at('11:24'), service: 'gateway-service', level: 'WARN', title: '의심 요청 type=secret-file path=/.env', status: null, traceId: null }],
 });
 
@@ -74,11 +81,22 @@ describe('장애 분석 리포트 — 규칙', () => {
     expect(escapeHtml('<a href="x">&\'')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&#39;');
   });
 
-  it('내려받기 HTML — 운영팀 섹션(요약 · 막대 · 이슈 · 이벤트) + 개발자 섹션(근거 · traceId · JSON), 로그는 escape', () => {
+  it('한눈에 보기, 영향 한 줄, 이벤트 요약표 — 파드 이벤트는 종류별 한 줄로 묶는다', () => {
+    expect(overview(report()).statusText).toBe('실제 장애 1건');
+    expect(issueImpact(report().issues[0])).toBe('상품, 5xx 827건');
+    expect(issueImpact(report().issues[1])).toBe('탐색 요청 3건');
+    expect(summarizeEvents(report().events)).toEqual([
+      { label: '장애 주입', count: 1, detail: '상품 / 복구 평균 21초, 최장 21초' },
+      { label: '파드 종료', count: 3, detail: '장애 주입 2, 자동 축소', alert: false },
+      { label: '파드 시작', count: 1, detail: '상품' },
+    ]);
+  });
+
+  it('내려받기 HTML — 섹션 5개(한눈에 보기, 이슈, 이벤트 요약, 시간대별, 개발자 상세), 로그는 escape', () => {
     const html = buildReportHtml(report(), new Date('2026-11-17T11:31:00+09:00'));
-    expect(html).toContain('<h2>1. 운영팀 보고</h2>');
-    expect(html).toContain('<h2>2. 개발자 상세</h2>');
-    expect(html).toContain('응답 실패 총 827건');
+    ['1. 한눈에 보기', '2. 이슈', '3. 운영 이벤트 요약', '4. 시간대별 건수', '5. 개발자 상세'].forEach((h) => expect(html).toContain(`<h2>${h}</h2>`));
+    expect(html).toContain('실제 장애 1건');
+    expect(html).toContain('<td>파드 종료</td><td>3</td><td>장애 주입 2, 자동 축소</td>');
     expect(html).toContain('<svg');
     expect(html).toContain('의도한 시험');
     expect(html).toContain('<b class="bad">실제 장애</b>');
@@ -110,12 +128,13 @@ describe('장애 분석 리포트 — 화면', () => {
 
   it('요약 문장 · 이슈 표(실제 장애 / 의도한 시험) · 이벤트를 보여 주고, 기간 버튼을 누르면 다시 조회한다', async () => {
     renderPage();
-    expect(await screen.findByLabelText('요약')).toHaveProperty('textContent', report().summary.headline);
+    expect((await screen.findByLabelText('상태')).textContent).toBe('실제 장애 1건');
     const table = screen.getByRole('table', { name: '이슈 목록' });
     expect(within(table).getByText('의도한 시험')).toBeTruthy();
     expect(within(table).getByText('실제 장애')).toBeTruthy();
-    expect(within(table).getByText('827')).toBeTruthy();
-    expect(within(screen.getByRole('list', { name: '이벤트' })).getByText('장애 주입')).toBeTruthy();
+    expect(within(table).getByText('상품, 5xx 827건')).toBeTruthy();
+    const events = screen.getByRole('table', { name: '운영 이벤트 요약' });
+    expect(within(events).getByText('장애 주입 2, 자동 축소')).toBeTruthy();
     expect(screen.getByText(/traceId abc123/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: '어제 퇴근 후' }));
@@ -130,7 +149,7 @@ describe('장애 분석 리포트 — 화면', () => {
     renderPage();
     const button = screen.getByRole('button', { name: /보고서 내려받기/ });
     expect(button.disabled).toBe(true);
-    await screen.findByLabelText('요약');
+    await screen.findByLabelText('상태');
     fireEvent.click(button);
 
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
