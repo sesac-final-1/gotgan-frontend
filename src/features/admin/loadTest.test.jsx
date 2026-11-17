@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { axiosInstance } from '@/shared/api/axiosInstance';
 import { fetchLoadTest, prepareLoadTestAccounts, scaleLoadTest, startLoadTest, stopLoadTest } from '@/features/admin/api/systemApi';
 import LoadTestChart from '@/features/admin/components/LoadTestChart';
 import SystemLoadTestPanel from '@/features/admin/components/SystemLoadTestPanel';
+import SystemVisitors from '@/features/admin/components/SystemVisitors';
+import { failureCauses, progress } from '@/features/admin/loadTest';
 import { useToastStore } from '@/shared/stores/toastStore';
 
 // 관리자 화면 부하테스트 — 계약 backend admin.md 8절. 서버를 흉내 내는 작은 상태 하나로 시작 · 조절 · 중지 · 계정 준비를 확인한다
@@ -30,7 +32,7 @@ const series = () => ({
 
 function stubServer() {
   vi.spyOn(axiosInstance, 'get').mockImplementation(async () => ({
-    data: { data: { enabled: server.enabled, maxVus: 300, load: server.load, accounts: server.accounts, series: server.load ? series() : {} } },
+    data: { data: { enabled: server.enabled, maxVus: 300, load: server.load, accounts: server.accounts, series: server.load ? series() : {}, result: server.result ?? null } },
   }));
   vi.spyOn(axiosInstance, 'post').mockImplementation(async (url, body) => {
     if (url === `${URL}/accounts`) server.accounts = { id: 'lt-2', state: 'RUNNING' };
@@ -87,7 +89,7 @@ describe('부하테스트 패널', () => {
     fireEvent.click(screen.getByRole('button', { name: '부하 시작' }));
 
     await waitFor(() => expect(axiosInstance.post).toHaveBeenCalledWith(URL, { scenario: 'REVIEWS', vus: 80, durationSec: 180 }));
-    expect(await screen.findByText(/실행 중 \d\d:\d\d/)).toBeTruthy();
+    expect(await screen.findByText(/남은 시간 \d\d:\d\d/)).toBeTruthy();
     expect(screen.getByText('120명')).toBeTruthy();
     expect(screen.getByText('150건')).toBeTruthy();
     expect(screen.getByLabelText('시나리오가 쓰는 서비스').textContent).toContain('review');
@@ -98,12 +100,12 @@ describe('부하테스트 패널', () => {
     resetServer({ load: { id: 'lt-1', scenario: 'BROWSE', state: 'RUNNING', vus: 50, durationSec: 300, startedAt: new Date().toISOString() } });
     renderPanel();
     const slider = await screen.findByRole('slider', { name: '동시 사용자 수' });
-    await screen.findByRole('button', { name: '중지' });
+    await screen.findByRole('button', { name: '부하 중지' });
     fireEvent.change(slider, { target: { value: '200' } });
     fireEvent.pointerUp(slider);
     await waitFor(() => expect(server.scaled).toEqual([200]));
 
-    fireEvent.click(screen.getByRole('button', { name: '중지' }));
+    fireEvent.click(screen.getByRole('button', { name: '부하 중지' }));
     await waitFor(() => expect(axiosInstance.delete).toHaveBeenCalledWith(URL));
     expect(await screen.findByRole('button', { name: '부하 시작' })).toBeTruthy();
     expect(lastToast()).toBe('부하테스트를 중지했어요.');
@@ -161,5 +163,56 @@ describe('부하테스트 그래프', () => {
     expect(xs()).toEqual([0, 300]);   // 30초 = 최소 창 전부
     rerender(<LoadTestChart label="p95" points={[{ t: 0, v: 1 }, { t: 300_000, v: 1 }, { t: 600_000, v: 1 }]} format={String} />);
     expect(xs()).toEqual([-700, -200, 300]);   // 최근 3분만 화면 안
+  });
+
+});
+
+describe('부하테스트 결과', () => {
+  let queryClient;
+  beforeEach(() => stubServer());
+  afterEach(() => { cleanup(); queryClient?.clear(); vi.restoreAllMocks(); });
+  const renderPanel = () => {
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(<QueryClientProvider client={queryClient}><ControlledPanel /></QueryClientProvider>);
+  };
+
+  it('끝난 실행은 결과 탭 — 요청, 실패, 상태 코드별 원인, 실패 많은 API, 같은 시간 서버 5xx', async () => {
+    resetServer({ load: { id: 'lt-1', scenario: 'CART', state: 'DONE', vus: 200, durationSec: 300, startedAt: '2026-11-17T12:59:00+09:00', finishedAt: '2026-11-17T13:04:00+09:00' } });
+    server.result = {
+      requests: 41816, failed: 9, byStatus: { 200: 41807, 502: 7, '연결 실패': 2 }, p95Ms: 87.3, avgRps: 139.4, peakVus: 200, elapsedSec: 300,
+      topFailures: [{ api: 'GET /api/products', status: '502', count: 7 }], serverErrors: { 'product-service': 7 },
+    };
+    renderPanel();
+    const result = await screen.findByLabelText('부하테스트 결과');
+    expect(within(result).getByText('41,816건')).toBeTruthy();
+    const causes = within(result).getByRole('list', { name: '실패 원인' });
+    expect(within(causes).getByText('502 7건: 서비스 연결 실패(파드 종료, 재시작)')).toBeTruthy();
+    expect(within(causes).getByText('같은 시간 서버 5xx: product 7건')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '부하 중지' }).disabled).toBe(true);
+    expect(screen.getByText(/마지막 부하테스트 완료/)).toBeTruthy();
+  });
+});
+
+describe('부하테스트 진행, 원인 해석과 현재 접속자', () => {
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+
+  it('진행 막대 값 — 실행 중은 지금 기준, 끝난 실행은 실제 끝난 시각 기준', () => {
+    const start = Date.parse('2026-11-17T13:00:00+09:00');
+    expect(progress({ startedAt: new Date(start).toISOString(), durationSec: 300 }, start + 90_000))
+      .toEqual({ elapsed: '01:30', remaining: '03:30', percent: 30 });
+    expect(progress({ startedAt: new Date(start).toISOString(), durationSec: 300, finishedAt: new Date(start + 120_000).toISOString() }, start + 999_000).elapsed)
+      .toBe('02:00');
+    expect(failureCauses({ failed: 0 })).toEqual(['실패 없음: 모든 요청이 정상 응답(2xx)']);
+  });
+
+  it('현재 접속자 — 5초 폴링 값을 그래프로 쌓는다', async () => {
+    vi.spyOn(axiosInstance, 'get').mockResolvedValue({ data: { data: { visitors: 12, members: 5, windowSeconds: 120 } } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><SystemVisitors /></QueryClientProvider>);
+
+    expect(await screen.findByText('12명')).toBeTruthy();
+    expect(screen.getByText('5명')).toBeTruthy();
+    expect(axiosInstance.get).toHaveBeenCalledWith('/api/admin/system/monitor/visitors');
+    client.clear();
   });
 });

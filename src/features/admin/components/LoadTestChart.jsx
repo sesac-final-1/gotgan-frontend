@@ -1,6 +1,6 @@
 // 시스템 상태 그래프 한 칸 — 선 그래프(SVG, 라이브러리 없음). 담당 구지훈(11/16)
 // 점은 [{ t: epoch ms, v }]. 가로축은 첫 점부터 채우고 창 길이는 30초 ~ 3분(짧게 잡아 변화가 눈에 띄게).
-// y 축은 0 부터, 최댓값은 floor 이상으로 잡아 작은 값이 과장돼 보이지 않게. alert 면 연한 빨간 배경(에러 · 응답 급등)
+// y 축은 0 부터, 최댓값은 floor 이상으로 잡아 작은 값이 과장돼 보이지 않게. alert 면 연한 빨간 배경(에러, 응답 급등)
 const MIN_WINDOW_MS = 30 * 1000;
 const MAX_WINDOW_MS = 3 * 60 * 1000;
 const W = 300;
@@ -20,7 +20,7 @@ export default function LoadTestChart({ label, points = [], format, floor = 1, t
     <figure className={`border px-3 pt-2 pb-1 min-w-0 transition-colors ${alert ? 'border-rust bg-rust-soft' : 'border-line bg-paper'}`} aria-label={label}
       data-alert={alert || undefined}>
       <figcaption className="flex items-baseline justify-between gap-2">
-        <span className={`text-sm ${alert ? 'text-rust font-bold' : 'text-mute'}`}>{label}{alert && alertText ? ` · ${alertText}` : ''}</span>
+        <span className={`text-sm ${alert ? 'text-rust font-bold' : 'text-mute'}`}>{label}{alert && alertText ? `: ${alertText}` : ''}</span>
         <b className={`${compact ? 'text-base' : 'text-xl'} tabular-nums ${alert ? 'text-rust' : ''}`}>{last ? format(last.v) : '-'}</b>
       </figcaption>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={`w-full ${compact ? 'h-12' : 'h-20'} ${alert ? 'text-rust' : tone}`} role="img" aria-hidden="true">
