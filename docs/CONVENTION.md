@@ -66,9 +66,10 @@
 | 코드 품질 | SonarQube Cloud — main 대상 PR에 품질 게이트 | 1-3 |
 | (10/13) 저장소 3개 | `gotgan-backend`(services, serverless, docker-compose, docs/api), `gotgan-frontend`(React 루트), `gotgan-config`(deploy, infra/terraform, scripts, docs). 모노레포 폐지. 각 저장소 `docs/CONVENTION.md`는 이 문서의 발췌본(자동 생성) — 이 문서만 고친다 | 1-4, 5-5 |
 | (10/13) 시크릿 | **GitHub Secrets 단일 소스**(클러스터, CI), Vercel 환경 변수(프론트). Secrets Manager, KMS, ESO 없음. `secrets-sync` 워크플로가 K8s Secret 생성 | 1-5, 5-3 |
-| (10/13) 인프라 일일 스케줄 | `infra/terraform/cluster/`는 `infra-schedule` 워크플로가 매일 KST 08:00 apply(→ `bootstrap`), 22:00 destroy (10/26 부터 EventBridge Scheduler → Lambda 가 실행). 나머지 폴더는 상시. apply/destroy는 워크플로 또는 구지훈 | 5-2 — **11/17 부터 24시간 운영: 두 스케줄 DISABLED(`infra/terraform/app/scheduler.tf` `schedule_enabled = false`, config #112), 11/20 발표 후 정리는 `infra-schedule` 수동 실행(destroy)** |
+| (10/13) 인프라 일일 스케줄 | `infra/terraform/cluster/`는 `infra-schedule` 워크플로가 매일 KST 08:00 apply(→ `bootstrap`), 22:00 destroy (10/26 부터 EventBridge Scheduler → Lambda 가 실행). 나머지 폴더는 상시. apply/destroy는 워크플로 또는 구지훈. **11/17부터 두 스케줄 DISABLED**(`app/scheduler.tf` `schedule_enabled = false`) — 24시간 운영, 11/20 발표 후 정리는 `infra-schedule` 수동 destroy | 5-2 |
 | (10/13) Redis 폴백 | 장바구니 원본은 MySQL `orderdb.cart_item`, Redis `cart:{userId}`는 캐시. Redis 호출은 서킷 인스턴스 `redisCart` + 폴백(MySQL) | 2-2, 2-7, 3-2 |
 | (10/13 3차) 3티어(db 노드 분리, NetworkPolicy) | 프론트(Vercel) → 백(EKS `app` 노드 그룹 t3.xlarge ×2 — 10/14 t3.large에서 조정) → DB(EKS `db` 노드 그룹 t3.medium ×1, 테인트 `tier=db:NoSchedule`, MySQL, Redis만). `02-networkpolicy.yaml`로 DB 3306, 6379는 `tier=backend` 파드만. blackbox exporter 없음. 파일 업로드만 presigned URL로 브라우저 → S3 직접(예외) | 5-3 |
+| (11/17) 자동 확장 | HPA는 Helm values 서비스 항목에 `hpa: { maxReplicas: N }`이 있을 때만(gateway, user, store, product, order), 최소는 `replicas`, 목표 CPU는 `defaults.hpa.cpu`(requests 대비 70%). HPA가 바꾼 replicas는 ArgoCD `ignoreDifferences`로 덮지 않음. Cluster Autoscaler는 app 노드 그룹만 2~3대(db 노드 그룹 제외) | 5-3 |
 
 ---
 
@@ -155,6 +156,7 @@ gotgan-frontend/src/
 │   ├── RootLayout.jsx            #   최상위 틀 (ToastHost 등)
 │   ├── providers.jsx             #   QueryClientProvider 등
 │   ├── bootstrap.js              #   부팅 시 refresh 1회 → 로그인 상태 복구
+│   ├── usePresence.js            #   접속 신호 — 20초마다 /api/presence/ping, 나갈 때 leave (현재 접속자, 11/17)
 │   └── App.jsx
 ├── pages/                        # 라우트 1개 = 페이지 파일 1개. features 조립만
 │   ├── shop/                     #   메인, 상품, 스토어, 장바구니, 주문서, 로그인, 입점 신청, 고객센터, 정책(공지, FAQ, 수수료, 판매자 약관)
@@ -184,14 +186,14 @@ gotgan-frontend/src/
 │   ├── components/ui/            #   목업 공통 컴포넌트 (Pill, Price, Modal, Kpi, BarChart …)
 │   ├── components/common/        #   PostcodeSearch(우편번호 검색), DataTable, SearchInput, BlockPager, SortableHeader, MockNav(개발 모드 전용)
 │   ├── layouts/                  #   ShopLayout, MyPageLayout, ConsoleLayout
-│   ├── hooks/  stores/  utils/   #   utils: format, safeHtml(DOMPurify), fileType(업로드 형식 확인), postcode, imageFallback, collection
+│   ├── hooks/  stores/  utils/   #   utils: format, safeHtml(DOMPurify), fileType(업로드 형식 확인), postcode, imageFallback, collection, visitorId(방문자 ID, 11/17)
 ├── test/setup.js                 # Vitest 공통 설정
 └── styles/index.css              # Tailwind 진입, @theme 디자인 토큰
 ```
 
 **운영 규칙**
 
-1. **관리자 화면은 `features/admin`에 둔다** (입점 심사, 스토어, 카테고리, 수수료, 정산, 회원, 신고, 관리자 대시보드, 시스템 상태(장애 시연 `/admin/system`, 11/9 화면 박지연)). `/api/admin/**`(admin-service)만 호출, 도메인 서비스 API를 직접 부르지 않음 — 담당 구지훈. 예외: 관리자 상담함은 `features/chat` 공용 화면이 `/api/chats/**`(chat-service) 호출(10/27)
+1. **관리자 화면은 `features/admin`에 둔다** (입점 심사, 스토어, 카테고리, 수수료, 정산, 회원, 신고, 관리자 대시보드, 시스템 상태(장애 시연 `/admin/system`, 11/9 화면 박지연), 11/16 부하테스트와 실시간 모니터링 패널, 11/17 장애 분석 리포트 `/admin/system/report`(구지훈)). `/api/admin/**`(admin-service)만 호출, 도메인 서비스 API를 직접 부르지 않음 — 담당 구지훈. 예외: 관리자 상담함은 `features/chat` 공용 화면이 `/api/chats/**`(chat-service) 호출(10/27)
 2. 다른 사람의 `features/` 폴더는 PR 없이 수정 금지
 3. 두 도메인 이상에서 쓰이면 `shared/`로 승격, 승격 시 팀 공지
 4. `features` 간 직접 import 지양 — 필요하면 `shared` 경유
